@@ -6,6 +6,12 @@ protótipo de design validado (Claude Artifact) do repositório irmão
 `../pdv-mercadinho` (mockup estático, não código de produção — não copiar
 HTML dele, ele é referência visual, ver `docs/specs/`).
 
+- **Protótipo clicável publicado**: https://claude.ai/code/artifact/b115bb97-13a7-46a8-9550-6e63cce98f10
+  — referência visual definitiva de todas as telas, nos 3 breakpoints
+  (Desktop/Tablet/Celular). Usar para tirar dúvida de layout/estado que os
+  specs não cobrem em detalhe; o design system em código está em
+  `apps/web/docs/DESIGN_SYSTEM.md`.
+
 ## Antes de qualquer alteração, leia
 
 Todo o contexto de produto, arquitetura e decisão já tomada está em

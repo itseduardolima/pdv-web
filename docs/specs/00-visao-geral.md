@@ -6,8 +6,10 @@ Sistema PDV (Ponto de Venda) web, multi-tenant e white-label, voltado inicialmen
 para pequenos mercados/mercadinhos que hoje não têm nenhum sistema informatizado
 (vendem no caderno ou de cabeça, sem emissão de nota, sem controle de estoque real).
 
-O protótipo visual (Claude Design / Artifact) já validado com o cliente cobre estas
-telas, em 3 breakpoints (Desktop 1600×900, Tablet 1180×820, Celular 412×915):
+O protótipo visual (Claude Design / Artifact) já validado com o cliente —
+publicado em https://claude.ai/code/artifact/b115bb97-13a7-46a8-9550-6e63cce98f10
+— cobre estas telas, em 3 breakpoints (Desktop 1600×900, Tablet 1180×820,
+Celular 412×915):
 
 - Login (seleção de operador + PIN)
 - Abertura de Caixa

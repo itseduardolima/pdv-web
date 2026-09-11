@@ -1,6 +1,15 @@
 # Design System — apps/web
 
-Fonte oficial: **Aaply** — https://styles.refero.design/style/357e6fee-72db-40cf-b858-254b802018bd
+Fonte oficial do design system: **Aaply** —
+https://styles.refero.design/style/357e6fee-72db-40cf-b858-254b802018bd
+
+Referência visual aplicada (telas reais, nos 3 breakpoints): protótipo
+clicável publicado em
+https://claude.ai/code/artifact/b115bb97-13a7-46a8-9550-6e63cce98f10 — é
+ele que mostra como cada token abaixo aparece de fato em Login, Vender,
+Produtos, Operadores, etc. Use-o para tirar dúvida de estado/layout que este
+documento não detalha (ex.: exatamente onde o dot-grid aparece, o espaçamento
+de um card específico).
 
 Este documento traduz esse design system em tokens de código (CSS
 variables + Tailwind) e define como eles são consumidos pelos componentes.
