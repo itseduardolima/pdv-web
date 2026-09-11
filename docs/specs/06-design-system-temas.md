@@ -1,5 +1,12 @@
 # Design System e Temas
 
+> Detalhamento em nível de implementação (tokens completos, mapeamento para
+> Tailwind, tabela de tipografia, do's/don'ts) vive em
+> [`../../apps/web/docs/DESIGN_SYSTEM.md`](../../apps/web/docs/DESIGN_SYSTEM.md).
+> Este documento aqui é o resumo de produto: o quê e o porquê do tema trocar
+> por tenant. Fonte oficial do design system: **Aaply** —
+> https://styles.refero.design/style/357e6fee-72db-40cf-b858-254b802018bd
+
 ## Base visual (design system "Aaply", herdado do protótipo)
 
 - Cor primária (amarelo): `#e6e51e`

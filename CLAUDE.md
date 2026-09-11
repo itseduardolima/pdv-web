@@ -13,7 +13,8 @@ Todo o contexto de produto, arquitetura e decisão já tomada está em
 
 1. `docs/specs/00-visao-geral.md` — o que é, por quê, o que é fora de escopo
 2. `docs/specs/01-arquitetura.md` — como as peças se encaixam (Next.js
-   full-stack, multi-tenant, offline-first no caixa)
+   frontend + NestJS backend em monorepo, multi-tenant, offline-first no
+   caixa, deploy self-hosted em VPS)
 3. `docs/specs/02-tecnologias.md` — stack escolhida e por quê
 4. `docs/specs/03-regras-negocio.md` — **fonte da verdade de comportamento**
    (papéis, caixa, venda, produtos, operadores) — qualquer feature nova
@@ -26,6 +27,16 @@ Todo o contexto de produto, arquitetura e decisão já tomada está em
    troca por tenant
 8. `docs/specs/07-multitenant-whitelabel.md` — isolamento de dado e como
    revender para outro mercado
+
+Specs específicas de implementação de cada app (endpoints, rotas, tokens de
+design em detalhe) vivem dentro do próprio app, não na raiz:
+
+- `apps/web/docs/SPEC.md` — rotas, estrutura de código, client HTTP, offline, PWA
+- `apps/web/docs/DESIGN_SYSTEM.md` — tokens completos (cor, tipografia,
+  espaçamento, raio, sombra), mapeamento para Tailwind, do's/don'ts —
+  baseado no design system oficial **Aaply**
+  (https://styles.refero.design/style/357e6fee-72db-40cf-b858-254b802018bd)
+- `apps/api/docs/SPEC.md` — módulos, endpoints, convenções de DTO/erro/teste
 
 Se uma tarefa contradiz algo escrito em `docs/specs/`, o spec vence — ou a
 tarefa é, na verdade, "atualizar o spec" (avisar o usuário disso).
