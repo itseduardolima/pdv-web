@@ -1,5 +1,11 @@
 # pdv-web
 
+> **Leia [`TODO.md`](./TODO.md) antes de qualquer outra coisa.** É o
+> checklist vivo do projeto — o que já está feito e o que falta, por
+> sprint. Toda sessão que trabalhar aqui lê esse arquivo primeiro e o
+> atualiza (marca `[x]`, adiciona linha nova) antes de terminar. Sem isso,
+> trabalho duplicado ou fora de ordem é praticamente garantido.
+
 Sistema PDV web, multi-tenant e white-label, para pequenos mercados
 ("mercadinhos") sem sistema informatizado hoje. Implementação real do
 protótipo de design validado (Claude Artifact) do repositório irmão
@@ -38,8 +44,10 @@ Todo o contexto de produto, arquitetura e decisão já tomada está em
    antes de tocar em auth, upload, ou qualquer query entre tenants
 
 Planejamento de execução (Scrum) está em `docs/scrum/`:
-`BACKLOG.md` (épicos e histórias de usuário, derivados do protótipo) e
-`SPRINTS.md` (ordem das sprints e por que começar por Tenant+Auth).
+`BACKLOG.md` (épicos e histórias de usuário, com critério de aceite e
+pontos) e `SPRINTS.md` (ordem das sprints e por que começar por
+Tenant+Auth). O **estado atual** (o que já foi feito) é `TODO.md`, na raiz
+— leia esse primeiro, ele referencia o número da HU aqui do backlog.
 
 Specs específicas de implementação de cada app (endpoints, rotas, tokens de
 design em detalhe) vivem dentro do próprio app, não na raiz:
