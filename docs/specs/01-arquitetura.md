@@ -19,8 +19,8 @@ consumindo uma **API NestJS** dedicada (HTTP/REST). Não é Next.js full-stack
 │                     API — NestJS                            │
 │  - TenantMiddleware: resolve tenant pelo host/subdomínio     │
 │  - AuthGuard: sessão do operador (PIN), escopada ao tenant   │
-│  - Modules por domínio: Venda, Caixa, Produto, Operador,      │
-│    Tenant (ver 04-padroes-codigo.md)                         │
+│  - Modules por domínio: Sale, CashSession, Product,          │
+│    Operator, Tenant (ver 04-padroes-codigo.md)               │
 │  - Regras de negócio nos Services (ver 03-regras-negocio.md) │
 └───────────────┬──────────────────────────────────────────┘
                 │ Prisma Client
@@ -184,10 +184,10 @@ apps/
   api/
     src/
       modules/
-        venda/
-        caixa/
-        produto/
-        operador/
+        sale/
+        cash-session/
+        product/
+        operator/
         tenant/
         auth/
       common/         # guards, middlewares, decorators, filters

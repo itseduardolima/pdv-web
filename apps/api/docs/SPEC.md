@@ -2,129 +2,143 @@
 
 Este documento é específico da implementação do backend. Contexto de
 produto, arquitetura geral e regras de negócio estão em `../../docs/specs/`
-(raiz do monorepo) — leia primeiro `01-arquitetura.md`, `03-regras-negocio.md`
-e `07-multitenant-whitelabel.md`. Aqui: o que existe dentro de `apps/api`
-especificamente — módulos, endpoints, convenções de DTO/erro/teste.
+(raiz do monorepo) — leia primeiro `01-arquitetura.md`, `03-regras-negocio.md`,
+`04-padroes-codigo.md` (seção Idioma) e `07-multitenant-whitelabel.md`.
+Aqui: o que existe dentro de `apps/api` — infra, módulos planejados,
+endpoints, convenções de DTO/erro/teste.
 
 ## Responsabilidade deste app
 
 NestJS — toda regra de negócio e todo acesso a dado (Prisma/PostgreSQL).
 `apps/web` nunca fala com o banco; fala só com este serviço, por HTTP.
 
-## Módulos e endpoints
+## Estado atual
 
-Convenção de rota: `/{modulo}` (nunca inclui o tenant na URL — o tenant é
-resolvido pelo host, ver `TenantMiddleware` abaixo, não por path param).
+Só a fundação está implementada (sem módulos de domínio ainda — eles entram
+um por vez, cada um testado antes do próximo):
+
+- `AppModule` com `ConfigModule`, `ThrottlerModule`, `JwtModule` (global) e
+  `PrismaModule`; pipe global `ZodValidationPipe`, filtro global
+  `DomainExceptionFilter`, guards globais `ThrottlerGuard` → `AuthGuard` →
+  `RolesGuard`.
+- `common/`: `tenant-context.ts` (`AsyncLocalStorage` + abstração
+  `TenantResolver`), `TenantMiddleware`, `AuthGuard`, `RolesGuard`,
+  decorators (`@Public()`, `@Roles()`, `@CurrentTenant()`,
+  `@CurrentOperator()`), `DomainError` e subclasses, filtro de exceção.
+- `prisma/schema.prisma` completo (Tenant, Operator, Product, CashSession,
+  Sale, SaleItem) e `prisma/seed.ts` (tenant `demo`, admin com PIN 1234,
+  4 produtos).
+
+O `TenantMiddleware` só é registrado quando o módulo `tenant` existir e
+fornecer o `TenantResolver`; até lá, nenhuma rota resolve tenant.
+
+## Ordem sugerida de criação dos módulos
+
+1. `tenant` — fornece `TenantResolver`, registra o middleware, expõe
+   `GET /tenant/current`.
+2. `auth` — login por PIN, cookie de sessão, `GET /auth/me`.
+3. `operator` — CRUD + regra do último admin.
+4. `product` — CRUD.
+5. `cash-session` — abrir/fechar caixa.
+6. `sale` — venda, sincronização offline, resumo do dashboard.
+
+## Endpoints planejados
+
+Convenção de rota: `/{resource}` em inglês, plural para coleções. O tenant
+nunca vai na URL — é resolvido pelo host (`TenantMiddleware`).
 
 ### `auth`
 
-| Método | Rota | Descrição | Papel exigido |
+| Método | Rota | Descrição | Papel |
 |---|---|---|---|
-| GET | `/auth/operadores` | Lista operadores ativos do tenant (avatar+nome, para a tela de seleção do Login) | público (dentro do tenant) |
-| POST | `/auth/login` | `{ operadorId, pin }` → seta cookie de sessão | público |
+| GET | `/auth/operators` | Operadores ativos (avatar+nome) para a tela de Login | público |
+| POST | `/auth/login` | `{ operatorId, pin }` → seta cookie `pdv_session` | público |
 | POST | `/auth/logout` | Encerra sessão | operador |
 | GET | `/auth/me` | Operador logado + papel + tenant | operador |
 
 ### `tenant`
 
-| Método | Rota | Descrição | Papel exigido |
+| Método | Rota | Descrição | Papel |
 |---|---|---|---|
-| GET | `/tenant/atual` | Dados do tenant resolvido (nome, logo, cores) — consumido pelo `apps/web` para montar o tema, ver `06-design-system-temas.md` | público (dentro do tenant) |
+| GET | `/tenant/current` | Nome, logo e cores do tenant resolvido (usado pelo `apps/web` para montar o tema) | público |
 
-### `operador`
+### `operator`
 
-| Método | Rota | Descrição | Papel exigido |
+| Método | Rota | Descrição | Papel |
 |---|---|---|---|
-| GET | `/operadores` | Lista (inclui inativos, para a tela de gestão) | admin |
-| POST | `/operadores` | Cria (nome, papel, PIN inicial, foto opcional) | admin |
-| PATCH | `/operadores/:id` | Edita dados/foto | admin |
-| PATCH | `/operadores/:id/pin` | Reseta/define novo PIN | admin |
-| PATCH | `/operadores/:id/ativo` | Toggle ativo/inativo | admin |
-| DELETE | `/operadores/:id` | Soft-delete | admin |
+| GET | `/operators` | Lista (inclui inativos) | admin |
+| POST | `/operators` | Cria (`CreateOperatorInput`) | admin |
+| PATCH | `/operators/:id` | Edita dados/foto | admin |
+| PATCH | `/operators/:id/pin` | Define novo PIN | admin |
+| PATCH | `/operators/:id/active` | Ativa/inativa | admin |
+| DELETE | `/operators/:id` | Soft-delete | admin |
 
-Todas as mutações acima validam a regra "sempre deve existir ao menos 1
-admin ativo" no `OperadorService` (ver `03-regras-negocio.md`) — a validação
-vive no service, não no controller nem na UI.
+Todas as mutações validam no `OperatorService` a regra "sempre deve existir
+ao menos 1 admin ativo" (`LAST_ADMIN`), ver `03-regras-negocio.md`.
 
-### `produto`
+### `product`
 
-| Método | Rota | Descrição | Papel exigido |
+| Método | Rota | Descrição | Papel |
 |---|---|---|---|
-| GET | `/produtos` | Lista (com filtro de busca/categoria via query params) | operador |
-| GET | `/produtos/:id` | Detalhe | operador |
-| POST | `/produtos` | Cria | admin |
-| PATCH | `/produtos/:id` | Edita | admin |
-| DELETE | `/produtos/:id` | Soft-delete | admin |
+| GET | `/products` | Lista (query: `search`, `category`) | operador |
+| GET | `/products/:id` | Detalhe | operador |
+| POST | `/products` | Cria | admin |
+| PATCH | `/products/:id` | Edita | admin |
+| DELETE | `/products/:id` | Soft-delete | admin |
 
-### `caixa`
+### `cash-session`
 
-| Método | Rota | Descrição | Papel exigido |
+| Método | Rota | Descrição | Papel |
 |---|---|---|---|
-| GET | `/caixa/atual` | Sessão aberta (se houver) do tenant | operador |
-| POST | `/caixa/abrir` | Abre sessão (`{ valorInicial }`) — 409 se já existe uma aberta | operador |
-| POST | `/caixa/:id/fechar` | Fecha, calcula totais por forma de pagamento | operador |
-| GET | `/caixa/:id/vendas` | Histórico de vendas da sessão (usado na tela de Fechamento) | operador |
+| GET | `/cash-sessions/current` | Sessão aberta, se houver | operador |
+| POST | `/cash-sessions` | Abre (`OpenCashSessionInput`) — 409 `CASH_SESSION_ALREADY_OPEN` se já existe uma aberta | operador |
+| POST | `/cash-sessions/:id/close` | Fecha e calcula totais por forma de pagamento | operador |
+| GET | `/cash-sessions/:id/sales` | Vendas da sessão (tela de Fechamento) | operador |
 
-### `venda`
+### `sale`
 
-| Método | Rota | Descrição | Papel exigido |
+| Método | Rota | Descrição | Papel |
 |---|---|---|---|
-| POST | `/vendas` | Cria uma venda (`{ uuid, itens[], formaPagamento }`) — idempotente pelo `uuid` gerado no cliente (ver estratégia offline em `01-arquitetura.md`) | operador |
-| POST | `/vendas/sincronizar` | Recebe um lote de vendas pendentes da fila offline, upsert idempotente por `uuid` | operador |
-| GET | `/dashboard/resumo` | Totais do dia, mais vendidos, gráfico da semana | operador |
+| POST | `/sales` | Cria venda (`CreateSaleInput`) — idempotente por `uuid` | operador |
+| POST | `/sales/sync` | Lote de vendas da fila offline, upsert por `uuid` | operador |
+| GET | `/dashboard/summary` | Totais do dia, mais vendidos, semana | operador |
 
-## Convenções de DTO
+## Convenções de DTO e erro
 
-- Todo `Controller` recebe um DTO decorado com `class-validator`
-  (`CriarProdutoDto`, `AtualizarOperadorDto`, etc.) — nunca um `any`/`object`
-  cru.
-- Onde o schema já existe em `packages/shared` (Zod, compartilhado com o
-  formulário do frontend), o DTO do Nest deriva dele — não redefinir a
-  mesma regra de validação em paralelo (ver `04-padroes-codigo.md`).
-- Resposta de erro de negócio segue um formato único, capturado por um
-  `ExceptionFilter` global:
+- DTOs derivam dos schemas Zod de `packages/shared` com `createZodDto`
+  (`nestjs-zod`); a validação acontece no `ZodValidationPipe` global.
+- Erros de negócio são subclasses de `DomainError` (`NotFoundError`,
+  `ConflictError`, `ForbiddenError`, `UnauthorizedError`) com `code` em
+  inglês e `message` em português. Formato de resposta (todo erro):
 
 ```json
-{ "statusCode": 409, "code": "CAIXA_JA_ABERTO", "message": "Já existe uma sessão de caixa aberta." }
+{ "statusCode": 409, "code": "CASH_SESSION_ALREADY_OPEN", "message": "Já existe um caixa aberto." }
 ```
 
-`code` é estável e machine-readable (o frontend pode decidir UI a partir
-dele); `message` é o texto em português mostrado ao usuário.
+Erros de validação vêm com `code: "VALIDATION"` e `details` (flatten do Zod).
 
-## Tenant e autenticação (implementação)
+## Tenant e autenticação
 
-- `TenantMiddleware` (global, registrado em `AppModule`): lê o header
-  interno enviado pelo `apps/web` (`x-tenant-host` ou equivalente),
-  resolve o `Tenant` (cache em memória, TTL curto + invalidação ao
-  atualizar tema) e anexa via `AsyncLocalStorage` — disponível em qualquer
-  ponto da request via `CurrentTenant()` (decorator).
-- `AuthGuard` (aplicado a todo módulo exceto rotas públicas listadas acima):
-  lê o cookie de sessão, valida contra a tabela de sessão/JWT, e confirma que
-  o `tenantId` da sessão bate com o tenant resolvido pelo middleware — uma
-  sessão de um tenant nunca é aceita em outro.
-- `RolesGuard` + decorator `@Roles('admin')`: aplicado nos endpoints que
-  exigem papel Administrador (ver tabela de módulos acima).
+- `TenantMiddleware`: lê `x-tenant-host` (enviado pelo `apps/web`) ou o
+  `Host`, chama `TenantResolver.resolveByHost` e guarda `tenantId` em
+  `AsyncLocalStorage` (`getTenantId()` / `@CurrentTenant()`).
+- `AuthGuard` (global, exceto `@Public()`): lê o JWT do cookie `pdv_session`,
+  valida e confere que o `tenantId` da sessão é o tenant resolvido.
+- `RolesGuard` + `@Roles('ADMIN')` nos endpoints restritos a Administrador.
 
-## Prisma / banco
+## Prisma
 
-- `schema.prisma` em `apps/api/prisma/schema.prisma`.
-- Toda entidade de domínio tem `tenantId String` com
-  `@@index([tenantId, ...])` nas queries mais comuns.
-- Migrations versionadas (`prisma migrate dev` em desenvolvimento,
-  `prisma migrate deploy` no deploy via Docker Compose).
-- RLS do Postgres como segunda camada de defesa (ver `01-arquitetura.md`) —
-  configurada via migration SQL própria (`prisma migrate dev --create-only`
-  + SQL manual de `CREATE POLICY`), não é algo que o Prisma gera sozinho.
+- Toda entidade de domínio tem `tenantId` com índice composto nas queries
+  mais comuns; `Sale` tem `@@unique([tenantId, uuid])` para idempotência.
+- `prisma migrate dev` em desenvolvimento; `prisma migrate deploy` roda no
+  `CMD` do Dockerfile antes de subir a API.
+- Row-Level Security do Postgres como segunda camada (ver
+  `01-arquitetura.md`) — migration SQL manual, não gerada pelo Prisma.
 
-## Testes (ver `04-padroes-codigo.md` para a régua geral)
+## Testes
 
-- `*.service.spec.ts`: um arquivo por `Service`, cobrindo cada regra de
-  `03-regras-negocio.md` relevante ao módulo (ex.: `caixa.service.spec.ts`
-  testa "não pode abrir caixa com uma já aberta", "não pode vender com caixa
-  fechado", "fechamento é imutável").
-- `*.controller.spec.ts`: valida DTO rejeita payload inválido, roteamento e
-  guards (papel errado → 403).
-- Sem teste de integração contra Postgres real no CI por padrão — usar
-  `Repository` mockado nos testes de `Service`; se precisar de teste de
-  integração com banco real, isolar num job de CI separado (mais lento),
-  não no caminho crítico de todo PR.
+- `*.service.spec.ts`: um por `Service`, cobrindo cada regra de
+  `03-regras-negocio.md` do módulo, com `Repository` mockado.
+- `*.controller.spec.ts`: DTO rejeita payload inválido, guards (papel errado
+  → 403).
+- Sem Postgres real no caminho crítico do CI.

@@ -1,0 +1,38 @@
+/* Tokens primitivos (Aaply) → semânticos. Componentes usam só os semânticos. */
+:root {
+  --color-highlighter-yellow: #e6e51e;
+  --color-sunbeam: #fff705;
+  --color-annotation-red: #f34646;
+  --color-signal-blue: #466cf3;
+  --color-peach-wash: #ff8562;
+  --color-carbon: #000000;
+  --color-paper-white: #ffffff;
+  --color-graphite-mist: #f2f2f2;
+  --color-hairline-gray: #e6e6e6;
+
+  --color-primary: var(--color-highlighter-yellow);
+  --color-primary-ink: var(--color-carbon);
+  --color-ink: var(--color-carbon);
+  --color-canvas: var(--color-graphite-mist);
+  --color-surface: var(--color-paper-white);
+  --color-border: var(--color-hairline-gray);
+  --color-accent: var(--color-signal-blue);
+  --color-danger: var(--color-annotation-red);
+  --color-warning: var(--color-peach-wash);
+
+  --radius-pill: 999px;
+  --radius-card: 32px;
+  --radius-card-sm: 20px;
+  --radius-input: 16px;
+  --radius-frame: 16px;
+  --radius-nav: 30px;
+
+  --shadow-nav: rgba(0, 0, 0, 0.2) 0px 10px 10px -5px;
+
+  --font-heading: 'Poppins', 'DM Sans', 'Nunito Sans', sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --control-height-desktop: 54px;
+  --control-height-tablet: 48px;
+  --control-height-mobile: 46px;
+}

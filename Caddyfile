@@ -1,0 +1,10 @@
+# Substitua os hosts pelo domínio real na VPS. Caddy emite/renova TLS (Let's Encrypt) sozinho.
+# Subdomínios de tenant (<slug>.app.exemplo.com.br) caem no bloco do web via wildcard.
+
+*.app.localhost, app.localhost {
+	reverse_proxy web:3000
+}
+
+api.localhost {
+	reverse_proxy api:3001
+}

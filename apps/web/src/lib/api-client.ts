@@ -1,0 +1,43 @@
+import type { z } from 'zod'
+import { apiErrorSchema, type ApiError } from '@pdv/shared'
+import { env } from './env'
+
+export class ApiClientError extends Error {
+  constructor(public readonly error: ApiError) {
+    super(error.message)
+    this.name = 'ApiClientError'
+  }
+}
+
+interface RequestOptions<TSchema extends z.ZodTypeAny> {
+  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE'
+  body?: unknown
+  schema: TSchema
+  headers?: Record<string, string>
+}
+
+export async function apiRequest<TSchema extends z.ZodTypeAny>(
+  path: string,
+  { method = 'GET', body, schema, headers }: RequestOptions<TSchema>,
+): Promise<z.infer<TSchema>> {
+  const baseUrl = typeof window === 'undefined' ? env.apiInternalUrl : env.apiUrl
+  const response = await fetch(`${baseUrl}${path}`, {
+    method,
+    credentials: 'include',
+    headers: { 'content-type': 'application/json', ...headers },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  })
+
+  const payload: unknown = response.status === 204 ? null : await response.json()
+
+  if (!response.ok) {
+    const parsed = apiErrorSchema.safeParse(payload)
+    throw new ApiClientError(
+      parsed.success
+        ? parsed.data
+        : { statusCode: response.status, code: 'HTTP_ERROR', message: 'Falha ao comunicar com o servidor.' },
+    )
+  }
+
+  return schema.parse(payload)
+}

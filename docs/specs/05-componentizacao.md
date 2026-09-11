@@ -11,7 +11,7 @@ para que isso seja escrito **uma vez**, não 3 vezes por breakpoint.
    domínio: `Button`, `PillButton`, `Toggle`, `Input`, `Select`, `Modal`,
    `Avatar`. Estilizados via tokens de tema (ver 06), nunca com cor
    hardcoded. Construídos sobre Radix UI primitives para acessibilidade.
-2. **`components/pdv/`** — composição de domínio, reutilizando `ui/`:
+2. **`components/pos/`** — composição de domínio, reutilizando `ui/`:
    `ProductCard`, `ProductGrid`, `CartLine`, `PaymentMethodPicker`,
    `PinKeypad`, `OperatorAvatarPicker`, `StatTile`, `PhotoUploadBox`
    (usado tanto em Produto quanto em Operador — ver nota abaixo).
@@ -19,7 +19,7 @@ para que isso seja escrito **uma vez**, não 3 vezes por breakpoint.
    `SplitAuthLayout` (o padrão de tela dividida usado em Login, Abertura de
    Caixa, Venda Confirmada).
 
-Regra: um componente de `pdv/` nunca deve saber se está rodando em desktop,
+Regra: um componente de `pos/` nunca deve saber se está rodando em desktop,
 tablet ou celular — quem decide isso é o layout responsivo (Tailwind
 breakpoints), não uma prop `variant="mobile"` espalhada pelo código.
 
@@ -39,7 +39,7 @@ repete**: cada tela é UM componente React com Tailwind responsivo
 formulário ao lado). Isso é um único componente:
 
 ```
-components/pdv/PhotoUploadBox.tsx
+components/pos/PhotoUploadBox.tsx
 ```
 
 Props: `value: string | null`, `onChange: (file: File) => void`, `label?:
@@ -61,7 +61,7 @@ lista de configuração (`lib/navigation.ts`), nunca duplicado em três lugares.
 
 ## Storybook (opcional, mas recomendado)
 
-Para os componentes de `ui/` e `pdv/`, manter um Storybook (ou equivalente
+Para os componentes de `ui/` e `pos/`, manter um Storybook (ou equivalente
 leve) ajuda a garantir que a troca de tema (branding de outro mercado) não
 quebra nada visualmente — é o lugar de revisar todos os componentes com o
 tema trocado antes de revender para um novo cliente.

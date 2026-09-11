@@ -9,3 +9,9 @@ dist/
 .DS_Store
 coverage/
 .vercel/
+.turbo/
+cypress/videos/
+cypress/screenshots/
+apps/api/generated/
+next-env.d.ts
+*.tsbuildinfo

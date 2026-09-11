@@ -10,47 +10,54 @@ apps/api/src/
       tenant.controller.ts
       tenant.service.ts
       tenant.repository.ts
-      dto/
     auth/
       auth.module.ts
       auth.controller.ts
       auth.service.ts          # login por PIN, emissão de sessão
-      strategies/
-      guards/                  # AuthGuard, RolesGuard (admin/operador)
-    operador/
-      operador.module.ts
-      operador.controller.ts
-      operador.service.ts
-      operador.repository.ts
       dto/
-    produto/
+    operator/
+      operator.module.ts
+      operator.controller.ts
+      operator.service.ts
+      operator.service.spec.ts
+      operator.repository.ts
+      dto/
+    product/
       (mesma forma)
-    caixa/
-      (mesma forma) — CaixaSession, abertura/fechamento
-    venda/
-      (mesma forma) — inclui endpoint de sincronização offline
+    cash-session/
+      (mesma forma) — abertura/fechamento de caixa
+    sale/
+      (mesma forma) — inclui endpoint de sincronização offline e resumo do dashboard
   common/
     middlewares/
       tenant.middleware.ts
     guards/
+      auth.guard.ts
+      roles.guard.ts
     decorators/
       current-tenant.decorator.ts
-      current-operador.decorator.ts
-    filters/                    # exception filters (erro de negócio → HTTP)
-    interceptors/
+      current-operator.decorator.ts
+      roles.decorator.ts
+      public.decorator.ts
+    errors/
+      domain.error.ts           # DomainError + subclasses (NotFound, Conflict, Forbidden)
+    filters/
+      domain-exception.filter.ts
+    tenant-context.ts           # AsyncLocalStorage do tenant da request
   prisma/
     prisma.module.ts
     prisma.service.ts
   main.ts
 prisma/
   schema.prisma
+  seed.ts
   migrations/
 ```
 
 Regra por módulo: **Controller nunca fala com o Prisma diretamente.**
 `Controller` recebe o DTO validado → chama `Service` (regra de negócio) →
 `Service` chama `Repository` (acesso a dado, sempre tenant-scoped). Isso
-existe para que uma regra de negócio (ex: "não pode vender com caixa
+existe para que uma regra de negócio (ex.: "não pode vender com caixa
 fechado") seja testável isolando o `Service` com um `Repository` mockado.
 
 ## Estrutura de pastas — `apps/web` (Next.js)
@@ -59,76 +66,106 @@ fechado") seja testável isolando o `Service` com um `Repository` mockado.
 apps/web/src/
   app/
     (public)/login/                # rota de login, sem sidebar
-    (pdv)/
-      vender/
-      produtos/
-      produtos/[id]/editar/
-      fechamento/
+    (pos)/
+      sell/
+      products/
+      products/[id]/edit/
+      closing/
+      open-register/
       dashboard/
-      operadores/
-      operadores/[id]/editar/
+      operators/
+      operators/[id]/edit/
       layout.tsx                   # shell com sidebar/bottom-nav (ver 05)
   components/
-    ui/                             # primitivos: Button, Input, PillButton, Toggle...
-    pdv/                             # composto de domínio: ProductCard, CartLine, PinKeypad...
-    layout/                          # Sidebar, BottomNav, AppShell
+    ui/                             # primitivos: Button, Input, Toggle...
+    pos/                            # composto de domínio: ProductCard, CartLine, PinKeypad...
+    layout/                         # Sidebar, BottomNav, AppShell
   lib/
-    api-client.ts                    # client HTTP tipado, consome apps/api
+    api-client.ts                   # client HTTP tipado, consome apps/api
+    tenant-theme.ts                 # gera o <style> com os tokens do tenant
   styles/
-    theme.css                        # tokens default (ver 06)
+    theme.css                       # tokens default (ver 06)
+    globals.css
 ```
 
 `apps/web` não acessa banco nem Prisma — toda leitura/escrita passa pelo
 `api-client` contra `apps/api`. Os tipos de request/response desse client
 vêm de `packages/shared` (schemas Zod compartilhados).
 
+## Idioma
+
+- **Código inteiro em inglês**: identificadores, nomes de arquivo, nomes de
+  domínio, rotas HTTP, códigos de erro, nomes de tabela/coluna no Prisma.
+  Vocabulário de domínio traduzido de forma fixa (usar sempre estes termos,
+  nunca sinônimos):
+
+  | Negócio (PT) | Código (EN) |
+  |---|---|
+  | Operador | `Operator` |
+  | Administrador / papel | `OperatorRole` = `ADMIN` \| `OPERATOR` |
+  | Produto | `Product` |
+  | Caixa (sessão) | `CashSession` |
+  | Abertura / fechamento de caixa | `openCashSession` / `closeCashSession` |
+  | Venda | `Sale` |
+  | Item de venda | `SaleItem` |
+  | Forma de pagamento | `PaymentMethod` = `CASH` \| `CARD` \| `PIX` |
+  | Estoque | `stock` |
+  | Código de barras | `barcode` |
+  | Loja (tenant) | `Tenant` |
+
+- **Texto exibido ao usuário em português** (mensagens de erro da API,
+  rótulos, títulos de tela) — é copy, não código.
+- **Comentários: poucos, e em português.** Só quando o *porquê* não é óbvio
+  (uma invariante, um workaround, uma restrição escondida). Nunca comentar
+  o *quê* — o nome do identificador já diz isso.
+- Documentação (`docs/`, `CLAUDE.md`, READMEs) em português.
+
 ## Nomenclatura
 
 - Módulos, Controllers, Services, Repositories do Nest: singular, sufixo
-  explícito (`ProdutoService`, `ProdutoController`, `ProdutoRepository`) —
-  é a convenção do próprio Nest CLI (`nest g resource produto`), manter.
+  explícito (`ProductService`, `ProductController`, `ProductRepository`) —
+  é a convenção do próprio Nest CLI (`nest g resource product`), manter.
 - Arquivos de componente React: `PascalCase.tsx` (`ProductCard.tsx`).
 - Arquivos de lógica/util: `kebab-case.ts` (`format-currency.ts`).
-- DTOs do Nest: `CriarProdutoDto`, `AtualizarProdutoDto` — nome da ação em
-  português, sufixo `Dto` em inglês (convenção Nest).
-- Tipos e interfaces de domínio (fora de DTO): `PascalCase`, sem prefixo `I`
-  (`Produto`, não `IProduto`).
-- Nomes de domínio **em português** (é o vocabulário do negócio: `Venda`,
-  `Operador`, `Caixa`, `Produto`) — evita a tradução mental entre o que o
-  cliente fala e o que o código diz. Nomes técnicos genéricos (guards, utils
-  de infraestrutura, decorators) em inglês, como é convenção do Nest e do
-  ecossistema (`AuthGuard`, `useQuery`, `formatCurrency`).
-- Componentes de UI genéricos (`Button`, `Toggle`, `Modal`) em inglês, porque
-  não são vocabulário de negócio, são vocabulário de design system.
+- DTOs do Nest: `CreateProductDto`, `UpdateProductDto` — derivados do schema
+  Zod de `packages/shared` via `nestjs-zod` (`createZodDto`).
+- Tipos e interfaces: `PascalCase`, sem prefixo `I` (`Product`, não
+  `IProduct`).
+- Valores monetários sempre em centavos inteiros, sufixo `Cents`
+  (`salePriceCents`, `totalCents`) — nunca `number` decimal para dinheiro.
+- Timestamps com sufixo `At` (`createdAt`, `closedAt`, `deletedAt`).
 
 ## TypeScript
 
 - `strict: true` sempre, nos dois apps.
 - Não usar `any` — se o tipo é genuinamente desconhecido, usar `unknown` e
   fazer narrowing.
-- DTOs do Nest são a fronteira de validação de entrada (via
-  `class-validator`); tipos de domínio internos ao `Service`/`Repository`
-  não precisam repetir validação já feita no DTO.
-- Erros de regra de negócio (ex: "caixa já fechado", "estoque insuficiente")
-  são exceções Nest tipadas (`BadRequestException` ou uma exceção de domínio
-  customizada capturada por um `ExceptionFilter`), nunca um erro genérico
-  sem contexto.
+- Validação de entrada acontece na borda do Controller, via
+  `ZodValidationPipe` global (`nestjs-zod`) sobre DTOs derivados dos schemas
+  de `packages/shared`; `Service`/`Repository` recebem dado já validado e não
+  repetem a validação.
+- Erros de regra de negócio (ex.: caixa já aberto, estoque insuficiente) são
+  subclasses de `DomainError` com `code` estável em inglês
+  (`CASH_SESSION_ALREADY_OPEN`, `INSUFFICIENT_STOCK`) e `message` em
+  português, mapeadas para HTTP por um `ExceptionFilter` global — nunca um
+  erro genérico sem contexto.
 
 ## Formulários (frontend)
 
-- React Hook Form + Zod para todo formulário (Produto, Operador, Abertura de
-  Caixa) — o **mesmo schema Zod de `packages/shared`** valida no cliente e é
+- React Hook Form + Zod para todo formulário (Product, Operator, abertura de
+  caixa) — o **mesmo schema Zod de `packages/shared`** valida no cliente e é
   o que o DTO do Nest espera receber (contrato único, não duas definições
   divergentes).
 
 ## Commits
 
-- Convenção: `tipo(escopo): descrição curta em português` — `feat(api):
-  adiciona endpoint de CRUD de produtos`, `fix(web): corrige cálculo de
-  troco`, `refactor(api): extrai ProdutoRepository`.
-- Escopo é o app ou módulo afetado (`api`, `web`, `api/venda`, etc.) — opcional
-  quando afeta o repo como um todo (`docs:`, `chore:`).
-- Tipos: `feat`, `fix`, `refactor`, `style`, `test`, `docs`, `chore`.
+- Conventional Commits, **em inglês**: `type(scope): short description` —
+  `feat(api): add product CRUD endpoints`, `fix(web): correct change
+  calculation`, `refactor(api): extract ProductRepository`.
+- Escopo é o app ou módulo afetado (`api`, `web`, `shared`, `api/sale`) —
+  opcional quando afeta o repo como um todo (`docs:`, `chore:`).
+- Tipos: `feat`, `fix`, `refactor`, `style`, `test`, `docs`, `chore`, `ci`.
+- Descrição no imperativo, minúscula, sem ponto final.
 
 ## Testes
 

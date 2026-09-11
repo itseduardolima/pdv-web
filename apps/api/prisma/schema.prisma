@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OperatorRole {
+  ADMIN
+  OPERATOR
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  PIX
+}
+
+enum ProductUnit {
+  UN
+  KG
+  L
+  PCT
+  CX
+}
+
+model Tenant {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  domain          String?  @unique
+  name            String
+  logoUrl         String?
+  primaryColor    String   @default("#e6e51e")
+  primaryInkColor String?
+  accentColor     String   @default("#466cf3")
+  createdAt       DateTime @default(now())
+
+  operators    Operator[]
+  products     Product[]
+  cashSessions CashSession[]
+  sales        Sale[]
+}
+
+model Operator {
+  id        String       @id @default(cuid())
+  tenantId  String
+  name      String
+  role      OperatorRole @default(OPERATOR)
+  pinHash   String
+  active    Boolean      @default(true)
+  photoUrl  String?
+  createdAt DateTime     @default(now())
+  deletedAt DateTime?
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
+  cashSessions CashSession[]
+  sales        Sale[]
+
+  @@index([tenantId, active])
+}
+
+model Product {
+  id             String      @id @default(cuid())
+  tenantId       String
+  name           String
+  category       String
+  unit           ProductUnit @default(UN)
+  barcode        String?
+  salePriceCents Int
+  costPriceCents Int
+  stockQuantity  Int         @default(0)
+  minStock       Int         @default(0)
+  photoUrl       String?
+  createdAt      DateTime    @default(now())
+  deletedAt      DateTime?
+
+  tenant Tenant     @relation(fields: [tenantId], references: [id])
+  items  SaleItem[]
+
+  @@unique([tenantId, barcode])
+  @@index([tenantId, category])
+  @@index([tenantId, name])
+}
+
+model CashSession {
+  id                 String    @id @default(cuid())
+  tenantId           String
+  openedById         String
+  openingAmountCents Int
+  note               String?
+  openedAt           DateTime  @default(now())
+  closedAt           DateTime?
+  totalCashCents     Int?
+  totalCardCents     Int?
+  totalPixCents      Int?
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  openedBy Operator @relation(fields: [openedById], references: [id])
+  sales    Sale[]
+
+  @@index([tenantId, closedAt])
+}
+
+model Sale {
+  id            String        @id @default(cuid())
+  uuid          String
+  tenantId      String
+  cashSessionId String
+  operatorId    String
+  paymentMethod PaymentMethod
+  totalCents    Int
+  soldAt        DateTime      @default(now())
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id])
+  cashSession CashSession @relation(fields: [cashSessionId], references: [id])
+  operator    Operator    @relation(fields: [operatorId], references: [id])
+  items       SaleItem[]
+
+  @@unique([tenantId, uuid])
+  @@index([tenantId, soldAt])
+  @@index([cashSessionId])
+}
+
+model SaleItem {
+  id             String @id @default(cuid())
+  saleId         String
+  productId      String
+  productName    String
+  quantity       Int
+  unitPriceCents Int
+
+  sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([productId])
+}

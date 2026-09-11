@@ -61,6 +61,14 @@ tarefa é, na verdade, "atualizar o spec" (avisar o usuário disso).
   UI.** Ver spec 03.
 - **Um componente por conceito, responsivo — não um componente por
   breakpoint.** Ver spec 05.
+- **Código em inglês, poucos comentários (em português), commits
+  Conventional Commits em inglês.** Vocabulário fixo de domínio
+  (`Operator`, `Product`, `CashSession`, `Sale`, `PaymentMethod`) na seção
+  Idioma de [04-padroes-codigo](./docs/specs/04-padroes-codigo.md). Texto
+  exibido ao usuário continua em português.
+- **Construir por etapas.** Um módulo/feature por vez, validado (typecheck +
+  testes) antes de começar o próximo — não scaffoldar vários módulos de uma
+  vez.
 - **Toda regra de negócio nova em `apps/api` precisa de teste unitário Jest
   no `Service` correspondente (`Repository` mockado) antes de ser
   considerada pronta** — não é opcional, é a forma de provar que a regra em
@@ -95,8 +103,9 @@ docker compose up -d --build   # sobe web + api + postgres + minio na VPS
 
 ## Estado atual do projeto
 
-Fase de especificação concluída (`docs/specs/`). Scaffold de código
-(monorepo `apps/web` Next.js + `apps/api` NestJS + Prisma + Docker Compose)
-ainda não iniciado — próximo passo natural é montar o workspace pnpm/Turborepo
-seguindo a estrutura de `04-padroes-codigo.md` e o schema inicial descrito em
-`07-multitenant-whitelabel.md`.
+Fundação pronta e validada (install + typecheck + build): monorepo pnpm +
+Turborepo, `packages/shared` (schemas Zod), `apps/api` (NestJS com infra de
+tenant/auth/erros e `schema.prisma` completo, **sem módulos de domínio**),
+`apps/web` (Next.js + Tailwind com tokens do tema, `api-client`, Cypress
+configurado), `docker-compose.yml` + `Caddyfile`. Próximo passo: módulo
+`tenant` na API (ver ordem em `apps/api/docs/SPEC.md`).

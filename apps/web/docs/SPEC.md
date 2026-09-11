@@ -18,24 +18,27 @@ passa pelo client HTTP tipado (`src/lib/api-client.ts`) contra `apps/api`.
 src/app/
   (public)/
     login/page.tsx                      # seleção de operador + teclado de PIN
-  (pdv)/
+  (pos)/
     layout.tsx                          # AppShell: sidebar (desktop/tablet) / bottom-nav (celular)
-    vender/page.tsx
-    vender/confirmada/page.tsx           # Venda Confirmada
-    produtos/page.tsx
-    produtos/novo/page.tsx
-    produtos/[id]/editar/page.tsx
-    fechamento/page.tsx                  # inclui Histórico de Vendas da sessão
-    abertura-caixa/page.tsx              # redireciona para aqui se não há caixa aberto
+    sell/page.tsx                       # Vender
+    sell/confirmed/page.tsx             # Venda Confirmada
+    products/page.tsx
+    products/new/page.tsx
+    products/[id]/edit/page.tsx
+    closing/page.tsx                    # Fechamento (inclui Histórico de Vendas da sessão)
+    open-register/page.tsx              # Abertura de Caixa — redireciona para cá se não há caixa aberto
     dashboard/page.tsx
-    operadores/page.tsx
-    operadores/novo/page.tsx
-    operadores/[id]/editar/page.tsx
+    operators/page.tsx
+    operators/new/page.tsx
+    operators/[id]/edit/page.tsx
 ```
 
-Regra de navegação: se o operador logado não tem uma `CaixaSession` aberta e
-tenta acessar `vender`, `produtos`, `fechamento`, `dashboard` ou
-`operadores`, redireciona para `abertura-caixa` (ver spec de negócio
+Rotas (URLs) em inglês, como o resto do código (ver `04-padroes-codigo.md`,
+seção Idioma); o título visível de cada tela continua em português.
+
+Regra de navegação: se o operador logado não tem uma `CashSession` aberta e
+tenta acessar `sell`, `products`, `closing`, `dashboard` ou `operators`,
+redireciona para `open-register` (ver spec de negócio
 `03-regras-negocio.md`, seção Caixa). Essa checagem é feita num
 `layout.tsx`/middleware de rota, não repetida em cada página.
 
@@ -46,7 +49,7 @@ src/
   app/                     # rotas acima
   components/
     ui/                    # Button, PillButton, Input, Select, Toggle, Modal, Avatar
-    pdv/                   # ProductCard, ProductGrid, CartLine, PaymentMethodPicker,
+    pos/                   # ProductCard, ProductGrid, CartLine, PaymentMethodPicker,
                             # PinKeypad, OperatorAvatarPicker, StatTile, PhotoUploadBox
     layout/                # AppShell, Sidebar, BottomNav, SplitAuthLayout
   hooks/                   # useCart, usePinInput, useCaixaAberto, etc.
@@ -78,8 +81,8 @@ cypress/
 
 ## Offline (ver `01-arquitetura.md` para a estratégia completa)
 
-- `lib/offline/db.ts`: tabelas Dexie — `produtosCache`, `vendasPendentes`.
-- Ao finalizar uma venda: grava em `vendasPendentes` com UUID gerado no
+- `lib/offline/db.ts`: tabelas Dexie — `productsCache`, `pendingSales`.
+- Ao finalizar uma venda: grava em `pendingSales` com UUID gerado no
   cliente, atualiza a UI como concluída, dispara `sync.ts` em background.
 - `sync.ts` roda: ao voltar a ficar online (`online` event), a cada N
   segundos como fallback, e a cada nova venda adicionada à fila. Remove da
@@ -97,7 +100,7 @@ cypress/
 
 ## Testes (ver `04-padroes-codigo.md` para a régua geral)
 
-- Component Testing (Cypress) em `components/ui` e `components/pdv` — cobre
+- Component Testing (Cypress) em `components/ui` e `components/pos` — cobre
   interações (`PinKeypad` compõe dígitos corretamente, `Toggle` emite
   `onChange`, `PhotoUploadBox` aceita arquivo e chama `onChange`).
 - E2E (Cypress) em `cypress/e2e/`, contra a API real de ambiente de teste,
