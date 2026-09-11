@@ -68,8 +68,12 @@ apps/web/src/
     (public)/login/                # rota de login, sem sidebar
     (pos)/
       sell/
+        page.tsx
+        use-sell-page.ts           # hook DE PÁGINA, colocado — só orquestração/lógica
       products/
       products/[id]/edit/
+        page.tsx
+        use-product-form.ts        # idem — colocado junto do page.tsx que ele serve
       closing/
       open-register/
       dashboard/
@@ -81,10 +85,13 @@ apps/web/src/
     pos/                            # composto de domínio: ProductCard, CartLine, PinKeypad...
     layout/                         # Sidebar, BottomNav, AppShell
   hooks/
-    use-sell-page.ts                # 1 hook por página — toda a lógica de sell/page.tsx
-    use-product-form.ts             # idem para products/[id]/edit/page.tsx
-    use-cart.ts                     # hook compartilhado entre páginas (não é "de página")
-    ...
+    queries/
+      use-products.ts               # React Query (useQuery) — GET /products
+      use-create-sale.ts            # React Query (useMutation) — POST /sales
+      use-cash-session.ts           # React Query — GET/POST /cash-sessions
+      ...
+    use-cart.ts                     # hook compartilhado (não-query), usado por mais de uma página
+    use-pin-input.ts
   lib/
     api-client.ts                   # client HTTP tipado, consome apps/api
     tenant-theme.ts                 # gera o <style> com os tokens do tenant
@@ -104,38 +111,83 @@ vêm de `packages/shared` (schemas Zod compartilhados).
 ## Separação de lógica e UI (frontend) — regra dura
 
 **Todo `page.tsx` é só view.** Nenhum `useState`, `useQuery`, `useMutation`,
-handler de evento ou cálculo é escrito direto dentro de um `page.tsx` (ou de
-qualquer componente de tela) — tudo isso vive num **hook próprio da
-página**, nomeado `use<NomeDaPágina>` (`useSellPage`, `useProductForm`,
-`useOperatorForm`, `useCashClosing`...), num arquivo ao lado em `hooks/`.
+handler de evento ou cálculo é escrito direto dentro de um `page.tsx` — mas
+nem toda lógica vai pro mesmo lugar. Três categorias de hook, cada uma com
+pasta e propósito diferentes:
+
+### 1. Hook de página — colocado, só orquestração
+
+Vive **na mesma pasta do `page.tsx` que ele serve** (não em `hooks/`),
+nomeado `use-<página>.ts` (`use-sell-page.ts`, `use-product-form.ts`). Só
+existe pra aquela página — nunca importado por outra. Sua responsabilidade
+é **exclusivamente lógica de orquestração**: estado local de UI (ex.: qual
+step do formulário), handlers de evento, decidir o que compor — ele **não
+busca dado sozinho**, ele chama os hooks de query (categoria 2) e monta o
+resultado pra página consumir.
 
 ```tsx
-// hooks/use-sell-page.ts
+// app/(pos)/sell/use-sell-page.ts
+import { useCart } from '@/hooks/use-cart'
+import { useProducts } from '@/hooks/queries/use-products'
+import { useCreateSale } from '@/hooks/queries/use-create-sale'
+
 export function useSellPage() {
   const cart = useCart()
-  const { data: products } = useQuery(/* ... */)
-  const finalizeSale = useMutation(/* ... */)
+  const { data: products, isLoading } = useProducts()
+  const createSale = useCreateSale()
 
-  function handleAddItem(productId: string) { /* ... */ }
+  function handleAddItem(productId: string) {
+    cart.addItem(productId)
+  }
 
-  return { products, cart, handleAddItem, finalizeSale }
+  function handleFinalize() {
+    createSale.mutate({ items: cart.items, paymentMethod: cart.paymentMethod })
+  }
+
+  return { products, isLoading, cart, handleAddItem, handleFinalize, createSale }
 }
 
 // app/(pos)/sell/page.tsx
 export default function SellPage() {
-  const { products, cart, handleAddItem, finalizeSale } = useSellPage()
+  const { products, cart, handleAddItem, handleFinalize } = useSellPage()
   return (/* só JSX, nenhuma lógica aqui */)
 }
 ```
 
-- Um hook usado por **mais de uma página** (`useCart`, `usePinInput`) não
-  leva o prefixo de página — é só `useCart`, mesmo lugar (`hooks/`).
+### 2. Hooks de dado — sempre TanStack Query, em `hooks/queries/`
+
+Toda busca ou mutação de dado contra a API é um hook próprio construído
+sobre **TanStack Query** (`useQuery`/`useMutation`), um arquivo por
+recurso/ação (`use-products.ts`, `use-create-sale.ts`,
+`use-cash-session.ts`), em `hooks/queries/` — nunca dentro do hook de
+página, nunca `fetch`/`apiRequest` chamado direto de um componente ou de um
+hook de página. Motivo: um hook de query em `hooks/queries/` é reusável por
+qualquer página que precise do mesmo dado (ex.: `useProducts` serve a tela
+de Vender e a de Produtos), tem cache/invalidação centralizados, e pode ser
+testado isolado do fluxo de uma página específica.
+
+```tsx
+// hooks/queries/use-products.ts
+export function useProducts() {
+  return useQuery({
+    queryKey: ['products'],
+    queryFn: () => apiRequest('/products', { schema: z.array(productSchema) }),
+  })
+}
+```
+
+### 3. Hooks compartilhados (não-query) — `hooks/`
+
+Lógica reutilizável entre páginas que não é busca de dado — `useCart`,
+`usePinInput`, `useDebounce`. Vivem em `hooks/` (fora de `queries/`), sem
+prefixo de página porque não pertencem a uma só.
+
 - Isso vale para toda tela do produto (Vender, Produtos, Operadores,
   Fechamento, Dashboard) — não é um padrão só pra tela complexa.
-- Motivo: `page.tsx` fica testável por leitura (é óbvio o que renderiza) e
-  o hook fica testável isolado (Cypress Component Testing pode montar o
-  hook via um componente-wrapper simples, sem precisar montar a página
-  inteira) — ver `05-componentizacao.md`.
+- `page.tsx` fica testável por leitura (é óbvio o que renderiza); o hook de
+  página fica testável isolado sem precisar mockar chamada de rede (ele só
+  orquestra, quem busca dado são os hooks de `queries/`, que por sua vez
+  são testáveis isolados de qualquer página) — ver `05-componentizacao.md`.
 
 **Nenhuma função solta dentro de um arquivo de componente.** Uma função que
 não depende de estado/props do componente (formatação, cálculo, parsing) é

@@ -46,15 +46,17 @@ redireciona para `open-register` (ver spec de negócio
 
 ```
 src/
-  app/                     # rotas acima
+  app/                     # rotas acima; cada page.tsx tem um use-<página>.ts colocado
+                            # ao lado, só com a lógica de orquestração dessa tela
   components/
     ui/                    # Button, PillButton, Input, Select, Toggle, Modal, Avatar
     pos/                   # ProductCard, ProductGrid, CartLine, PaymentMethodPicker,
                             # PinKeypad, OperatorAvatarPicker, StatTile, PhotoUploadBox
     layout/                # AppShell, Sidebar, BottomNav, SplitAuthLayout
-  hooks/                   # 1 hook por página (useSellPage, useProductForm...)
-                            # + hooks compartilhados (useCart, usePinInput) — ver
-                            # 04-padroes-codigo.md § Separação de lógica e UI
+  hooks/
+    queries/               # hooks de dado (TanStack Query) — use-products.ts,
+                            # use-create-sale.ts... reusáveis por qualquer página
+    use-cart.ts             # hooks compartilhados não-query (useCart, usePinInput)
   lib/
     api-client.ts          # client HTTP tipado, usa schemas de packages/shared
     navigation.ts           # lista única de itens de nav (ver 05-componentizacao.md)
@@ -71,10 +73,12 @@ cypress/
   component/               # specs de componente (co-localizados como *.cy.tsx também é aceitável)
 ```
 
-**Toda página é só view — a lógica vive num hook.** Ver
-`04-padroes-codigo.md` § Separação de lógica e UI para o padrão completo
-(`use<NomeDaPágina>` para lógica exclusiva de uma tela, hook sem prefixo
-quando compartilhado entre telas) e para a regra de que função pura vai
+**Toda página é só view — a lógica vive num hook.** Três categorias, ver
+`04-padroes-codigo.md` § Separação de lógica e UI para o padrão completo:
+(1) hook de página (`use-<página>.ts`, colocado na mesma pasta do
+`page.tsx`, só orquestração — nunca busca dado sozinho); (2) hook de dado
+(`hooks/queries/`, sempre TanStack Query, é quem de fato chama a API); (3)
+hook compartilhado não-query (`hooks/`, ex. `useCart`). Função pura vai
 para `lib/utils/`, nunca inline num arquivo de componente.
 
 ## Client HTTP (`lib/api-client.ts`)

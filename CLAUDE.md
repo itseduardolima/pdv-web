@@ -74,10 +74,13 @@ tarefa é, na verdade, "atualizar o spec" (avisar o usuário disso).
 - **Toda query de banco passa por um `Repository` do NestJS (`apps/api/src/modules/*/*.repository.ts`)
   com `tenantId` obrigatório.** Nunca escrever uma query Prisma direto num
   `Controller`, e nunca acessar banco a partir de `apps/web`.
-- **`page.tsx` é só view — a lógica vive num hook (`hooks/use<Página>.ts`).**
-  E nenhuma função solta dentro de um componente: função pura vai para
-  `lib/utils/`, reutilizável. Ver `04-padroes-codigo.md` § Separação de
-  lógica e UI.
+- **`page.tsx` é só view.** Três tipos de hook, nunca misturar: (1) hook de
+  página, colocado ao lado do `page.tsx` (`use-<página>.ts`) — só
+  orquestração/estado local, nunca busca dado sozinho; (2) hook de dado em
+  `hooks/queries/`, sempre TanStack Query — é quem chama a API; (3) hook
+  compartilhado não-query em `hooks/` (`useCart`, etc.). E nenhuma função
+  solta dentro de um componente: função pura vai para `lib/utils/`,
+  reutilizável. Ver `04-padroes-codigo.md` § Separação de lógica e UI.
 - **Toda regra e toda mensagem de validação vêm do backend — sempre, sem
   exceção.** Não é só regra de negócio sensível (permissão de admin,
   imutabilidade de caixa fechado, estoque não-negativo): até validação de
