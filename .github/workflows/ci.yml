@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Placeholders — Prisma generate/typecheck/build never connect to a real
+  # database; real secrets live only on the VPS (.env, never in CI).
+  DATABASE_URL: postgresql://pdv:pdv@localhost:5432/pdv?schema=public
+  SESSION_SECRET: ci-placeholder-secret-not-used-in-production
+  CORS_ORIGIN: http://localhost:3000
+  NEXT_PUBLIC_API_URL: http://localhost:3001
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter api db:generate
+
+      - name: Audit dependencies
+        run: pnpm audit --audit-level=high
+        continue-on-error: true # ver docs/specs/08-seguranca.md § 11 — falha vira decisão explícita, não bloqueio automático ainda
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build

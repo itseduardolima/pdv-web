@@ -29,7 +29,7 @@ frontend) — não quando o código só "existe".
 - [x] `apps/api` bootstrap: tenant context (`AsyncLocalStorage`), `AuthGuard`/`RolesGuard` globais, `DomainError` + `DomainExceptionFilter`, `schema.prisma` completo
 - [x] `apps/web` bootstrap: Next.js + Tailwind com tokens de tema, `api-client` tipado, Cypress configurado
 - [x] `docker-compose.yml` + `Caddyfile` para a VPS
-- [ ] CI (GitHub Actions: lint + typecheck + test em todo PR) — HU implícita, entra no início da Sprint 1
+- [x] CI (GitHub Actions: lint + typecheck + test + build em todo PR, `.github/workflows/ci.yml`)
 
 ## Sprint 1 — Tenant + Autenticação
 
