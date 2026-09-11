@@ -80,7 +80,23 @@ o PIN é uma senha forte:
   `GET /auth/operators` (público, mas escopado ao tenant) não pode aceitar
   um `tenantId` vindo de query param; é sempre o do host.
 
-## 5. Negação de serviço (DDoS / abuso de endpoint)
+### Cookie de sessão — todos os flags, sempre
+
+O cookie `pdv_session` (ver `apps/api/src/common/types/request.ts`) é o
+único jeito de forjar uma sessão se mal configurado — todos estes flags são
+obrigatórios juntos, não é "escolher um":
+
+- `HttpOnly` — inacessível via `document.cookie`/JS (mitiga roubo por XSS).
+- `Secure` — nunca enviado em `http://`, só `https://` (a VPS serve tudo
+  por Caddy com TLS, ver `01-arquitetura.md`; sem exceção nem em staging).
+- `SameSite=Lax` (ou `Strict`, testar contra o fluxo de subdomínio de
+  tenant) — mitiga CSRF, ver seção 3.
+- `Path=/` explícito e sem `Domain` mais largo do que o necessário — nunca
+  um cookie que valha para domínios que não são o `apps/web`.
+- Sem dado sensível dentro do JWT do cookie além do necessário
+  (`sub`, `tenantId`, `role`) — nunca PIN, nunca hash, nunca e-mail.
+
+## 5. Negação de serviço (DDoS / abuso de endpoint) e bots
 
 Numa VPS única (Hostinger, sem CDN/WAF gerenciado), a mitigação é mais
 manual do que seria numa nuvem grande — ser realista sobre isso:
@@ -100,18 +116,36 @@ manual do que seria numa nuvem grande — ser realista sobre isso:
 - **Timeouts explícitos** em toda chamada externa (storage MinIO, banco) —
   uma dependência lenta não pode travar o processo Node inteiro
   indefinidamente.
+- **Proteção contra bot em endpoints públicos sensíveis** (`POST
+  /auth/login`, e qualquer form público que existir no futuro): o
+  `@nestjs/throttler` já limita por IP, mas some com um segundo sinal
+  barato antes de qualquer CAPTCHA — um **honeypot** (campo invisível no
+  formulário que só um bot preenche; se vier preenchido, rejeita
+  silenciosamente sem revelar o motivo) resolve a maior parte do scraping
+  automatizado sem fricção para o Operador real. Reavaliar
+  Cloudflare Turnstile/hCaptcha só se o honeypot + rate-limit não bastarem
+  na prática.
+- **User-Agent e padrão de requisição** — logar e alertar (não bloquear
+  automaticamente sem revisão) picos de requisição sem `User-Agent` de
+  browser real ou com timing não-humano (múltiplas tentativas de login
+  em milissegundos) — sinal para investigar, não uma regra que bloqueia
+  sozinha e pode gerar falso positivo num tablet real.
 
 ## 6. Upload de arquivo (fotos de produto/operador/logo do tenant)
 
-- **Nunca aceitar upload direto no servidor da API** — o fluxo é URL
-  assinada do MinIO (ver `01-arquitetura.md`): o navegador manda o arquivo
-  direto pro storage, a API só gera a URL assinada e valida o resultado
-  depois. Isso evita que a API processe bytes de arquivo arbitrário.
-  gerada com escopo de content-type e tamanho máximo (ex.: 5MB, apenas
-  `image/jpeg`, `image/png`, `image/webp`).
-- **Validar o content-type real do arquivo** (magic bytes), não confiar na
-  extensão nem no `Content-Type` que o cliente declarou — evita um `.jpg`
-  que na verdade é um script.
+- **Restringir upload por tipo, tamanho e escopo — sempre no servidor, nunca só no `accept` do `<input>`**:
+  - Fluxo é URL assinada do MinIO (ver `01-arquitetura.md`): o navegador
+    manda o arquivo direto pro storage, a API só gera a URL assinada e
+    valida o resultado depois — evita que a API processe bytes de arquivo
+    arbitrário.
+  - A URL assinada é gerada com **content-type fixo na assinatura**
+    (`image/jpeg`, `image/png` ou `image/webp` — nunca um upload
+    "genérico") e **tamanho máximo** (5MB) — o storage rejeita qualquer
+    upload fora disso, o cliente não decide.
+  - **Validar o content-type real do arquivo** (magic bytes) depois do
+    upload, não confiar na extensão nem no header que o cliente declarou —
+    evita um `.jpg` que na verdade é um script; se não bater, o arquivo é
+    apagado do bucket e a operação falha.
 - **Nunca servir upload do usuário no mesmo domínio da aplicação** sem
   `Content-Disposition` apropriado — serve pelo domínio/bucket do MinIO,
   não por uma rota da API que herdaria os cookies de sessão do domínio
@@ -129,7 +163,60 @@ manual do que seria numa nuvem grande — ser realista sobre isso:
 - Filtros de busca (`GET /products?search=`) sempre validados pelo DTO
   (Zod) antes de chegar no Prisma — nunca concatenados em `where` cru.
 
-## 8. Segredos e configuração
+## 8. Mass assignment
+
+Um DTO validado pelo Zod garante o **formato** do campo, não que o campo
+**deveria** estar ali — mass assignment é o cliente conseguir setar um
+campo que não devia poder controlar (ex.: virar admin sozinho, mudar o
+`tenantId` da própria conta, forjar `createdAt`).
+
+- Todo schema de entrada (`createOperatorSchema`, `updateProductSchema`,
+  etc., em `packages/shared`) usa **allowlist explícita** de campo — nunca
+  `z.object({}).passthrough()` nem qualquer forma de aceitar campos extras
+  silenciosamente. Campo que não está no schema é rejeitado, não ignorado.
+- **Nunca repassar o body inteiro pro Prisma** (`prisma.operator.update({
+  data: dto })` só é seguro porque `dto` já passou por um schema com
+  allowlist — se algum dia um `Service` receber um objeto que não veio de
+  um DTO validado, ele constrói o objeto de `data` campo a campo,
+  explicitamente).
+- **Campos que o cliente nunca pode setar, mesmo em request de update**:
+  `tenantId`, `id`, `role` (exceto na tela de gestão de operador, e mesmo
+  aí só quando quem chama é `ADMIN` — ver `RolesGuard`), `pinHash`,
+  `createdAt`, `deletedAt`. Isso é o motivo de `updateOperatorSchema` e
+  `updateProductSchema` (`packages/shared`) omitirem esses campos na
+  origem, não confiarem em "o Controller não vai repassar" — o schema já
+  não aceita.
+- Operações de papel/permissão (`PATCH /operators/:id`, mudança de `role`)
+  passam por validação de negócio explícita no `Service`
+  (`RolesGuard` cobre "quem pode chamar", o `Service` cobre "o resultado é
+  um estado válido", ex.: não pode rebaixar o último admin — ver
+  `03-regras-negocio.md`).
+
+## 9. Exposição de dados na resposta da API (response shaping)
+
+Devolver o registro do Prisma direto na resposta HTTP é o jeito mais fácil
+de vazar campo que nunca devia sair do banco.
+
+- **Nunca retornar `pinHash`** em nenhuma resposta, nem em `GET
+  /operators`, nem em erro, nem em log de request/response. O schema de
+  resposta (`operatorSchema` em `packages/shared`) não tem esse campo — o
+  `Service`/`Controller` monta a resposta a partir do schema de saída, não
+  devolve o objeto do Prisma como veio do banco.
+- Toda resposta de endpoint valida contra o schema Zod de **saída**
+  correspondente antes de sair (o mesmo espírito de `apiRequest` no
+  `apps/web`, que já faz `schema.parse(payload)` na chegada — ver
+  `apps/web/src/lib/api-client.ts`) — um campo novo adicionado ao modelo do
+  Prisma não aparece na API por acidente; é preciso decidir expor.
+- Mensagens de erro **nunca** incluem stack trace, nome de tabela/coluna do
+  Prisma, ou o SQL gerado — o `DomainExceptionFilter` (ver
+  `apps/api/src/common/filters/domain-exception.filter.ts`) já garante um
+  formato fixo (`statusCode`, `code`, `message`, `details` só quando é erro
+  de validação de formato) em qualquer ambiente, inclusive produção.
+- `NODE_ENV=production` desativa qualquer detalhe de debug do Nest/Prisma
+  (`log: ['query']` do Prisma só em desenvolvimento, nunca em produção —
+  logar toda query é, na prática, logar dado de negócio de cada tenant).
+
+## 10. Segredos e configuração
 
 - `SESSION_SECRET`, credenciais de banco, credenciais do MinIO: só em
   `.env` (nunca commitado — já coberto no `.gitignore`), gerados com
@@ -145,11 +232,15 @@ manual do que seria numa nuvem grande — ser realista sobre isso:
   completo, nem corpo de request de login — mascarar explicitamente esses
   campos no logger, não confiar em "não vou logar isso" implícito.
 
-## 9. Dependências e superfície de ataque
+## 11. Scan de dependências
 
-- `pnpm audit` (ou equivalente) no CI — falha o build em vulnerabilidade
-  crítica/alta sem correção disponível não é aceitável mergear sem decisão
-  explícita.
+- `pnpm audit --audit-level=high` **no CI, em todo PR** — build vermelho em
+  vulnerabilidade alta/crítica com correção disponível; sem correção
+  disponível ainda, decisão explícita registrada (não é aceitável mergear
+  silenciando o alerta).
+- **Dependabot (ou Renovate)** habilitado no repositório para abrir PR de
+  atualização de dependência automaticamente — não depender de alguém
+  lembrar de atualizar manualmente.
 - Imagens Docker base fixadas em versão (`node:22-alpine`, já é o padrão
   usado) e atualizadas periodicamente — imagem `latest` implícita nunca.
 - Superfície pública mínima: só `apps/web` (porta 443 via Caddy) e `apps/api`
@@ -157,7 +248,7 @@ manual do que seria numa nuvem grande — ser realista sobre isso:
   publicada para fora da rede Docker interna (ver `docker-compose.yml` — não
   adicionar `ports:` neles sem motivo forte e revisão).
 
-## 10. Cabeçalhos de segurança HTTP
+## 12. Cabeçalhos de segurança HTTP
 
 Configurados no Caddy (camada única, mais simples que duplicar no Next e no
 Nest):
@@ -169,7 +260,7 @@ Nest):
   num iframe de terceiro.
 - `Referrer-Policy: strict-origin-when-cross-origin`.
 
-## 11. LGPD (dado pessoal de operador e movimento financeiro do mercado)
+## 13. LGPD (dado pessoal de operador e movimento financeiro do mercado)
 
 - Dado de operador (nome, foto) e histórico de venda são dados pessoais e
   dados de negócio do cliente (o mercado) — tratados com o mesmo cuidado de
