@@ -132,15 +132,33 @@ vêm de `packages/shared` (schemas Zod compartilhados).
 
 ## Testes
 
+Backend (`apps/api`), unitário com Jest:
+
 - `apps/api/src/modules/**/*.service.spec.ts`: testa o `Service` com o
   `Repository` mockado — é onde a regra de negócio (spec 03) é verificada.
+  Toda regra em [03-regras-negocio](./03-regras-negocio.md) (permissão de
+  admin, imutabilidade de caixa fechado, estoque não-negativo, etc.) precisa
+  de um teste unitário correspondente aqui — é o nível onde essas regras são
+  provadas, não só documentadas.
 - `apps/api/src/modules/**/*.controller.spec.ts`: teste de integração leve
   via `Test.createTestingModule`, cobre validação de DTO + roteamento.
-- Fluxos críticos end-to-end com Playwright em `apps/web`, contra uma API
-  real de ambiente de teste: login → abrir caixa → vender → fechar caixa.
-  Roda no CI antes de qualquer merge na branch principal.
-- Não escrever teste para estilo/CSS — isso é validado visualmente, não por
-  assert.
+
+Frontend (`apps/web`), com **Cypress** nos dois níveis:
+
+- **Component Testing** (`apps/web/src/components/**/*.cy.tsx`): testa
+  componente isolado, sem subir a aplicação inteira — `PinKeypad` (dígitos,
+  limpar, backspace), `ProductCard`, `PhotoUploadBox` (mesmo componente
+  reusado por Produto e Operador, ver spec 05), `Toggle`, `PaymentMethodPicker`.
+  Este é o "teste unitário" do frontend — cobre lógica/estado do componente
+  sem depender de rede ou da API.
+- **E2E** (`apps/web/cypress/e2e/**/*.cy.ts`): fluxos críticos de ponta a
+  ponta contra uma API real de ambiente de teste — login → abrir caixa →
+  vender → fechar caixa. Roda no CI antes de qualquer merge na branch
+  principal.
+
+Regra geral: não escrever teste para estilo/CSS (raio de borda, cor) — isso
+é validado visualmente, não por assert. Teste comportamento (o que o
+componente faz/emite), não aparência.
 
 ## O que NÃO fazer
 

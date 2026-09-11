@@ -22,7 +22,7 @@ possibilidade de operar offline no caixa.
 | Auth | `@nestjs/passport` com uma Strategy própria de PIN + sessão via cookie httpOnly (PIN hasheado com argon2) | PIN de 4-6 dígitos não é senha forte — mitiga com hashing, rate-limit de tentativas (`@nestjs/throttler`) e sessão de operador por tenant |
 | Multi-tenant | Middleware Nest (`TenantMiddleware`) + Guard de autenticação escopado ao tenant resolvido | Ver [07-multitenant-whitelabel](./07-multitenant-whitelabel.md) |
 | Upload de imagem | **MinIO** (S3-compatible, self-hosted, container na VPS) via URL assinada, gerada por um endpoint da API | Fotos de produto/operador e logo do tenant nunca em base64 no banco; MinIO fala a mesma API S3 então o código não muda se um dia migrar para um provedor gerenciado — ver [01-arquitetura](./01-arquitetura.md) |
-| Testes | Vitest ou Jest (o padrão que o Nest CLI já scaffolda é Jest — manter, não trocar sem motivo) para Services; Nest também facilita teste de integração de Controller com `Test.createTestingModule` | Regra de negócio testada isolada de HTTP quando possível; integração cobre o fio Controller→Service→Repository |
+| Testes unitários | **Jest** (padrão que o Nest CLI já scaffolda — manter) para `Service`s; Nest também facilita teste de integração de `Controller` com `Test.createTestingModule` | Regra de negócio (spec 03) testada isolada de HTTP, com `Repository` mockado; integração cobre o fio Controller→Service→Repository |
 | Docs de API | `@nestjs/swagger` | Gera OpenAPI a partir dos DTOs já existentes — documentação sempre sincronizada com o contrato real |
 
 ## Frontend (`apps/web`)
@@ -37,7 +37,7 @@ possibilidade de operar offline no caixa.
 | Offline storage | Dexie (wrapper de IndexedDB) | Fila de vendas pendentes de sincronizar com a API, cache de catálogo |
 | PWA | `next-pwa` (ou Serwist) | Service worker, instalável, ícone do tenant |
 | Formulários | React Hook Form + Zod | O mesmo schema Zod de `packages/shared` valida no cliente e é o contrato esperado pelos DTOs da API |
-| Testes E2E | Playwright | Fluxos críticos de ponta a ponta: abrir caixa → vender → fechar caixa, contra a API real (ambiente de teste) |
+| Testes (unitário de componente + E2E) | **Cypress** (Component Testing para `components/ui` e `components/pdv`; E2E para os fluxos completos) | Um único runner cobre os dois níveis do frontend — testa `PinKeypad`, `ProductCard`, `PhotoUploadBox` isolados (unitário/componente) e depois os fluxos críticos de ponta a ponta: abrir caixa → vender → fechar caixa, contra a API real (ambiente de teste) |
 
 ## Compartilhado (`packages/shared`)
 

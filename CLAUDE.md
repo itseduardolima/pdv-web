@@ -44,6 +44,11 @@ tarefa é, na verdade, "atualizar o spec" (avisar o usuário disso).
   UI.** Ver spec 03.
 - **Um componente por conceito, responsivo — não um componente por
   breakpoint.** Ver spec 05.
+- **Toda regra de negócio nova em `apps/api` precisa de teste unitário Jest
+  no `Service` correspondente (`Repository` mockado) antes de ser
+  considerada pronta** — não é opcional, é a forma de provar que a regra em
+  [03-regras-negocio](./docs/specs/03-regras-negocio.md) está implementada
+  corretamente. Ver [04-padroes-codigo](./docs/specs/04-padroes-codigo.md).
 
 ## Stack e topologia (resumo — detalhe em docs/specs)
 
@@ -63,8 +68,9 @@ pnpm dev              # turbo run dev (web + api em paralelo)
 pnpm build
 pnpm lint
 pnpm typecheck
-pnpm test             # Jest/Vitest — apps/api/src/modules/**/*.spec.ts
-pnpm test:e2e         # Playwright — apps/web contra api real
+pnpm test             # Jest — apps/api/src/modules/**/*.spec.ts (testes unitários do backend)
+pnpm --filter web cy:run        # Cypress — component tests (apps/web/src/components/**/*.cy.tsx)
+pnpm --filter web cy:run:e2e    # Cypress E2E — apps/web contra api real
 pnpm --filter api db:migrate   # prisma migrate dev
 pnpm --filter api db:studio    # prisma studio
 docker compose up -d --build   # sobe web + api + postgres + minio na VPS
