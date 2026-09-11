@@ -36,31 +36,44 @@ tarefa é, na verdade, "atualizar o spec" (avisar o usuário disso).
   Isso é o requisito central do produto (white-label) — ver spec 06 e 07.
   Se você está prestes a escrever `#e6e51e` ou `"Mercadinho PDV"` fora de
   `styles/theme.css` / seed de tenant default, pare e use o token/tenant.
-- **Toda query de banco passa por `server/repositories/*` com `tenantId`
-  obrigatório.** Nunca escrever uma query Prisma direto numa rota/action.
+- **Toda query de banco passa por um `Repository` do NestJS (`apps/api/src/modules/*/*.repository.ts`)
+  com `tenantId` obrigatório.** Nunca escrever uma query Prisma direto num
+  `Controller`, e nunca acessar banco a partir de `apps/web`.
 - **Regra de negócio sensível (permissão de admin, imutabilidade de caixa
   fechado, estoque não-negativo) é validada no servidor, não só escondida na
   UI.** Ver spec 03.
 - **Um componente por conceito, responsivo — não um componente por
   breakpoint.** Ver spec 05.
 
+## Stack e topologia (resumo — detalhe em docs/specs)
+
+Monorepo pnpm + Turborepo: `apps/web` (Next.js, só frontend/PWA) e `apps/api`
+(**NestJS**, toda regra de negócio e acesso a dado via Prisma/PostgreSQL).
+`apps/web` nunca acessa banco direto — sempre chama `apps/api` por HTTP.
+Hospedagem: **VPS própria (Hostinger)**, tudo via Docker Compose
+(web + api + PostgreSQL + MinIO + Nginx/Caddy) — sem PaaS/serviço gerenciado
+de terceiro (nada de Vercel, Supabase, Railway). Ver
+[01-arquitetura](./docs/specs/01-arquitetura.md).
+
 ## Comandos (preencher conforme o projeto for scaffolded)
 
 ```bash
 pnpm install
-pnpm dev            # Next.js em modo dev
+pnpm dev              # turbo run dev (web + api em paralelo)
 pnpm build
 pnpm lint
 pnpm typecheck
-pnpm test           # Vitest (server/domain)
-pnpm test:e2e       # Playwright
-pnpm db:migrate     # prisma migrate dev
-pnpm db:studio      # prisma studio
+pnpm test             # Jest/Vitest — apps/api/src/modules/**/*.spec.ts
+pnpm test:e2e         # Playwright — apps/web contra api real
+pnpm --filter api db:migrate   # prisma migrate dev
+pnpm --filter api db:studio    # prisma studio
+docker compose up -d --build   # sobe web + api + postgres + minio na VPS
 ```
 
 ## Estado atual do projeto
 
 Fase de especificação concluída (`docs/specs/`). Scaffold de código
-(Next.js + Prisma + Tailwind) ainda não iniciado — próximo passo natural é
-`pnpm create next-app` seguindo a estrutura de `04-padroes-codigo.md` e o
-schema inicial descrito em `07-multitenant-whitelabel.md`.
+(monorepo `apps/web` Next.js + `apps/api` NestJS + Prisma + Docker Compose)
+ainda não iniciado — próximo passo natural é montar o workspace pnpm/Turborepo
+seguindo a estrutura de `04-padroes-codigo.md` e o schema inicial descrito em
+`07-multitenant-whitelabel.md`.
