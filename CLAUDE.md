@@ -42,6 +42,9 @@ Todo o contexto de produto, arquitetura e decisão já tomada está em
 9. `docs/specs/08-seguranca.md` — checklist de segurança (vazamento entre
    tenants, XSS, CSRF, PIN/rate-limit, upload, segredos, LGPD) — consultar
    antes de tocar em auth, upload, ou qualquer query entre tenants
+10. `docs/specs/09-operacao.md` — runbook (health check, monitoramento,
+    logs, backup/restore, deploy/rollback, incidentes) — consultar antes de
+    tocar em deploy, migration em produção, ou qualquer coisa da VPS
 
 Planejamento de execução (Scrum) está em `docs/scrum/`:
 `BACKLOG.md` (épicos e histórias de usuário, com critério de aceite e
@@ -71,6 +74,10 @@ tarefa é, na verdade, "atualizar o spec" (avisar o usuário disso).
 - **Toda query de banco passa por um `Repository` do NestJS (`apps/api/src/modules/*/*.repository.ts`)
   com `tenantId` obrigatório.** Nunca escrever uma query Prisma direto num
   `Controller`, e nunca acessar banco a partir de `apps/web`.
+- **`page.tsx` é só view — a lógica vive num hook (`hooks/use<Página>.ts`).**
+  E nenhuma função solta dentro de um componente: função pura vai para
+  `lib/utils/`, reutilizável. Ver `04-padroes-codigo.md` § Separação de
+  lógica e UI.
 - **Toda regra e toda mensagem de validação vêm do backend — sempre, sem
   exceção.** Não é só regra de negócio sensível (permissão de admin,
   imutabilidade de caixa fechado, estoque não-negativo): até validação de

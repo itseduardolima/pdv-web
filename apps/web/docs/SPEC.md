@@ -52,10 +52,14 @@ src/
     pos/                   # ProductCard, ProductGrid, CartLine, PaymentMethodPicker,
                             # PinKeypad, OperatorAvatarPicker, StatTile, PhotoUploadBox
     layout/                # AppShell, Sidebar, BottomNav, SplitAuthLayout
-  hooks/                   # useCart, usePinInput, useCaixaAberto, etc.
+  hooks/                   # 1 hook por página (useSellPage, useProductForm...)
+                            # + hooks compartilhados (useCart, usePinInput) — ver
+                            # 04-padroes-codigo.md § Separação de lógica e UI
   lib/
     api-client.ts          # client HTTP tipado, usa schemas de packages/shared
     navigation.ts           # lista única de itens de nav (ver 05-componentizacao.md)
+    utils/                 # funções puras reutilizáveis (format-currency.ts, etc.) —
+                            # nunca função solta dentro de um componente
     offline/
       db.ts                # Dexie — definição das tabelas locais
       sync.ts              # worker de sincronização da fila de vendas
@@ -66,6 +70,12 @@ cypress/
   e2e/                     # fluxos completos (login → abrir caixa → vender → fechar caixa)
   component/               # specs de componente (co-localizados como *.cy.tsx também é aceitável)
 ```
+
+**Toda página é só view — a lógica vive num hook.** Ver
+`04-padroes-codigo.md` § Separação de lógica e UI para o padrão completo
+(`use<NomeDaPágina>` para lógica exclusiva de uma tela, hook sem prefixo
+quando compartilhado entre telas) e para a regra de que função pura vai
+para `lib/utils/`, nunca inline num arquivo de componente.
 
 ## Client HTTP (`lib/api-client.ts`)
 

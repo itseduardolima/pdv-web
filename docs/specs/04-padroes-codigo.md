@@ -80,9 +80,18 @@ apps/web/src/
     ui/                             # primitivos: Button, Input, Toggle...
     pos/                            # composto de domínio: ProductCard, CartLine, PinKeypad...
     layout/                         # Sidebar, BottomNav, AppShell
+  hooks/
+    use-sell-page.ts                # 1 hook por página — toda a lógica de sell/page.tsx
+    use-product-form.ts             # idem para products/[id]/edit/page.tsx
+    use-cart.ts                     # hook compartilhado entre páginas (não é "de página")
+    ...
   lib/
     api-client.ts                   # client HTTP tipado, consome apps/api
     tenant-theme.ts                 # gera o <style> com os tokens do tenant
+    utils/
+      format-currency.ts            # função pura, reutilizável — nunca inline num componente
+      format-date.ts
+      ...
   styles/
     theme.css                       # tokens default (ver 06)
     globals.css
@@ -91,6 +100,56 @@ apps/web/src/
 `apps/web` não acessa banco nem Prisma — toda leitura/escrita passa pelo
 `api-client` contra `apps/api`. Os tipos de request/response desse client
 vêm de `packages/shared` (schemas Zod compartilhados).
+
+## Separação de lógica e UI (frontend) — regra dura
+
+**Todo `page.tsx` é só view.** Nenhum `useState`, `useQuery`, `useMutation`,
+handler de evento ou cálculo é escrito direto dentro de um `page.tsx` (ou de
+qualquer componente de tela) — tudo isso vive num **hook próprio da
+página**, nomeado `use<NomeDaPágina>` (`useSellPage`, `useProductForm`,
+`useOperatorForm`, `useCashClosing`...), num arquivo ao lado em `hooks/`.
+
+```tsx
+// hooks/use-sell-page.ts
+export function useSellPage() {
+  const cart = useCart()
+  const { data: products } = useQuery(/* ... */)
+  const finalizeSale = useMutation(/* ... */)
+
+  function handleAddItem(productId: string) { /* ... */ }
+
+  return { products, cart, handleAddItem, finalizeSale }
+}
+
+// app/(pos)/sell/page.tsx
+export default function SellPage() {
+  const { products, cart, handleAddItem, finalizeSale } = useSellPage()
+  return (/* só JSX, nenhuma lógica aqui */)
+}
+```
+
+- Um hook usado por **mais de uma página** (`useCart`, `usePinInput`) não
+  leva o prefixo de página — é só `useCart`, mesmo lugar (`hooks/`).
+- Isso vale para toda tela do produto (Vender, Produtos, Operadores,
+  Fechamento, Dashboard) — não é um padrão só pra tela complexa.
+- Motivo: `page.tsx` fica testável por leitura (é óbvio o que renderiza) e
+  o hook fica testável isolado (Cypress Component Testing pode montar o
+  hook via um componente-wrapper simples, sem precisar montar a página
+  inteira) — ver `05-componentizacao.md`.
+
+**Nenhuma função solta dentro de um arquivo de componente.** Uma função que
+não depende de estado/props do componente (formatação, cálculo, parsing) é
+uma função pura e vai para `lib/utils/`, agrupada por assunto
+(`format-currency.ts`, `format-date.ts`, `slugify.ts`...), nunca declarada
+inline no topo ou dentro de um `.tsx`. Isso vale mesmo que a função só seja
+usada uma vez hoje — o ponto é reuso e teste isolado, não "está sendo
+reusada agora".
+
+- Se a função depende de estado/hook do React (ex.: `useDebounce`), ela não
+  é um util — é um hook, vai para `hooks/`.
+- Se a função é regra de negócio (cálculo de troco, validação), ela não
+  deveria estar no frontend de forma alguma — ver seção Formulários acima:
+  validação e regra são sempre do backend.
 
 ## Idioma
 

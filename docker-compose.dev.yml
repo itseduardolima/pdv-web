@@ -1,0 +1,13 @@
+# Overlay só para desenvolvimento local: publica as portas de Postgres e
+# MinIO no host (a base docker-compose.yml, pensada pra VPS, nunca expõe
+# essas portas — ver docs/specs/08-seguranca.md § 11). Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres minio
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+
+  minio:
+    ports:
+      - "9000:9000"
+      - "9001:9001"
