@@ -242,3 +242,103 @@ nunca dois amarelos ou dois pretos lado a lado no mesmo par de ação.
 - Não usar peso de fonte fino (300) em título — Aaply reserva peso leve só
   para texto secundário do body.
 - Não separar o par de botão amarelo/preto (ver regra de pareamento acima).
+
+## Validação e feedback ao usuário
+
+O protótipo (mockup estático) não cobre estado de erro nem feedback de
+ação — isso precisa existir na implementação real. Decisão de produto:
+**nunca usar toast** (notificação flutuante que aparece e desaparece por
+conta própria, alheia ao card com que o usuário está interagindo). Em vez
+disso, dois padrões, sempre ancorados ao componente que gerou a ação —
+o feedback aparece *onde o olho já está*, não num canto da tela que o
+Operador pode nem ver num tablet no meio de um atendimento.
+
+### 1. Erro de campo (validação de formulário)
+
+A validação é sempre da API — o frontend não tem regra própria, ver
+`04-padroes-codigo.md` § Formulários. Fluxo: o submit chama a API; se ela
+responder 400 (`code: "VALIDATION"`), o formulário lê `details.fieldErrors`
+e aplica em cada campo correspondente. Nada é validado antes desse retorno.
+
+- Borda do input muda para `--color-danger` (2px) + ícone de alerta dentro
+  do campo, à direita.
+- Mensagem **abaixo do próprio campo** — exatamente o texto que a API
+  devolveu, sem reescrever — `--color-danger`, Inter 500 12px,
+  `margin-top: 4px`. Nunca um resumo genérico de erros no topo do
+  formulário.
+- O primeiro campo com erro recebe foco automaticamente depois da resposta.
+- Enquanto a API responde, o botão de submit entra em `state="loading"`
+  (ver componente `Button` abaixo) — não existe estado "inválido" antes
+  disso, porque não existe validação antes disso.
+
+```
+Nome completo
+[___________________________]  ← borda vermelha, ícone de alerta
+Informe o nome completo
+```
+
+### 2. `InlineAlert` — erro de regra de negócio / ação bloqueada
+
+Substitui completamente o toast para erros que vêm da API (regra de
+negócio: `CASH_SESSION_ALREADY_OPEN`, `INSUFFICIENT_STOCK`,
+`LAST_ADMIN`, etc.) e para avisos que não são erro de um campo específico.
+
+- Um banner que nasce **dentro do próprio card/painel** onde a ação foi
+  disparada (não sobrepõe a tela, não flutua sobre outros elementos) —
+  ocupa a largura do card, `border-radius: var(--radius-card-sm)`, fundo
+  `--color-danger` a 8% de opacidade, texto e ícone em `--color-danger`
+  sólido, padding `12px 16px`, entra com um slide-down + fade de ~150ms.
+- Fica **acima do elemento que causou o erro** (ex.: acima do botão
+  "Finalizar Venda", dentro do próprio painel de carrinho) — o usuário nunca
+  precisa procurar o que aconteceu.
+- Não desaparece por conta própria quando é bloqueante (ex.: estoque
+  insuficiente) — só quando o usuário corrige a causa (ajusta a quantidade)
+  ou dispensa manualmente (X no canto). Quando é só um aviso não bloqueante,
+  pode ter um botão "Entendi" que fecha o banner.
+- Variante de aviso (não erro): mesma estrutura, fundo `--color-warning` a
+  10%, ícone diferente (ex.: estoque baixo ao adicionar um produto — aviso,
+  não impede a venda).
+
+```
+┌ Painel do carrinho ───────────────────────┐
+│ ⚠ Estoque insuficiente: só há 3 unidades   │
+│   de "Cerveja Lata 350ml" em estoque.       │
+├─────────────────────────────────────────────┤
+│  Item 1                                      │
+│  Item 2                                      │
+│  ...                                         │
+│  [ Finalizar Venda ]                         │
+└───────────────────────────────────────────────┘
+```
+
+### 3. Sucesso — sem banner nenhum, o próprio fluxo já confirma
+
+Em vez de "salvou, mostra um toast de sucesso", a confirmação é o próprio
+próximo estado da tela — mais agradável que uma notificação que pisca e
+some, porque o usuário não precisa nem processar uma mensagem extra:
+
+- **Ações de navegação natural** (finalizar venda, abrir caixa): o
+  protótipo já resolve isso — vai para a tela seguinte (Venda Confirmada,
+  Vender). Manter esse padrão para toda ação equivalente; nunca adicionar um
+  toast "Venda registrada!" por cima de uma tela que já é a confirmação.
+- **Ações que ficam na mesma tela** (salvar Produto, salvar Operador,
+  fechar um Modal de edição): o botão de ação faz uma transição de estado
+  inline — vira um ícone de check + label ("Salvo") por ~600ms, com um
+  micro-scale (1 → 1.05 → 1), e só então a tela volta para a lista/fecha o
+  modal. Nada aparece fora do botão que o usuário já está olhando.
+
+```
+[ Salvar Produto ]   →   [ ✓ Salvo ]   →   (volta para a lista)
+```
+
+- Componente: `<Button variant="primary" state="idle|loading|success">` —
+  o próprio `Button` de `components/ui` já modela esse ciclo, não é um
+  componente novo de notificação.
+
+### Por que este padrão em vez de toast
+
+Toast exige que o Operador — que está de olho no produto/dinheiro/cliente,
+não na tela — note algo que aparece e desaparece num canto sozinho. Ancorar
+o feedback no componente que originou a ação (o campo, o card, o próprio
+botão) garante que ele está exatamente onde o olho já está no momento em
+que o erro ou a confirmação acontece.

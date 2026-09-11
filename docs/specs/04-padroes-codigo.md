@@ -150,12 +150,35 @@ vêm de `packages/shared` (schemas Zod compartilhados).
   português, mapeadas para HTTP por um `ExceptionFilter` global — nunca um
   erro genérico sem contexto.
 
-## Formulários (frontend)
+## Formulários (frontend) — validação é sempre do backend
 
-- React Hook Form + Zod para todo formulário (Product, Operator, abertura de
-  caixa) — o **mesmo schema Zod de `packages/shared`** valida no cliente e é
-  o que o DTO do Nest espera receber (contrato único, não duas definições
-  divergentes).
+**Regra dura: toda regra de validação e toda mensagem de erro vêm da API.
+O frontend nunca decide se um dado é válido — ele só exibe o que a API
+respondeu.** Isso vale para validação de formato de campo e para regra de
+negócio; não existe uma segunda implementação da regra no cliente, nem
+"provisória", nem "só pra UX".
+
+- Os schemas Zod de `packages/shared` existem **só para tipar** o
+  request/response (`z.infer`) — nunca são chamados com `.parse()` /
+  `.safeParse()` no frontend para bloquear ou liberar um submit. Rodar o
+  mesmo schema no cliente ainda seria o cliente decidindo; a decisão tem que
+  vir de uma resposta HTTP real da API.
+- React Hook Form é usado **sem resolver de validação** (sem `zodResolver`)
+  — ele só governa estado de campo/submit. Todo submit chama a API; a API é
+  a única que valida.
+- Em caso de 400 (`code: "VALIDATION"`, ver `common/filters/domain-exception.filter.ts`),
+  a resposta traz `details` (flatten do erro Zod do `nestjs-zod`) —
+  o formulário mapeia `details.fieldErrors["<campo>"]` para a mensagem
+  exibida embaixo de cada input. Nenhuma mensagem de validação é escrita no
+  frontend.
+- Erro de regra de negócio (`CASH_SESSION_ALREADY_OPEN`, `INSUFFICIENT_STOCK`,
+  `LAST_ADMIN`, etc.) chega com `message` já em português, pronta pra
+  mostrar — o frontend não interpreta o `code` para gerar seu próprio texto,
+  só decide *onde* mostrar a mensagem (`InlineAlert`, ver
+  `apps/web/docs/DESIGN_SYSTEM.md` § Validação e feedback).
+- Feedback "em tempo real" (antes do submit) não existe como validação
+  paralela do cliente — se um dia for necessário, é uma chamada real à API
+  (debounced), nunca uma cópia local da regra.
 
 ## Commits
 

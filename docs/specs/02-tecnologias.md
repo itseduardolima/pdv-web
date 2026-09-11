@@ -36,7 +36,7 @@ possibilidade de operar offline no caixa.
 | Estado local (UI) | Zustand | Carrinho em progresso, teclado de PIN, estado de formulário — sem boilerplate de Context |
 | Offline storage | Dexie (wrapper de IndexedDB) | Fila de vendas pendentes de sincronizar com a API, cache de catálogo |
 | PWA | `next-pwa` (ou Serwist) | Service worker, instalável, ícone do tenant |
-| Formulários | React Hook Form + Zod | O mesmo schema Zod de `packages/shared` valida no cliente e é o contrato esperado pelos DTOs da API |
+| Formulários | React Hook Form (sem resolver de validação) + schemas Zod de `packages/shared` só para tipagem | Validação é sempre da API — o frontend nunca decide se um dado é válido, só exibe a resposta; ver `04-padroes-codigo.md` § Formulários |
 | Testes (unitário de componente + E2E) | **Cypress** (Component Testing para `components/ui` e `components/pos`; E2E para os fluxos completos) | Um único runner cobre os dois níveis do frontend — testa `PinKeypad`, `ProductCard`, `PhotoUploadBox` isolados (unitário/componente) e depois os fluxos críticos de ponta a ponta: abrir caixa → vender → fechar caixa, contra a API real (ambiente de teste) |
 
 ## Compartilhado (`packages/shared`)

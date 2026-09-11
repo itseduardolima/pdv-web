@@ -33,6 +33,13 @@ Todo o contexto de produto, arquitetura e decisão já tomada está em
    troca por tenant
 8. `docs/specs/07-multitenant-whitelabel.md` — isolamento de dado e como
    revender para outro mercado
+9. `docs/specs/08-seguranca.md` — checklist de segurança (vazamento entre
+   tenants, XSS, CSRF, PIN/rate-limit, upload, segredos, LGPD) — consultar
+   antes de tocar em auth, upload, ou qualquer query entre tenants
+
+Planejamento de execução (Scrum) está em `docs/scrum/`:
+`BACKLOG.md` (épicos e histórias de usuário, derivados do protótipo) e
+`SPRINTS.md` (ordem das sprints e por que começar por Tenant+Auth).
 
 Specs específicas de implementação de cada app (endpoints, rotas, tokens de
 design em detalhe) vivem dentro do próprio app, não na raiz:
@@ -56,9 +63,14 @@ tarefa é, na verdade, "atualizar o spec" (avisar o usuário disso).
 - **Toda query de banco passa por um `Repository` do NestJS (`apps/api/src/modules/*/*.repository.ts`)
   com `tenantId` obrigatório.** Nunca escrever uma query Prisma direto num
   `Controller`, e nunca acessar banco a partir de `apps/web`.
-- **Regra de negócio sensível (permissão de admin, imutabilidade de caixa
-  fechado, estoque não-negativo) é validada no servidor, não só escondida na
-  UI.** Ver spec 03.
+- **Toda regra e toda mensagem de validação vêm do backend — sempre, sem
+  exceção.** Não é só regra de negócio sensível (permissão de admin,
+  imutabilidade de caixa fechado, estoque não-negativo): até validação de
+  campo simples (nome obrigatório, PIN de 4 dígitos) é decidida e respondida
+  pela API. O frontend nunca roda `.parse()`/`.safeParse()` de um schema
+  para bloquear um submit, nunca escreve sua própria mensagem de erro — só
+  exibe o que a API devolveu. Ver `04-padroes-codigo.md` § Formulários e
+  `apps/web/docs/DESIGN_SYSTEM.md` § Validação e feedback.
 - **Um componente por conceito, responsivo — não um componente por
   breakpoint.** Ver spec 05.
 - **Código em inglês, poucos comentários (em português), commits
