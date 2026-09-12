@@ -9,7 +9,7 @@ export const loginOperatorSchema = z.object({
 export type LoginOperator = z.infer<typeof loginOperatorSchema>
 
 export const loginInputSchema = z.object({
-  operatorId: idSchema,
+  operatorId: z.string().min(1, 'Selecione quem está no caixa'),
   pin: pinSchema,
 })
 export type LoginInput = z.infer<typeof loginInputSchema>
