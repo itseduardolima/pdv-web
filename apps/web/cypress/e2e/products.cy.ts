@@ -1,0 +1,47 @@
+// CRUD de produto pela tela, com erro de campo vindo da API (HU 10.1).
+describe('Produtos: criar, editar e excluir', () => {
+  const name = `E2E Café ${Date.now()}`
+
+  beforeEach(() => {
+    cy.loginAs('Administrador', '1234')
+    cy.ensureRegisterOpen()
+  })
+
+  it('creates, edits and deletes a product', () => {
+    cy.visit('/products/new')
+    cy.contains('h1', 'Novo Produto')
+
+    // submit vazio: as mensagens de campo vêm da API, embaixo de cada campo
+    cy.contains('button', 'Salvar Produto').click()
+    cy.contains('O nome precisa ter pelo menos 2 caracteres')
+    cy.contains('Informe a categoria')
+
+    cy.get('input[name=name]').type(name)
+    cy.get('input[role=combobox]').type('Bebi')
+    cy.contains('[role=option]', 'Bebidas').click()
+    cy.get('select[name=unit]').select('PCT')
+    cy.get('input[name=salePrice]').type('12,90')
+    cy.get('button[aria-label=Aumentar]').click().click().click()
+    cy.contains('button', 'Salvar Produto').click()
+    cy.contains('Salvo')
+    cy.location('pathname').should('eq', '/products')
+    cy.contains(name).should('exist')
+    cy.contains('R$ 12,90')
+
+    // editar
+    cy.get(`a[aria-label="Editar ${name}"]`).first().click({ force: true })
+    cy.contains('h1', 'Editar Produto')
+    cy.get('input[name=salePrice]').clear().type('13,50')
+    cy.contains('button', 'Salvar Produto').click()
+    cy.location('pathname').should('eq', '/products')
+    cy.contains('R$ 13,50')
+
+    // excluir
+    cy.get(`a[aria-label="Editar ${name}"]`).first().click({ force: true })
+    cy.contains('button', 'Excluir Produto').click()
+    // o botão do diálogo, não o "Excluir Produto" atrás do overlay
+    cy.get('[role=dialog]').contains('button', 'Excluir').click()
+    cy.location('pathname').should('eq', '/products')
+    cy.contains(name).should('not.exist')
+  })
+})

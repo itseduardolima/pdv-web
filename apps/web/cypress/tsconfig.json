@@ -1,8 +1,18 @@
 {
-  "extends": "../tsconfig.json",
   "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "preserve",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "isolatedModules": false,
     "types": ["cypress", "node"],
-    "isolatedModules": false
+    "baseUrl": "..",
+    "paths": { "@/*": ["./src/*"] }
   },
   "include": ["**/*.ts", "../src/**/*.cy.tsx"]
 }
