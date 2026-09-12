@@ -16,7 +16,10 @@ export function SaleHistoryRow({ sale }: { sale: Sale }) {
         <p className="truncate font-body text-sm font-medium">
           {itemsLabel} · {sale.operatorName} · {PAYMENT_METHOD_LABEL[sale.paymentMethod]}
         </p>
-        <p className="font-body text-xs text-ink/40">{formatTime(new Date(sale.soldAt))}</p>
+        <p className="font-body text-xs text-ink/40">
+          {formatTime(new Date(sale.soldAt))}
+          {sale.changeCents !== null && sale.changeCents > 0 && ` · troco ${formatCurrency(sale.changeCents)}`}
+        </p>
       </div>
       <span className="font-body text-sm font-semibold">{formatCurrency(sale.totalCents)}</span>
     </li>

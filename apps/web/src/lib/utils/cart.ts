@@ -1,3 +1,5 @@
+import type { PaymentMethod } from '@pdv/shared'
+
 export interface CartItem {
   productId: string
   name: string
@@ -26,4 +28,15 @@ export function matchesProductSearch(
     product.category.toLowerCase().includes(query) ||
     product.barcode === term.trim()
   )
+}
+
+// Troco exibido ao vivo enquanto o operador digita. Só orientação visual:
+// quem valida e grava o troco é a API. null = sem troco a mostrar.
+export function changeForCash(
+  paymentMethod: PaymentMethod | null,
+  amountReceivedCents: number,
+  totalCents: number,
+): number | null {
+  if (paymentMethod !== 'CASH' || !Number.isFinite(amountReceivedCents)) return null
+  return amountReceivedCents - totalCents
 }

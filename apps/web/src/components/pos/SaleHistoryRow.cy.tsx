@@ -13,6 +13,8 @@ describe('SaleHistoryRow', () => {
             operatorName: 'Karol',
             paymentMethod: 'PIX',
             totalCents: 8340,
+            amountReceivedCents: null,
+            changeCents: null,
             soldAt: new Date(2026, 8, 12, 16, 42).toISOString(),
             items: [
               { productId: 'p1', productName: 'Arroz', quantity: 3, unitPriceCents: 100 },

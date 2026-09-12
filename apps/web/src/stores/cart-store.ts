@@ -5,6 +5,8 @@ import type { CartItem } from '@/lib/utils/cart'
 interface CartState {
   items: CartItem[]
   paymentMethod: PaymentMethod | null
+  // Só para Dinheiro: quanto o cliente entregou, como o operador digita (mascarado).
+  amountReceivedText: string
   // uuid da venda em andamento: gerado ao montar o carrinho e reusado em
   // qualquer reenvio, para a API nunca duplicar a venda (idempotência).
   saleUuid: string
@@ -14,6 +16,7 @@ interface CartState {
   decrement: (productId: string) => void
   remove: (productId: string) => void
   setPaymentMethod: (method: PaymentMethod) => void
+  setAmountReceivedText: (text: string) => void
   clear: () => void
   finish: (sale: Sale) => void
 }
@@ -23,6 +26,7 @@ const newUuid = () => crypto.randomUUID()
 export const useCartStore = create<CartState>((set) => ({
   items: [],
   paymentMethod: null,
+  amountReceivedText: '',
   saleUuid: newUuid(),
   lastSale: null,
   add: (item) =>
@@ -49,7 +53,9 @@ export const useCartStore = create<CartState>((set) => ({
     })),
   remove: (productId) => set((state) => ({ items: state.items.filter((line) => line.productId !== productId) })),
   setPaymentMethod: (paymentMethod) => set({ paymentMethod }),
+  setAmountReceivedText: (amountReceivedText) => set({ amountReceivedText }),
   // Cancelar só descarta o carrinho — nenhum registro (03-regras-negocio § Venda).
-  clear: () => set({ items: [], paymentMethod: null, saleUuid: newUuid() }),
-  finish: (sale) => set({ items: [], paymentMethod: null, saleUuid: newUuid(), lastSale: sale }),
+  clear: () => set({ items: [], paymentMethod: null, amountReceivedText: '', saleUuid: newUuid() }),
+  finish: (sale) =>
+    set({ items: [], paymentMethod: null, amountReceivedText: '', saleUuid: newUuid(), lastSale: sale }),
 }))

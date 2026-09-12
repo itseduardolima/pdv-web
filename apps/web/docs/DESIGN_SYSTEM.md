@@ -347,6 +347,20 @@ negócio: `CASH_SESSION_ALREADY_OPEN`, `INSUFFICIENT_STOCK`,
 └───────────────────────────────────────────────┘
 ```
 
+### Valor recebido e troco — `CashReceived`
+
+Só aparece no painel do carrinho quando a forma de pagamento é **Dinheiro**
+(`components/pos/CashReceived`): um `Input` "Valor recebido" (prefixo `R$`,
+máscara de dinheiro, opcional) sobre um bloco `--color-canvas` e, assim que
+há valor, uma linha "Troco R$ X" em destaque (`font-heading`, 20px). Se o
+digitado for menor que o total, a linha vira "Faltam R$ X" em
+`--color-danger` — só orientação visual: o front **não bloqueia** o
+Finalizar, quem recusa é a API (`INSUFFICIENT_CASH`), e a mensagem dela
+aparece como erro do próprio campo, não como banner do carrinho. O campo
+zera junto com o carrinho (cancelar / nova venda). "Venda Confirmada" mostra
+"Recebido" e "Troco" abaixo do total, e o Histórico de Vendas acrescenta
+"· troco R$ X" na linha da venda em dinheiro que teve troco.
+
 ### Estado vazio — `EmptyState`
 
 Toda lista/grid sem conteúdo usa `components/ui/EmptyState` (`title`,

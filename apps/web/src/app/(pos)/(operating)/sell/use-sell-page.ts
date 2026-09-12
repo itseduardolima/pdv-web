@@ -40,12 +40,20 @@ export function useSellPage() {
     }
   }
 
-  // Sempre envia: a API decide (caixa aberto, estoque, forma de pagamento).
+  function handleAmountReceivedChange(text: string) {
+    createSale.reset()
+    cart.setAmountReceivedText(text)
+  }
+
+  // Sempre envia: a API decide (caixa aberto, estoque, forma de pagamento,
+  // troco). O valor recebido só vai em Dinheiro e só se foi digitado.
   function handleCheckout() {
+    const sendsReceived = cart.paymentMethod === 'CASH' && cart.amountReceivedText.trim() !== ''
     createSale.mutate(
       {
         uuid: cart.saleUuid,
         paymentMethod: cart.paymentMethod ?? ('' as never),
+        ...(sendsReceived ? { amountReceivedCents: cart.amountReceivedCents } : {}),
         items: cart.items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
       },
       {
@@ -63,10 +71,10 @@ export function useSellPage() {
   }
 
   const fieldErrors = apiFieldErrors(createSale.error)
-  const details =
-    createSale.error instanceof ApiClientError
-      ? (createSale.error.error.details as { productId?: string } | undefined)
-      : undefined
+  const apiError = createSale.error instanceof ApiClientError ? createSale.error.error : null
+  const details = apiError?.details as { productId?: string } | undefined
+  // INSUFFICIENT_CASH é erro do campo "Valor recebido", não do carrinho inteiro.
+  const insufficientCash = apiError?.code === 'INSUFFICIENT_CASH' ? apiError.message : null
 
   return {
     operator,
@@ -79,12 +87,14 @@ export function useSellPage() {
     productsError: apiErrorMessage(products.error),
     cart,
     handleAdd,
+    handleAmountReceivedChange,
     handleCheckout,
     handleCancel,
     isSubmitting: createSale.isPending,
     paymentMethodError: fieldErrors?.paymentMethod ?? null,
     itemsError: fieldErrors?.items ?? null,
-    errorMessage: apiGeneralErrorMessage(createSale.error),
+    amountReceivedError: fieldErrors?.amountReceivedCents ?? insufficientCash,
+    errorMessage: insufficientCash ? null : apiGeneralErrorMessage(createSale.error),
     highlightedProductId: details?.productId ?? null,
     dismissError: createSale.reset,
   }

@@ -18,6 +18,10 @@ frontend) — não quando o código só "existe".
 
 ## Em andamento agora
 
+- Extra pós-Sprint 5 (2026-09-12): troco em venda em Dinheiro —
+  `amountReceivedCents`/`changeCents` na venda, calculados e validados na
+  API (`INSUFFICIENT_CASH`), campo "Valor recebido" no carrinho, troco na
+  confirmação e no histórico. Spec 03 § Venda atualizada.
 - Sprint 5 concluída no código (9.1, 1.4, E2E, imagens Docker buildadas).
   9.2 (TLS) fica pendente de validação com domínio real no primeiro deploy.
   Próximo: Sprint 6 — Operadores (6.1 → 6.7) + Dashboard (7.1 → 7.3).
@@ -76,6 +80,7 @@ frontend) — não quando o código só "existe".
 - [~] 9.2 — HTTPS automático (Caddy + Let's Encrypt, `on_demand_tls` com `tls-check`) — implementado; **validar com domínio real no primeiro deploy**
 - [x] 1.4 — Row-Level Security no Postgres (policies + extensão do Prisma + usuário sem superusuário)
 - [x] Testes E2E Cypress dos fluxos críticos (login → abrir caixa → vender → fechar caixa) + CRUD de produto (`apps/web/cypress/e2e`, job `e2e` no CI)
+- [x] Troco em venda em Dinheiro (API calcula/valida, front só exibe) — E2E cobre troco ao vivo e recusa de valor menor
 
 ## Sprint 6 — Operadores (gestão completa) + Dashboard
 

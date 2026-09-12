@@ -47,6 +47,21 @@ export default function SaleConfirmedPage() {
           <span>Total</span>
           <span>{formatCurrency(sale.totalCents)}</span>
         </li>
+        {sale.changeCents !== null && sale.amountReceivedCents !== null && (
+          <>
+            <li className="flex justify-between font-body text-xs text-ink/60 md:text-[13px]">
+              <span>Recebido</span>
+              <span>{formatCurrency(sale.amountReceivedCents)}</span>
+            </li>
+            <li
+              data-cy="confirmed-change"
+              className="flex items-baseline justify-between rounded-input bg-canvas px-3 py-2 font-body text-sm font-bold md:text-[15px]"
+            >
+              <span>Troco</span>
+              <span className="font-heading text-xl">{formatCurrency(sale.changeCents)}</span>
+            </li>
+          </>
+        )}
       </ul>
 
       <hr className="w-full border-border" />

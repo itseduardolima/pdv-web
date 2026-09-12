@@ -2,6 +2,7 @@
 
 import { PageHeader } from '@/components/layout/PageHeader'
 import { CartLine } from '@/components/pos/CartLine'
+import { CashReceived } from '@/components/pos/CashReceived'
 import { PaymentMethodPicker } from '@/components/pos/PaymentMethodPicker'
 import { ProductTile } from '@/components/pos/ProductTile'
 import { Button } from '@/components/ui/Button'
@@ -124,6 +125,15 @@ export default function SellPage() {
             onChange={page.cart.setPaymentMethod}
             error={page.paymentMethodError ?? undefined}
           />
+
+          {page.cart.paymentMethod === 'CASH' && (
+            <CashReceived
+              value={page.cart.amountReceivedText}
+              onChange={page.handleAmountReceivedChange}
+              changeCents={page.cart.changeCents}
+              error={page.amountReceivedError ?? undefined}
+            />
+          )}
 
           {page.errorMessage && <InlineAlert onDismiss={page.dismissError}>{page.errorMessage}</InlineAlert>}
 
