@@ -45,6 +45,12 @@ export class ProductService {
     return toPublic(await this.products.update(tenantId, id, data))
   }
 
+  async remove(tenantId: string, id: string): Promise<void> {
+    const current = await this.products.findById(tenantId, id)
+    if (!current) throw productNotFound()
+    await this.products.softDelete(tenantId, id)
+  }
+
   // Código de barras é único dentro do tenant (03-regras-negocio § Produtos).
   private async assertBarcodeAvailable(tenantId: string, barcode: string | null, exceptId?: string) {
     if (!barcode) return

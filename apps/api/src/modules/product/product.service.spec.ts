@@ -37,6 +37,7 @@ function makeService(overrides: Partial<Record<keyof ProductRepository, jest.Moc
     findCategories: jest.fn().mockResolvedValue(['Estiva']),
     create: jest.fn().mockImplementation(async (_t: string, data: typeof input) => ({ ...row, ...data })),
     update: jest.fn().mockImplementation(async (_t: string, _id: string, data: Partial<typeof input>) => ({ ...row, ...data })),
+    softDelete: jest.fn().mockResolvedValue({ ...row, deletedAt: new Date(), barcode: null }),
     ...overrides,
   }
   return { service: new ProductService(repository as unknown as ProductRepository), repository }
@@ -113,6 +114,20 @@ describe('ProductService', () => {
       const { service, repository } = makeService({ findById: jest.fn().mockResolvedValue(row) })
       await service.update('t1', 'p1', { barcode: '' })
       expect(repository.update).toHaveBeenCalledWith('t1', 'p1', { barcode: null })
+    })
+  })
+
+  describe('remove', () => {
+    it('soft-deletes an existing product of the tenant', async () => {
+      const { service, repository } = makeService({ findById: jest.fn().mockResolvedValue(row) })
+      await service.remove('t1', 'p1')
+      expect(repository.softDelete).toHaveBeenCalledWith('t1', 'p1')
+    })
+
+    it('throws PRODUCT_NOT_FOUND for an unknown, deleted or other-tenant id', async () => {
+      const { service, repository } = makeService()
+      await expect(service.remove('t1', 'p1')).rejects.toMatchObject({ code: 'PRODUCT_NOT_FOUND' })
+      expect(repository.softDelete).not.toHaveBeenCalled()
     })
   })
 })

@@ -46,4 +46,10 @@ export class ProductRepository {
     // updateMany não existe com retorno; o Service já garantiu que o id é do tenant.
     return this.prisma.product.update({ where: { id, tenantId }, data })
   }
+
+  // Soft-delete: some da lista/venda; SaleItem mantém o nome congelado. O
+  // código de barras é liberado para um cadastro novo (unique por tenant).
+  softDelete(tenantId: string, id: string): Promise<Product> {
+    return this.prisma.product.update({ where: { id, tenantId }, data: { deletedAt: new Date(), barcode: null } })
+  }
 }

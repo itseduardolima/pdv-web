@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common'
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -6,6 +6,7 @@ import {
   ApiCookieAuth,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiTags,
@@ -67,5 +68,15 @@ export class ProductController {
   @ApiForbiddenResponse({ schema: apiErrorOpenApi, description: 'ADMIN_ONLY' })
   update(@CurrentTenant() tenantId: string, @Param('id') id: string, @Body() body: UpdateProductDto): Promise<Product> {
     return this.products.update(tenantId, id, body)
+  }
+
+  @Delete(':id')
+  @Roles('ADMIN')
+  @HttpCode(204)
+  @ApiNoContentResponse({ description: 'Soft-delete: produto some da lista e da venda; histórico preservado' })
+  @ApiNotFoundResponse({ schema: apiErrorOpenApi, description: 'PRODUCT_NOT_FOUND' })
+  @ApiForbiddenResponse({ schema: apiErrorOpenApi, description: 'ADMIN_ONLY' })
+  remove(@CurrentTenant() tenantId: string, @Param('id') id: string): Promise<void> {
+    return this.products.remove(tenantId, id)
   }
 }
