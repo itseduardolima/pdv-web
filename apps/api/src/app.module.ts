@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { APP_FILTER, APP_GUARD, APP_PIPE } from '@nestjs/core'
 import { JwtModule } from '@nestjs/jwt'
@@ -8,10 +8,11 @@ import { PrismaModule } from './prisma/prisma.module'
 import { DomainExceptionFilter } from './common/filters/domain-exception.filter'
 import { AuthGuard } from './common/guards/auth.guard'
 import { RolesGuard } from './common/guards/roles.guard'
+import { TenantMiddleware } from './common/middlewares/tenant.middleware'
+import { TenantModule } from './modules/tenant/tenant.module'
 
-// Módulos de domínio (tenant, auth, operator, product, cash-session, sale)
-// entram aqui conforme forem criados; o TenantMiddleware é registrado junto
-// com o módulo tenant, que fornece o TenantResolver.
+// Módulos de domínio (auth, operator, product, cash-session, sale) entram
+// aqui conforme forem criados, um por vez.
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -25,6 +26,7 @@ import { RolesGuard } from './common/guards/roles.guard'
       }),
     }),
     PrismaModule,
+    TenantModule,
   ],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },
@@ -34,4 +36,9 @@ import { RolesGuard } from './common/guards/roles.guard'
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  // Toda rota exige tenant resolvido; só o Swagger fica fora.
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(TenantMiddleware).exclude('docs', 'docs/{*path}').forRoutes('*path')
+  }
+}
