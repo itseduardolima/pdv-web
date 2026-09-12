@@ -24,6 +24,26 @@ async function main() {
     })
   }
 
+  // Operadores extras para a tela de Login: um ativo e um inativo (não aparece).
+  const extraOperators = [
+    { name: 'Rafael', role: 'OPERATOR' as const, active: true, pin: '2222' },
+    { name: 'Luana', role: 'OPERATOR' as const, active: false, pin: '3333' },
+  ]
+  for (const extra of extraOperators) {
+    const exists = await prisma.operator.findFirst({ where: { tenantId: tenant.id, name: extra.name } })
+    if (!exists) {
+      await prisma.operator.create({
+        data: {
+          tenantId: tenant.id,
+          name: extra.name,
+          role: extra.role,
+          active: extra.active,
+          pinHash: await argon2.hash(extra.pin),
+        },
+      })
+    }
+  }
+
   const products = [
     { name: 'Refrigerante Lata 350ml', category: 'Bebidas', salePriceCents: 550, costPriceCents: 320, stockQuantity: 48, minStock: 12, barcode: '7891000100103' },
     { name: 'Cerveja Lata 350ml', category: 'Bebidas', salePriceCents: 399, costPriceCents: 260, stockQuantity: 120, minStock: 24, barcode: '7891149010202' },
