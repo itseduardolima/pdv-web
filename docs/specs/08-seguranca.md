@@ -113,7 +113,10 @@ manual do que seria numa nuvem grande — ser realista sobre isso:
 
 - **Rate limiting global** (`@nestjs/throttler`, já na base) em toda rota,
   não só login — limite mais permissivo nas rotas de leitura, mais estrito
-  em mutação.
+  em mutação. Liga por padrão em todo ambiente (`RATE_LIMIT_ENABLED` não
+  setada = ligado); só o `.env` de desenvolvimento local desliga
+  (`RATE_LIMIT_ENABLED=false`), para uma sessão de testes manuais/E2E
+  repetidos não travar em 429 — nunca `false` em CI ou produção.
 - **Caddy como primeira linha**: `limit_req`-like (via plugin ou
   configuração de timeout/conexões simultâneas) antes de chegar no Node.
 - **Payload size limit** no `main.ts` (Express `json({ limit: '1mb' })` ou

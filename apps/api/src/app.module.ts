@@ -21,7 +21,17 @@ import { SaleModule } from './modules/sale/sale.module'
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
+    // RATE_LIMIT_ENABLED: seguro por padrão (true) se a env não existir —
+    // só o .env de desenvolvimento local desliga, para não travar em 429
+    // durante uma sessão de testes manuais/E2E repetidos. CI e produção
+    // nunca desligam (a env não é setada lá).
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => {
+        const enabled = config.get<string>('RATE_LIMIT_ENABLED', 'true') !== 'false'
+        return [{ ttl: 60_000, limit: 120, skipIf: () => !enabled }]
+      },
+    }),
     JwtModule.registerAsync({
       global: true,
       inject: [ConfigService],
