@@ -18,10 +18,18 @@ export function useUploadImage(kind: UploadKind) {
       form.append('file', file)
       const upload = await fetch(ticket.uploadUrl, { method: 'POST', body: form })
       if (!upload.ok) {
-        throw new ApiClientError({ statusCode: upload.status, code: 'UPLOAD_FAILED', message: 'Não foi possível enviar a imagem.' })
+        throw new ApiClientError({
+          statusCode: upload.status,
+          code: 'UPLOAD_FAILED',
+          message: 'Não foi possível enviar a imagem.',
+        })
       }
 
-      const confirmed = await apiRequest('/uploads/confirm', { method: 'POST', body: { key: ticket.key }, schema: confirmedUploadSchema })
+      const confirmed = await apiRequest('/uploads/confirm', {
+        method: 'POST',
+        body: { key: ticket.key },
+        schema: confirmedUploadSchema,
+      })
       return confirmed.url
     },
   })

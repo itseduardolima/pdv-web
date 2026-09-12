@@ -36,7 +36,9 @@ function makeService(overrides: Partial<Record<keyof ProductRepository, jest.Moc
     findByBarcode: jest.fn().mockResolvedValue(null),
     findCategories: jest.fn().mockResolvedValue(['Estiva']),
     create: jest.fn().mockImplementation(async (_t: string, data: typeof input) => ({ ...row, ...data })),
-    update: jest.fn().mockImplementation(async (_t: string, _id: string, data: Partial<typeof input>) => ({ ...row, ...data })),
+    update: jest
+      .fn()
+      .mockImplementation(async (_t: string, _id: string, data: Partial<typeof input>) => ({ ...row, ...data })),
     softDelete: jest.fn().mockResolvedValue({ ...row, deletedAt: new Date(), barcode: null }),
     ...overrides,
   }

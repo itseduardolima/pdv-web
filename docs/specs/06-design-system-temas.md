@@ -37,10 +37,10 @@ instalação atende vários tenants ao mesmo tempo — ver
 /* src/styles/theme.css — valores DEFAULT, usados até o tenant carregar */
 :root {
   --color-primary: #e6e51e;
-  --color-primary-ink: #000000;   /* cor do texto sobre o primário */
-  --color-ink: #000000;           /* texto principal */
-  --color-canvas: #f2f2f2;        /* fundo da aplicação */
-  --color-surface: #ffffff;       /* fundo de cards */
+  --color-primary-ink: #000000; /* cor do texto sobre o primário */
+  --color-ink: #000000; /* texto principal */
+  --color-canvas: #f2f2f2; /* fundo da aplicação */
+  --color-surface: #ffffff; /* fundo de cards */
   --color-accent: #466cf3;
   --color-danger: #f34646;
   --color-warning: #ff8562;

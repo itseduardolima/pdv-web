@@ -51,9 +51,7 @@ async function main() {
 
   if (isDemo) await seedDemoData(tenant.id)
 
-  console.log(
-    `Seed done for tenant "${tenant.slug}" (${tenant.name})${admin ? '' : ` — admin PIN: ${adminPin}`}`,
-  )
+  console.log(`Seed done for tenant "${tenant.slug}" (${tenant.name})${admin ? '' : ` — admin PIN: ${adminPin}`}`)
 }
 
 // Dados de exemplo só para a loja demo (desenvolvimento e E2E).
@@ -66,16 +64,54 @@ async function seedDemoData(tenantId: string) {
     const exists = await prisma.operator.findFirst({ where: { tenantId, name: extra.name } })
     if (!exists) {
       await prisma.operator.create({
-        data: { tenantId, name: extra.name, role: extra.role, active: extra.active, pinHash: await argon2.hash(extra.pin) },
+        data: {
+          tenantId,
+          name: extra.name,
+          role: extra.role,
+          active: extra.active,
+          pinHash: await argon2.hash(extra.pin),
+        },
       })
     }
   }
 
   const products = [
-    { name: 'Refrigerante Lata 350ml', category: 'Bebidas', salePriceCents: 550, costPriceCents: 320, stockQuantity: 48, minStock: 12, barcode: '7891000100103' },
-    { name: 'Cerveja Lata 350ml', category: 'Bebidas', salePriceCents: 399, costPriceCents: 260, stockQuantity: 120, minStock: 24, barcode: '7891149010202' },
-    { name: 'Arroz 5kg', category: 'Estiva', salePriceCents: 2890, costPriceCents: 2100, stockQuantity: 20, minStock: 5, barcode: '7896006700012' },
-    { name: 'Feijão 1kg', category: 'Estiva', salePriceCents: 899, costPriceCents: 620, stockQuantity: 30, minStock: 8, barcode: '7896006700029' },
+    {
+      name: 'Refrigerante Lata 350ml',
+      category: 'Bebidas',
+      salePriceCents: 550,
+      costPriceCents: 320,
+      stockQuantity: 48,
+      minStock: 12,
+      barcode: '7891000100103',
+    },
+    {
+      name: 'Cerveja Lata 350ml',
+      category: 'Bebidas',
+      salePriceCents: 399,
+      costPriceCents: 260,
+      stockQuantity: 120,
+      minStock: 24,
+      barcode: '7891149010202',
+    },
+    {
+      name: 'Arroz 5kg',
+      category: 'Estiva',
+      salePriceCents: 2890,
+      costPriceCents: 2100,
+      stockQuantity: 20,
+      minStock: 5,
+      barcode: '7896006700012',
+    },
+    {
+      name: 'Feijão 1kg',
+      category: 'Estiva',
+      salePriceCents: 899,
+      costPriceCents: 620,
+      stockQuantity: 30,
+      minStock: 8,
+      barcode: '7896006700029',
+    },
   ]
   for (const product of products) {
     await prisma.product.upsert({

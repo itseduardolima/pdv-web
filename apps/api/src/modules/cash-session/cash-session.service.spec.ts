@@ -24,14 +24,18 @@ function makeService(overrides: Partial<Record<keyof CashSessionRepository, jest
     findById: jest.fn().mockResolvedValue(null),
     countOpenedUpTo: jest.fn().mockResolvedValue(1),
     create: jest.fn().mockResolvedValue(openRow),
-    close: jest.fn().mockImplementation(async (_t: string, _id: string, totals: Record<string, number>, closedAt: Date) => ({
-      ...openRow,
-      closedAt,
-      totalCashCents: totals.CASH,
-      totalCardCents: totals.CARD,
-      totalPixCents: totals.PIX,
-    })),
-    sumSalesByPaymentMethod: jest.fn().mockResolvedValue({ totals: { CASH: 21400, CARD: 17890, PIX: 21950 }, count: 42 }),
+    close: jest
+      .fn()
+      .mockImplementation(async (_t: string, _id: string, totals: Record<string, number>, closedAt: Date) => ({
+        ...openRow,
+        closedAt,
+        totalCashCents: totals.CASH,
+        totalCardCents: totals.CARD,
+        totalPixCents: totals.PIX,
+      })),
+    sumSalesByPaymentMethod: jest
+      .fn()
+      .mockResolvedValue({ totals: { CASH: 21400, CARD: 17890, PIX: 21950 }, count: 42 }),
     findSales: jest.fn().mockResolvedValue([]),
     ...overrides,
   }
@@ -81,7 +85,12 @@ describe('CashSessionService', () => {
     it('sums sales by payment method, freezes the totals and sets closedAt', async () => {
       const { service, repository } = makeService({ findById: jest.fn().mockResolvedValue(openRow) })
       const result = await service.close('t1', 'cs1', operator)
-      expect(repository.close).toHaveBeenCalledWith('t1', 'cs1', { CASH: 21400, CARD: 17890, PIX: 21950 }, expect.any(Date))
+      expect(repository.close).toHaveBeenCalledWith(
+        't1',
+        'cs1',
+        { CASH: 21400, CARD: 17890, PIX: 21950 },
+        expect.any(Date),
+      )
       expect(result.closedAt).not.toBeNull()
       expect(result.totalCashCents).toBe(21400)
       expect(result.totalCents).toBe(61240)
@@ -94,15 +103,27 @@ describe('CashSessionService', () => {
 
     it('rejects closing an already closed session (immutable)', async () => {
       const { service, repository } = makeService({
-        findById: jest.fn().mockResolvedValue({ ...openRow, closedAt: new Date(), totalCashCents: 1, totalCardCents: 2, totalPixCents: 3 }),
+        findById: jest.fn().mockResolvedValue({
+          ...openRow,
+          closedAt: new Date(),
+          totalCashCents: 1,
+          totalCardCents: 2,
+          totalPixCents: 3,
+        }),
       })
-      await expect(service.close('t1', 'cs1', admin)).rejects.toMatchObject({ code: 'CASH_SESSION_ALREADY_CLOSED', statusCode: 409 })
+      await expect(service.close('t1', 'cs1', admin)).rejects.toMatchObject({
+        code: 'CASH_SESSION_ALREADY_CLOSED',
+        statusCode: 409,
+      })
       expect(repository.close).not.toHaveBeenCalled()
     })
 
     it('forbids an operator from closing a session opened by someone else', async () => {
       const { service } = makeService({ findById: jest.fn().mockResolvedValue(openRow) })
-      await expect(service.close('t1', 'cs1', otherOperator)).rejects.toMatchObject({ code: 'NOT_CASH_SESSION_OWNER', statusCode: 403 })
+      await expect(service.close('t1', 'cs1', otherOperator)).rejects.toMatchObject({
+        code: 'NOT_CASH_SESSION_OWNER',
+        statusCode: 403,
+      })
     })
 
     it('lets an admin close any session', async () => {
@@ -112,9 +133,18 @@ describe('CashSessionService', () => {
 
     it('a closed session reports the frozen totals, not live sums', async () => {
       const { service } = makeService({
-        findById: jest.fn().mockResolvedValue({ ...openRow, closedAt: new Date(), totalCashCents: 100, totalCardCents: 200, totalPixCents: 300 }),
+        findById: jest.fn().mockResolvedValue({
+          ...openRow,
+          closedAt: new Date(),
+          totalCashCents: 100,
+          totalCardCents: 200,
+          totalPixCents: 300,
+        }),
       })
-      await expect(service.get('t1', 'cs1')).resolves.toMatchObject({ totals: { CASH: 100, CARD: 200, PIX: 300 }, totalCents: 600 })
+      await expect(service.get('t1', 'cs1')).resolves.toMatchObject({
+        totals: { CASH: 100, CARD: 200, PIX: 300 },
+        totalCents: 600,
+      })
     })
   })
 
@@ -133,13 +163,20 @@ describe('CashSessionService', () => {
             totalCents: 8340,
             soldAt: new Date('2026-09-12T16:42:00Z'),
             operator: { name: 'Karol' },
-            items: [{ id: 'i1', saleId: 's1', productId: 'p1', productName: 'Arroz 5kg', quantity: 2, unitPriceCents: 2890 }],
+            items: [
+              { id: 'i1', saleId: 's1', productId: 'p1', productName: 'Arroz 5kg', quantity: 2, unitPriceCents: 2890 },
+            ],
           },
         ]),
       })
       const sales = await service.listSales('t1', 'cs1')
       expect(sales[0]).toMatchObject({ operatorName: 'Karol', paymentMethod: 'PIX', totalCents: 8340 })
-      expect(sales[0]?.items[0]).toEqual({ productId: 'p1', productName: 'Arroz 5kg', quantity: 2, unitPriceCents: 2890 })
+      expect(sales[0]?.items[0]).toEqual({
+        productId: 'p1',
+        productName: 'Arroz 5kg',
+        quantity: 2,
+        unitPriceCents: 2890,
+      })
     })
 
     it('throws 404 for a session of another tenant', async () => {

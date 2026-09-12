@@ -12,7 +12,13 @@ import {
 } from '@nestjs/swagger'
 import { Throttle } from '@nestjs/throttler'
 import type { CookieOptions, Response } from 'express'
-import { currentSessionSchema, loginInputSchema, loginOperatorSchema, type CurrentSession, type LoginOperator } from '@pdv/shared'
+import {
+  currentSessionSchema,
+  loginInputSchema,
+  loginOperatorSchema,
+  type CurrentSession,
+  type LoginOperator,
+} from '@pdv/shared'
 import { z } from 'zod'
 import { CurrentOperator } from '../../common/decorators/current-operator.decorator'
 import { CurrentTenant } from '../../common/decorators/current-tenant.decorator'
@@ -44,7 +50,10 @@ export class AuthController {
 
   @Public()
   @Get('operators')
-  @ApiOkResponse({ schema: openApi(z.array(loginOperatorSchema)), description: 'Operadores ativos da loja, para a tela de Login' })
+  @ApiOkResponse({
+    schema: openApi(z.array(loginOperatorSchema)),
+    description: 'Operadores ativos da loja, para a tela de Login',
+  })
   listOperators(@CurrentTenant() tenantId: string): Promise<LoginOperator[]> {
     return this.auth.listOperators(tenantId)
   }
@@ -56,7 +65,10 @@ export class AuthController {
   @ApiBody({ schema: openApi(loginInputSchema) })
   @ApiOkResponse({ schema: openApi(currentSessionSchema), description: 'Sessão criada; cookie pdv_session setado' })
   @ApiBadRequestResponse({ schema: apiErrorOpenApi, description: 'VALIDATION — details.fieldErrors por campo' })
-  @ApiUnauthorizedResponse({ schema: apiErrorOpenApi, description: 'INVALID_CREDENTIALS — mesma resposta para qualquer causa' })
+  @ApiUnauthorizedResponse({
+    schema: apiErrorOpenApi,
+    description: 'INVALID_CREDENTIALS — mesma resposta para qualquer causa',
+  })
   @ApiTooManyRequestsResponse({ schema: apiErrorOpenApi, description: 'TOO_MANY_ATTEMPTS — 5 falhas em 60s' })
   async login(
     @CurrentTenant() tenantId: string,

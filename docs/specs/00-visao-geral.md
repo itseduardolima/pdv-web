@@ -49,10 +49,10 @@ código. Ver [07-multitenant-whitelabel](./07-multitenant-whitelabel.md) e
 
 ## Glossário
 
-| Termo | Significado |
-|---|---|
-| Tenant | Um mercado cliente do sistema (dados isolados, tema próprio) |
-| Operador | Funcionário que usa o caixa (login por PIN) |
+| Termo         | Significado                                                            |
+| ------------- | ---------------------------------------------------------------------- |
+| Tenant        | Um mercado cliente do sistema (dados isolados, tema próprio)           |
+| Operador      | Funcionário que usa o caixa (login por PIN)                            |
 | Administrador | Papel com permissão de CRUD de operadores, produtos, revogar/criar PIN |
-| Caixa | Sessão de operação de um período (abertura → vendas → fechamento) |
-| Fechamento | Encerramento da sessão de caixa, com totais por forma de pagamento |
+| Caixa         | Sessão de operação de um período (abertura → vendas → fechamento)      |
+| Fechamento    | Encerramento da sessão de caixa, com totais por forma de pagamento     |

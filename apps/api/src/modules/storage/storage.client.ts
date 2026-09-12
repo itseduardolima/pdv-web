@@ -32,7 +32,9 @@ export class StorageClient implements OnModuleInit {
 
   constructor(config: ConfigService) {
     this.bucket = config.get<string>('STORAGE_BUCKET', 'pdv-media')
-    this.publicBaseUrl = config.get<string>('STORAGE_PUBLIC_URL', `http://localhost:9000/${this.bucket}`).replace(/\/$/, '')
+    this.publicBaseUrl = config
+      .get<string>('STORAGE_PUBLIC_URL', `http://localhost:9000/${this.bucket}`)
+      .replace(/\/$/, '')
     this.s3 = new S3Client({
       endpoint: config.get<string>('STORAGE_ENDPOINT', 'http://localhost:9000'),
       region: config.get<string>('STORAGE_REGION', 'us-east-1'),
@@ -54,18 +56,30 @@ export class StorageClient implements OnModuleInit {
     }
     const policy = {
       Version: '2012-10-17',
-      Statement: [{ Effect: 'Allow', Principal: { AWS: ['*'] }, Action: ['s3:GetObject'], Resource: [`arn:aws:s3:::${this.bucket}/*`] }],
+      Statement: [
+        {
+          Effect: 'Allow',
+          Principal: { AWS: ['*'] },
+          Action: ['s3:GetObject'],
+          Resource: [`arn:aws:s3:::${this.bucket}/*`],
+        },
+      ],
     }
-    await this.s3.send(new PutBucketPolicyCommand({ Bucket: this.bucket, Policy: JSON.stringify(policy) })).catch((error: unknown) => {
-      this.logger.warn(`Could not set public-read policy on "${this.bucket}": ${String(error)}`)
-    })
+    await this.s3
+      .send(new PutBucketPolicyCommand({ Bucket: this.bucket, Policy: JSON.stringify(policy) }))
+      .catch((error: unknown) => {
+        this.logger.warn(`Could not set public-read policy on "${this.bucket}": ${String(error)}`)
+      })
   }
 
   presignPost(key: string, contentType: string, maxBytes: number, expiresInSeconds: number): Promise<PresignedPost> {
     return createPresignedPost(this.s3, {
       Bucket: this.bucket,
       Key: key,
-      Conditions: [['content-length-range', 1, maxBytes], ['eq', '$Content-Type', contentType]],
+      Conditions: [
+        ['content-length-range', 1, maxBytes],
+        ['eq', '$Content-Type', contentType],
+      ],
       Fields: { 'Content-Type': contentType },
       Expires: expiresInSeconds,
     })
@@ -81,7 +95,9 @@ export class StorageClient implements OnModuleInit {
   }
 
   async readLeadingBytes(key: string, length: number): Promise<Uint8Array> {
-    const result = await this.s3.send(new GetObjectCommand({ Bucket: this.bucket, Key: key, Range: `bytes=0-${length - 1}` }))
+    const result = await this.s3.send(
+      new GetObjectCommand({ Bucket: this.bucket, Key: key, Range: `bytes=0-${length - 1}` }),
+    )
     const bytes = await result.Body?.transformToByteArray()
     return bytes ?? new Uint8Array()
   }

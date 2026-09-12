@@ -16,7 +16,12 @@ export function InlineAlert({ variant = 'danger', children, onDismiss }: InlineA
       <AlertIcon aria-hidden width="20" height="20" className="mt-0.5 shrink-0" />
       <p className="flex-1 font-body text-sm font-medium">{children}</p>
       {onDismiss && (
-        <button type="button" onClick={onDismiss} aria-label="Fechar aviso" className="shrink-0 font-body text-sm font-bold">
+        <button
+          type="button"
+          onClick={onDismiss}
+          aria-label="Fechar aviso"
+          className="shrink-0 font-body text-sm font-bold"
+        >
           ×
         </button>
       )}

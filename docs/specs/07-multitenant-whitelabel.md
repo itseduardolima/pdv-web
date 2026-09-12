@@ -84,15 +84,15 @@ docker compose exec \
   api node dist/seed/seed.js
 ```
 
-| Variável | Quando | Default | Uso |
-|---|---|---|---|
-| `SEED_TENANT_SLUG` | sempre (sem ela cria a loja `demo`) | `demo` | subdomínio `<slug>.APP_BASE_DOMAIN` |
-| `SEED_TENANT_NAME` | na criação | `Mercadinho Demo` | nome exibido no app e no título |
-| `SEED_TENANT_DOMAIN` | opcional | — | domínio próprio (CNAME do cliente) |
-| `SEED_TENANT_LOGO_URL` | opcional | — | logo (URL pública no MinIO) |
-| `SEED_PRIMARY_COLOR` / `SEED_ACCENT_COLOR` | opcional | `#e6e51e` / `#466cf3` | tema |
-| `SEED_PRIMARY_INK_COLOR` | opcional | calculado por contraste | texto sobre o primário |
-| `SEED_ADMIN_NAME` / `SEED_ADMIN_PIN` | só se ainda não houver admin | `Administrador` / `1234` | primeiro Administrador |
+| Variável                                   | Quando                              | Default                  | Uso                                 |
+| ------------------------------------------ | ----------------------------------- | ------------------------ | ----------------------------------- |
+| `SEED_TENANT_SLUG`                         | sempre (sem ela cria a loja `demo`) | `demo`                   | subdomínio `<slug>.APP_BASE_DOMAIN` |
+| `SEED_TENANT_NAME`                         | na criação                          | `Mercadinho Demo`        | nome exibido no app e no título     |
+| `SEED_TENANT_DOMAIN`                       | opcional                            | —                        | domínio próprio (CNAME do cliente)  |
+| `SEED_TENANT_LOGO_URL`                     | opcional                            | —                        | logo (URL pública no MinIO)         |
+| `SEED_PRIMARY_COLOR` / `SEED_ACCENT_COLOR` | opcional                            | `#e6e51e` / `#466cf3`    | tema                                |
+| `SEED_PRIMARY_INK_COLOR`                   | opcional                            | calculado por contraste  | texto sobre o primário              |
+| `SEED_ADMIN_NAME` / `SEED_ADMIN_PIN`       | só se ainda não houver admin        | `Administrador` / `1234` | primeiro Administrador              |
 
 Depois do seed, o cliente acessa `https://<slug>.app.seudominio.com.br`
 (o wildcard já está no `Caddyfile`) e loga com o PIN informado; a primeira

@@ -210,25 +210,25 @@ reusada agora".
   Vocabulário de domínio traduzido de forma fixa (usar sempre estes termos,
   nunca sinônimos):
 
-  | Negócio (PT) | Código (EN) |
-  |---|---|
-  | Operador | `Operator` |
-  | Administrador / papel | `OperatorRole` = `ADMIN` \| `OPERATOR` |
-  | Produto | `Product` |
-  | Caixa (sessão) | `CashSession` |
-  | Abertura / fechamento de caixa | `openCashSession` / `closeCashSession` |
-  | Venda | `Sale` |
-  | Item de venda | `SaleItem` |
-  | Forma de pagamento | `PaymentMethod` = `CASH` \| `CARD` \| `PIX` |
-  | Estoque | `stock` |
-  | Código de barras | `barcode` |
-  | Loja (tenant) | `Tenant` |
+  | Negócio (PT)                   | Código (EN)                                 |
+  | ------------------------------ | ------------------------------------------- |
+  | Operador                       | `Operator`                                  |
+  | Administrador / papel          | `OperatorRole` = `ADMIN` \| `OPERATOR`      |
+  | Produto                        | `Product`                                   |
+  | Caixa (sessão)                 | `CashSession`                               |
+  | Abertura / fechamento de caixa | `openCashSession` / `closeCashSession`      |
+  | Venda                          | `Sale`                                      |
+  | Item de venda                  | `SaleItem`                                  |
+  | Forma de pagamento             | `PaymentMethod` = `CASH` \| `CARD` \| `PIX` |
+  | Estoque                        | `stock`                                     |
+  | Código de barras               | `barcode`                                   |
+  | Loja (tenant)                  | `Tenant`                                    |
 
 - **Texto exibido ao usuário em português** (mensagens de erro da API,
   rótulos, títulos de tela) — é copy, não código.
-- **Comentários: poucos, e em português.** Só quando o *porquê* não é óbvio
+- **Comentários: poucos, e em português.** Só quando o _porquê_ não é óbvio
   (uma invariante, um workaround, uma restrição escondida). Nunca comentar
-  o *quê* — o nome do identificador já diz isso.
+  o _quê_ — o nome do identificador já diz isso.
 - Documentação (`docs/`, `CLAUDE.md`, READMEs) em português.
 
 ## Nomenclatura
@@ -285,7 +285,7 @@ negócio; não existe uma segunda implementação da regra no cliente, nem
 - Erro de regra de negócio (`CASH_SESSION_ALREADY_OPEN`, `INSUFFICIENT_STOCK`,
   `LAST_ADMIN`, etc.) chega com `message` já em português, pronta pra
   mostrar — o frontend não interpreta o `code` para gerar seu próprio texto,
-  só decide *onde* mostrar a mensagem (`InlineAlert`, ver
+  só decide _onde_ mostrar a mensagem (`InlineAlert`, ver
   `apps/web/docs/DESIGN_SYSTEM.md` § Validação e feedback).
 - Feedback "em tempo real" (antes do submit) não existe como validação
   paralela do cliente — se um dia for necessário, é uma chamada real à API
@@ -295,7 +295,7 @@ negócio; não existe uma segunda implementação da regra no cliente, nem
 
 - Conventional Commits, **em inglês**: `type(scope): short description` —
   `feat(api): add product CRUD endpoints`, `fix(web): correct change
-  calculation`, `refactor(api): extract ProductRepository`.
+calculation`, `refactor(api): extract ProductRepository`.
 - Escopo é o app ou módulo afetado (`api`, `web`, `shared`, `api/sale`) —
   opcional quando afeta o repo como um todo (`docs:`, `chore:`).
 - Tipos: `feat`, `fix`, `refactor`, `style`, `test`, `docs`, `chore`, `ci`.

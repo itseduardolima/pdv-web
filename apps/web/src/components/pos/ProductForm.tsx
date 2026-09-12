@@ -49,7 +49,12 @@ export function ProductForm({
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-1 flex-col gap-4 md:flex-row md:gap-5">
       <aside className="flex flex-col gap-3.5 rounded-card bg-surface p-4 md:w-[260px] md:shrink-0 md:p-[22px]">
-        <PhotoUploadBox value={photoUrl} onChange={onPhotoChange} uploading={photoUploading} error={photoError ?? errors.photoUrl?.message} />
+        <PhotoUploadBox
+          value={photoUrl}
+          onChange={onPhotoChange}
+          uploading={photoUploading}
+          error={photoError ?? errors.photoUrl?.message}
+        />
         <Input label="Código de barras" inputMode="numeric" error={errors.barcode?.message} {...register('barcode')} />
       </aside>
 
@@ -57,7 +62,13 @@ export function ProductForm({
         <Input label="Nome do produto" autoComplete="off" error={errors.name?.message} {...register('name')} />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Input label="Categoria" list={categoriesListId} autoComplete="off" error={errors.category?.message} {...register('category')} />
+          <Input
+            label="Categoria"
+            list={categoriesListId}
+            autoComplete="off"
+            error={errors.category?.message}
+            {...register('category')}
+          />
           <datalist id={categoriesListId}>
             {categories.map((category) => (
               <option key={category} value={category} />
@@ -67,8 +78,22 @@ export function ProductForm({
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Input label="Preço de venda" leading="R$" inputMode="decimal" placeholder="0,00" error={errors.salePrice?.message} {...register('salePrice')} />
-          <Input label="Preço de custo" leading="R$" inputMode="decimal" placeholder="0,00" error={errors.costPrice?.message} {...register('costPrice')} />
+          <Input
+            label="Preço de venda"
+            leading="R$"
+            inputMode="decimal"
+            placeholder="0,00"
+            error={errors.salePrice?.message}
+            {...register('salePrice')}
+          />
+          <Input
+            label="Preço de custo"
+            leading="R$"
+            inputMode="decimal"
+            placeholder="0,00"
+            error={errors.costPrice?.message}
+            {...register('costPrice')}
+          />
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -76,10 +101,20 @@ export function ProductForm({
             control={control}
             name="stockQuantity"
             render={({ field }) => (
-              <NumberStepper label="Estoque atual" value={field.value} onChange={field.onChange} error={errors.stockQuantity?.message} />
+              <NumberStepper
+                label="Estoque atual"
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.stockQuantity?.message}
+              />
             )}
           />
-          <Input label="Estoque mínimo" inputMode="numeric" error={errors.minStock?.message} {...register('minStock')} />
+          <Input
+            label="Estoque mínimo"
+            inputMode="numeric"
+            error={errors.minStock?.message}
+            {...register('minStock')}
+          />
         </div>
 
         {errorMessage && <InlineAlert onDismiss={onDismissError}>{errorMessage}</InlineAlert>}

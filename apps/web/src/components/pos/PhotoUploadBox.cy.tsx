@@ -5,7 +5,10 @@ describe('PhotoUploadBox', () => {
     const onChange = cy.stub().as('onChange')
     cy.mount(<PhotoUploadBox value={null} onChange={onChange} />)
     cy.contains('Adicionar foto')
-    cy.get('[data-cy=photo-input]').selectFile({ contents: Cypress.Buffer.from('x'), fileName: 'foto.png', mimeType: 'image/png' }, { force: true })
+    cy.get('[data-cy=photo-input]').selectFile(
+      { contents: Cypress.Buffer.from('x'), fileName: 'foto.png', mimeType: 'image/png' },
+      { force: true },
+    )
     cy.get('@onChange').should('have.been.calledOnce')
   })
 

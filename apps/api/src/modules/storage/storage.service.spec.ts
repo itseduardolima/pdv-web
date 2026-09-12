@@ -8,7 +8,9 @@ const SCRIPT = new Uint8Array(Buffer.from('<script>alert'))
 
 function makeService(overrides: Partial<Record<keyof StorageClient, jest.Mock>> = {}) {
   const client = {
-    presignPost: jest.fn().mockResolvedValue({ url: 'http://minio/pdv-media', fields: { key: 'x', 'Content-Type': 'image/png' } }),
+    presignPost: jest
+      .fn()
+      .mockResolvedValue({ url: 'http://minio/pdv-media', fields: { key: 'x', 'Content-Type': 'image/png' } }),
     head: jest.fn().mockResolvedValue({ sizeBytes: 1000, contentType: 'image/png' }),
     readLeadingBytes: jest.fn().mockResolvedValue(PNG),
     delete: jest.fn().mockResolvedValue(undefined),
@@ -75,7 +77,9 @@ describe('StorageService', () => {
     })
 
     it('deletes the object when it exceeds the size limit', async () => {
-      const { service, client } = makeService({ head: jest.fn().mockResolvedValue({ sizeBytes: 6 * 1024 * 1024, contentType: 'image/png' }) })
+      const { service, client } = makeService({
+        head: jest.fn().mockResolvedValue({ sizeBytes: 6 * 1024 * 1024, contentType: 'image/png' }),
+      })
       await expect(service.confirmUpload('t1', key)).rejects.toMatchObject({ code: 'INVALID_UPLOAD' })
       expect(client.delete).toHaveBeenCalledWith(key)
     })

@@ -29,7 +29,10 @@ export class ProductController {
   constructor(private readonly products: ProductService) {}
 
   @Get()
-  @ApiOkResponse({ schema: openApi(z.array(productSchema)), description: 'Produtos ativos da loja (query: search, category)' })
+  @ApiOkResponse({
+    schema: openApi(z.array(productSchema)),
+    description: 'Produtos ativos da loja (query: search, category)',
+  })
   list(@CurrentTenant() tenantId: string, @Query() query: ProductListQueryDto): Promise<Product[]> {
     return this.products.list(tenantId, query)
   }

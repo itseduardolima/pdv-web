@@ -36,14 +36,19 @@ export function ProductCard({ product, editHref }: ProductCardProps) {
       </div>
 
       <div className="min-w-0 flex-1">
-        <h3 className="truncate font-heading text-sm font-bold tracking-tight md:whitespace-normal md:text-base">{product.name}</h3>
+        <h3 className="truncate font-heading text-sm font-bold tracking-tight md:whitespace-normal md:text-base">
+          {product.name}
+        </h3>
         <p className="font-body text-[11px] text-ink/45 md:text-xs">{product.barcode ?? product.category}</p>
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-1 md:mt-auto md:flex-row md:items-center md:justify-between">
         <span className="font-heading text-[15px] font-bold md:text-lg">{formatCurrency(product.salePriceCents)}</span>
         {low ? (
-          <span data-cy="stock-low" className="rounded-pill bg-danger px-3 py-1 font-body text-[11px] font-semibold text-surface">
+          <span
+            data-cy="stock-low"
+            className="rounded-pill bg-danger px-3 py-1 font-body text-[11px] font-semibold text-surface"
+          >
             <span className="hidden md:inline">Estoque baixo · </span>
             {stockLabel}
           </span>
@@ -56,7 +61,11 @@ export function ProductCard({ product, editHref }: ProductCardProps) {
       </div>
 
       {editHref && (
-        <Link href={editHref} aria-label={`Editar ${product.name}`} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-canvas md:hidden">
+        <Link
+          href={editHref}
+          aria-label={`Editar ${product.name}`}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-canvas md:hidden"
+        >
           <EditIcon aria-hidden />
         </Link>
       )}

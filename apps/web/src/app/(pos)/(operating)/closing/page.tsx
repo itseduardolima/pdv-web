@@ -22,8 +22,16 @@ export default function ClosingPage() {
     <>
       <PageHeader
         title="Fechamento de Caixa"
-        subtitle={openedAt ? `${formatDayLong(openedAt)} · Caixa aberto desde ${formatTime(openedAt)}` : 'Carregando...'}
-        actions={session && <span className="rounded-pill bg-ink px-4 py-1.5 font-body text-[13px] font-medium text-surface">Caixa #{session.sequence}</span>}
+        subtitle={
+          openedAt ? `${formatDayLong(openedAt)} · Caixa aberto desde ${formatTime(openedAt)}` : 'Carregando...'
+        }
+        actions={
+          session && (
+            <span className="rounded-pill bg-ink px-4 py-1.5 font-body text-[13px] font-medium text-surface">
+              Caixa #{session.sequence}
+            </span>
+          )
+        }
       />
 
       {page.errorMessage && <InlineAlert onDismiss={page.dismissError}>{page.errorMessage}</InlineAlert>}
@@ -32,10 +40,15 @@ export default function ClosingPage() {
         <>
           <div className="flex flex-col gap-3 md:flex-row md:gap-[18px]">
             <div className="relative flex flex-1 flex-col justify-between gap-3 overflow-hidden rounded-card bg-ink p-5 text-surface md:p-6">
-              <span aria-hidden className="pointer-events-none absolute -bottom-24 -right-20 h-64 w-64 rounded-pill bg-primary/20 blur-2xl" />
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -bottom-24 -right-20 h-64 w-64 rounded-pill bg-primary/20 blur-2xl"
+              />
               <div className="relative">
                 <p className="font-body text-[13px] font-medium text-surface/55">Total do caixa</p>
-                <p className="mt-1 font-heading text-[34px] font-bold tracking-tight md:text-[46px]">{formatCurrency(session.totalCents)}</p>
+                <p className="mt-1 font-heading text-[34px] font-bold tracking-tight md:text-[46px]">
+                  {formatCurrency(session.totalCents)}
+                </p>
               </div>
               <div className="relative flex flex-wrap items-center gap-2.5">
                 <span className="rounded-pill bg-primary px-3.5 py-1.5 font-body text-xs font-semibold text-primary-ink">
@@ -79,7 +92,12 @@ export default function ClosingPage() {
           </section>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:gap-2.5">
-            <Button onClick={page.handleClose} state={page.closeState} successLabel="Caixa fechado" className="sm:flex-[2]">
+            <Button
+              onClick={page.handleClose}
+              state={page.closeState}
+              successLabel="Caixa fechado"
+              className="sm:flex-[2]"
+            >
               Confirmar Fechamento
             </Button>
             <Button variant="secondary" href="/products" className="sm:flex-1">

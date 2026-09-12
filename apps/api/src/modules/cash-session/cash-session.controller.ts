@@ -34,7 +34,10 @@ export class CashSessionController {
   constructor(private readonly sessions: CashSessionService) {}
 
   @Get('current')
-  @ApiOkResponse({ schema: openApi(currentCashSessionSchema), description: 'Caixa aberto com totais ao vivo, ou { session: null }' })
+  @ApiOkResponse({
+    schema: openApi(currentCashSessionSchema),
+    description: 'Caixa aberto com totais ao vivo, ou { session: null }',
+  })
   async getCurrent(@CurrentTenant() tenantId: string): Promise<CurrentCashSession> {
     return { session: await this.sessions.getCurrent(tenantId) }
   }
@@ -61,7 +64,10 @@ export class CashSessionController {
 
   @Post(':id/close')
   @HttpCode(200)
-  @ApiOkResponse({ schema: openApi(cashSessionSummarySchema), description: 'Sessão fechada com totais por forma de pagamento' })
+  @ApiOkResponse({
+    schema: openApi(cashSessionSummarySchema),
+    description: 'Sessão fechada com totais por forma de pagamento',
+  })
   @ApiNotFoundResponse({ schema: apiErrorOpenApi, description: 'CASH_SESSION_NOT_FOUND' })
   @ApiConflictResponse({ schema: apiErrorOpenApi, description: 'CASH_SESSION_ALREADY_CLOSED' })
   @ApiForbiddenResponse({ schema: apiErrorOpenApi, description: 'NOT_CASH_SESSION_OWNER' })
@@ -74,7 +80,10 @@ export class CashSessionController {
   }
 
   @Get(':id/sales')
-  @ApiOkResponse({ schema: openApi(z.array(saleSchema)), description: 'Histórico de vendas da sessão (mais recente primeiro)' })
+  @ApiOkResponse({
+    schema: openApi(z.array(saleSchema)),
+    description: 'Histórico de vendas da sessão (mais recente primeiro)',
+  })
   @ApiNotFoundResponse({ schema: apiErrorOpenApi, description: 'CASH_SESSION_NOT_FOUND' })
   listSales(@CurrentTenant() tenantId: string, @Param('id') id: string): Promise<Sale[]> {
     return this.sessions.listSales(tenantId, id)

@@ -9,9 +9,12 @@ export function useSaveState(isPending: boolean) {
   const [saved, setSaved] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => () => {
-    if (timer.current) clearTimeout(timer.current)
-  }, [])
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current)
+    },
+    [],
+  )
 
   const markSaved = useCallback((then: () => void) => {
     setSaved(true)

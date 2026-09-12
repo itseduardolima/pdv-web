@@ -5,7 +5,15 @@ import { CreateProductDto } from './dto/create-product.dto'
 describe('ProductController DTO validation', () => {
   const pipe = new ZodValidationPipe()
   const metadata: ArgumentMetadata = { type: 'body', metatype: CreateProductDto }
-  const valid = { name: 'Arroz', category: 'Estiva', unit: 'UN', salePriceCents: 100, costPriceCents: 50, stockQuantity: 1, minStock: 0 }
+  const valid = {
+    name: 'Arroz',
+    category: 'Estiva',
+    unit: 'UN',
+    salePriceCents: 100,
+    costPriceCents: 50,
+    stockQuantity: 1,
+    minStock: 0,
+  }
 
   function fieldErrors(payload: unknown): Record<string, string[] | undefined> {
     try {

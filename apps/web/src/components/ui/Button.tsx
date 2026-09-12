@@ -15,7 +15,8 @@ const sizeClass: Record<Size, string> = {
   md: 'px-8 py-4 text-base',
   sm: 'px-6 py-3 text-sm',
 }
-const baseClass = 'inline-flex items-center justify-center gap-2 rounded-pill font-body font-medium transition-[opacity,transform] disabled:opacity-60'
+const baseClass =
+  'inline-flex items-center justify-center gap-2 rounded-pill font-body font-medium transition-[opacity,transform] disabled:opacity-60'
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant

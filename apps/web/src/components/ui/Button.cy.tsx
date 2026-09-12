@@ -7,7 +7,11 @@ describe('Button', () => {
   })
 
   it('shows the success label with a check instead of the children', () => {
-    cy.mount(<Button state="success" successLabel="Salvo">Salvar</Button>)
+    cy.mount(
+      <Button state="success" successLabel="Salvo">
+        Salvar
+      </Button>,
+    )
     cy.get('button').should('contain', 'Salvo').and('not.contain', 'Salvar').find('svg').should('exist')
   })
 

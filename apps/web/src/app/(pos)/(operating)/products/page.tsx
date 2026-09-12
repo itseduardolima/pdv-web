@@ -39,7 +39,11 @@ export default function ProductsPage() {
 
       <div className="flex flex-col gap-2.5 md:grid md:grid-cols-2 md:gap-4 xl:grid-cols-3">
         {page.products.map((product) => (
-          <ProductCard key={product.id} product={product} editHref={page.canManage ? `/products/${product.id}/edit` : undefined} />
+          <ProductCard
+            key={product.id}
+            product={product}
+            editHref={page.canManage ? `/products/${product.id}/edit` : undefined}
+          />
         ))}
       </div>
 

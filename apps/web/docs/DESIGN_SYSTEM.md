@@ -13,7 +13,7 @@ de um card específico).
 
 Este documento traduz esse design system em tokens de código (CSS
 variables + Tailwind) e define como eles são consumidos pelos componentes.
-Contexto de produto sobre *por que* o tema precisa trocar por tenant está em
+Contexto de produto sobre _por que_ o tema precisa trocar por tenant está em
 [`../../docs/specs/06-design-system-temas.md`](../../docs/specs/06-design-system-temas.md)
 — aqui é o "como", concreto, dentro de `apps/web`.
 
@@ -33,33 +33,33 @@ primitivo (Aaply, fixo)  →  semântico (troca por tenant)  →  componente
 
 ### Cor
 
-| Token primitivo | Hex | Papel no Aaply |
-|---|---|---|
-| `--color-highlighter-yellow` | `#e6e51e` | Acento de marca primário |
-| `--color-sunbeam` | `#fff705` | Amarelo mais vibrante, destaques |
-| `--color-annotation-red` | `#f34646` | Callout/ênfase (perigo, excluir) |
-| `--color-signal-blue` | `#466cf3` | Acentos secundários, conectores |
-| `--color-peach-wash` | `#ff8562` | Fundos com tinta suave |
-| `--color-carbon` | `#000000` | Texto principal, UI escura |
-| `--color-paper-white` | `#ffffff` | Superfície de cards |
-| `--color-graphite-mist` | `#f2f2f2` | Fundo de página (canvas) |
-| `--color-hairline-gray` | `#e6e6e6` | Bordas, divisores |
-| `--color-shadow-gray` | `#cccccc` | Base da sombra (20% de opacidade) |
+| Token primitivo              | Hex       | Papel no Aaply                    |
+| ---------------------------- | --------- | --------------------------------- |
+| `--color-highlighter-yellow` | `#e6e51e` | Acento de marca primário          |
+| `--color-sunbeam`            | `#fff705` | Amarelo mais vibrante, destaques  |
+| `--color-annotation-red`     | `#f34646` | Callout/ênfase (perigo, excluir)  |
+| `--color-signal-blue`        | `#466cf3` | Acentos secundários, conectores   |
+| `--color-peach-wash`         | `#ff8562` | Fundos com tinta suave            |
+| `--color-carbon`             | `#000000` | Texto principal, UI escura        |
+| `--color-paper-white`        | `#ffffff` | Superfície de cards               |
+| `--color-graphite-mist`      | `#f2f2f2` | Fundo de página (canvas)          |
+| `--color-hairline-gray`      | `#e6e6e6` | Bordas, divisores                 |
+| `--color-shadow-gray`        | `#cccccc` | Base da sombra (20% de opacidade) |
 
 ### Tipografia
 
 - **Display/Headings**: Poppins (400, 500, 700) — fallback DM Sans, Nunito Sans
 - **Body/UI**: Inter (300, 400, 500, 700) — fallback system-ui, -apple-system, Segoe UI
 
-| Papel | Tamanho | Peso | Line-height | Letter-spacing | Uso no PDV |
-|---|---|---|---|---|---|
-| Display | 57px | 700 | 1.05 | -4.22px | Não usado (é escala de marketing/landing, não de UI de produto) |
-| Heading LG | 52px | 700 | 1.0 | -3.85px | Não usado no PDV |
-| Heading | 34px | 500 | 1.05 | -0.65px | `page-title` desktop (ex.: "Editar Produto") |
-| Heading SM | 27px | 500 | 1.33 | -0.49px | `page-title` tablet/celular |
-| Subheading | 18px | 400 | 1.4 | -0.5px | Subtítulo de tela (`page-sub`), nome em destaque |
-| Body | 16px | 400 | 1.53 | — | Texto de input, item de lista |
-| Caption | 14px | — | 1.57 | — | Labels de campo, texto auxiliar |
+| Papel      | Tamanho | Peso | Line-height | Letter-spacing | Uso no PDV                                                      |
+| ---------- | ------- | ---- | ----------- | -------------- | --------------------------------------------------------------- |
+| Display    | 57px    | 700  | 1.05        | -4.22px        | Não usado (é escala de marketing/landing, não de UI de produto) |
+| Heading LG | 52px    | 700  | 1.0         | -3.85px        | Não usado no PDV                                                |
+| Heading    | 34px    | 500  | 1.05        | -0.65px        | `page-title` desktop (ex.: "Editar Produto")                    |
+| Heading SM | 27px    | 500  | 1.33        | -0.49px        | `page-title` tablet/celular                                     |
+| Subheading | 18px    | 400  | 1.4         | -0.5px         | Subtítulo de tela (`page-sub`), nome em destaque                |
+| Body       | 16px    | 400  | 1.53        | —              | Texto de input, item de lista                                   |
+| Caption    | 14px    | —    | 1.57        | —              | Labels de campo, texto auxiliar                                 |
 
 Nota: a escala do Aaply é pensada para landing/marketing (por isso "Display"
 e "Heading LG" não aparecem em nenhuma tela do PDV — são grandes demais para
@@ -79,14 +79,14 @@ Body/Caption para o resto — ver mapeamento de componentes abaixo.
 
 ### Raio (border-radius)
 
-| Elemento | Valor |
-|---|---|
-| Botões | `3000px` (= pílula, `999px` na prática de CSS) |
-| Tags | `3000px` |
-| Navegação (sidebar/bottom-nav) | `30px` |
-| Cards | `30–40px` |
-| Inputs | `16px` |
-| Frame de produto/imagem | `16px` |
+| Elemento                       | Valor                                          |
+| ------------------------------ | ---------------------------------------------- |
+| Botões                         | `3000px` (= pílula, `999px` na prática de CSS) |
+| Tags                           | `3000px`                                       |
+| Navegação (sidebar/bottom-nav) | `30px`                                         |
+| Cards                          | `30–40px`                                      |
+| Inputs                         | `16px`                                         |
+| Frame de produto/imagem        | `16px`                                         |
 
 ### Sombra
 
@@ -107,7 +107,7 @@ no layout raiz, resolvido a partir do tenant — ver
 :root {
   /* cor — semântico → primitivo Aaply */
   --color-primary: var(--color-highlighter-yellow);
-  --color-primary-ink: var(--color-carbon);      /* texto sobre o primário */
+  --color-primary-ink: var(--color-carbon); /* texto sobre o primário */
   --color-ink: var(--color-carbon);
   --color-canvas: var(--color-graphite-mist);
   --color-surface: var(--color-paper-white);
@@ -118,7 +118,7 @@ no layout raiz, resolvido a partir do tenant — ver
 
   /* raio */
   --radius-pill: 999px;
-  --radius-card: 32px;      /* 30–40px do Aaply, 32px é o ponto médio usado */
+  --radius-card: 32px; /* 30–40px do Aaply, 32px é o ponto médio usado */
   --radius-card-sm: 20px;
   --radius-input: 16px;
   --radius-frame: 16px;
@@ -209,14 +209,14 @@ resolve é que muda em runtime.
 
 ## Mapeamento de componente (do Aaply para o que existe no PDV)
 
-| Componente Aaply | Componente no código | Onde |
-|---|---|---|
-| Filled Yellow Pill Button | `<Button variant="primary">` | `components/ui/Button.tsx` — bg `primary`, texto `primary-ink`, `rounded-pill`, padding `16px 32px`, Inter 500 16px |
-| Filled Black Pill Button | `<Button variant="secondary">` | bg `ink`, texto `surface` |
-| Ghost Pill Button | `<Button variant="ghost">` | transparente, borda 1px `ink`, texto `ink`, Inter 500 15px, padding `12px 24px` |
-| Navigation Bar Card | `AppShell` → `Sidebar` / `BottomNav` | única aplicação de `shadow-nav`, `rounded-nav` |
-| Annotation Tag | não usado como "tag" — usado como `<Button variant="danger">`/badge de ação destrutiva | cor `danger` |
-| Avatar Stack | `Avatar` (uso individual, não stack, no PDV) | `components/ui/Avatar.tsx` |
+| Componente Aaply          | Componente no código                                                                   | Onde                                                                                                                |
+| ------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Filled Yellow Pill Button | `<Button variant="primary">`                                                           | `components/ui/Button.tsx` — bg `primary`, texto `primary-ink`, `rounded-pill`, padding `16px 32px`, Inter 500 16px |
+| Filled Black Pill Button  | `<Button variant="secondary">`                                                         | bg `ink`, texto `surface`                                                                                           |
+| Ghost Pill Button         | `<Button variant="ghost">`                                                             | transparente, borda 1px `ink`, texto `ink`, Inter 500 15px, padding `12px 24px`                                     |
+| Navigation Bar Card       | `AppShell` → `Sidebar` / `BottomNav`                                                   | única aplicação de `shadow-nav`, `rounded-nav`                                                                      |
+| Annotation Tag            | não usado como "tag" — usado como `<Button variant="danger">`/badge de ação destrutiva | cor `danger`                                                                                                        |
+| Avatar Stack              | `Avatar` (uso individual, não stack, no PDV)                                           | `components/ui/Avatar.tsx`                                                                                          |
 
 Regra dura de pareamento (do próprio Aaply, "Don'ts"): **botão amarelo e
 botão preto sempre em par** (ex.: "Salvar" amarelo + "Cancelar" preto) —
@@ -225,6 +225,7 @@ nunca dois amarelos ou dois pretos lado a lado no mesmo par de ação.
 ## Do's / Don'ts (herdados do Aaply, aplicados ao PDV)
 
 **Fazer:**
+
 - Usar raio de pílula (`rounded-pill`) em todo elemento interativo (botão,
   toggle, chip).
 - Manter contraste máximo: texto `--color-ink` (preto) sobre superfícies
@@ -234,6 +235,7 @@ nunca dois amarelos ou dois pretos lado a lado no mesmo par de ação.
   ilustração.
 
 **Não fazer:**
+
 - Não empilhar sombras — `--shadow-nav` é a única sombra do sistema, e só em
   navegação.
 - Não introduzir cor fora da paleta de 5 acentos+neutros acima sem atualizar
@@ -250,7 +252,7 @@ ação — isso precisa existir na implementação real. Decisão de produto:
 **nunca usar toast** (notificação flutuante que aparece e desaparece por
 conta própria, alheia ao card com que o usuário está interagindo). Em vez
 disso, dois padrões, sempre ancorados ao componente que gerou a ação —
-o feedback aparece *onde o olho já está*, não num canto da tela que o
+o feedback aparece _onde o olho já está_, não num canto da tela que o
 Operador pode nem ver num tablet no meio de um atendimento.
 
 ### 1. Erro de campo (validação de formulário)

@@ -1,6 +1,21 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common'
-import { ApiBadRequestResponse, ApiBody, ApiCookieAuth, ApiCreatedResponse, ApiForbiddenResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger'
-import { confirmUploadSchema, confirmedUploadSchema, createUploadSchema, uploadTicketSchema, type ConfirmedUpload, type UploadTicket } from '@pdv/shared'
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiCookieAuth,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger'
+import {
+  confirmUploadSchema,
+  confirmedUploadSchema,
+  createUploadSchema,
+  uploadTicketSchema,
+  type ConfirmedUpload,
+  type UploadTicket,
+} from '@pdv/shared'
 import { CurrentTenant } from '../../common/decorators/current-tenant.decorator'
 import { Roles } from '../../common/decorators/roles.decorator'
 import { apiErrorOpenApi, openApi } from '../../common/openapi'
@@ -18,7 +33,10 @@ export class StorageController {
 
   @Post()
   @ApiBody({ schema: openApi(createUploadSchema) })
-  @ApiCreatedResponse({ schema: openApi(uploadTicketSchema), description: 'Presigned POST: enviar `fields` + `file` como multipart para `uploadUrl`' })
+  @ApiCreatedResponse({
+    schema: openApi(uploadTicketSchema),
+    description: 'Presigned POST: enviar `fields` + `file` como multipart para `uploadUrl`',
+  })
   @ApiBadRequestResponse({ schema: apiErrorOpenApi, description: 'VALIDATION (tipo/tamanho)' })
   @ApiForbiddenResponse({ schema: apiErrorOpenApi, description: 'ADMIN_ONLY' })
   create(@CurrentTenant() tenantId: string, @Body() body: CreateUploadDto): Promise<UploadTicket> {

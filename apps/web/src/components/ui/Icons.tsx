@@ -2,7 +2,13 @@ import type { SVGProps } from 'react'
 
 type IconProps = SVGProps<SVGSVGElement>
 
-const base = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeLinecap: 'round', strokeLinejoin: 'round' } as const
+const base = {
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+} as const
 
 export function SellIcon(props: IconProps) {
   return (
@@ -196,4 +202,3 @@ export function InfoIcon(props: IconProps) {
     </svg>
   )
 }
-

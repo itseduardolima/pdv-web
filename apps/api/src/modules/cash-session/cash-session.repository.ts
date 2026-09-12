@@ -41,7 +41,10 @@ export class CashSessionRepository {
     })
   }
 
-  async sumSalesByPaymentMethod(tenantId: string, cashSessionId: string): Promise<{ totals: PaymentTotals; count: number }> {
+  async sumSalesByPaymentMethod(
+    tenantId: string,
+    cashSessionId: string,
+  ): Promise<{ totals: PaymentTotals; count: number }> {
     const groups = await this.prisma.sale.groupBy({
       by: ['paymentMethod'],
       where: { tenantId, cashSessionId },

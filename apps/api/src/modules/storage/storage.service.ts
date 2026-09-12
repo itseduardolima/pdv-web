@@ -1,6 +1,12 @@
 import { randomUUID } from 'node:crypto'
 import { Injectable } from '@nestjs/common'
-import { UPLOAD_MAX_BYTES, type ConfirmedUpload, type CreateUploadInput, type UploadContentType, type UploadTicket } from '@pdv/shared'
+import {
+  UPLOAD_MAX_BYTES,
+  type ConfirmedUpload,
+  type CreateUploadInput,
+  type UploadContentType,
+  type UploadTicket,
+} from '@pdv/shared'
 import { DomainError } from '../../common/errors/domain.error'
 import { StorageClient } from './storage.client'
 

@@ -5,8 +5,7 @@ import { ConflictError, NotFoundError } from '../../common/errors/domain.error'
 import { ProductRepository } from './product.repository'
 
 const productNotFound = () => new NotFoundError('PRODUCT_NOT_FOUND', 'Produto não encontrado.')
-const barcodeInUse = () =>
-  new ConflictError('BARCODE_IN_USE', 'Já existe um produto com este código de barras.')
+const barcodeInUse = () => new ConflictError('BARCODE_IN_USE', 'Já existe um produto com este código de barras.')
 
 @Injectable()
 export class ProductService {

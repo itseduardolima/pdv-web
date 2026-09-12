@@ -32,7 +32,7 @@ existir), nunca código "pela metade" — é a mesma régua que já está em
 ## Por onde começar (recomendação)
 
 **Sprint 1 = Épico 1 (Multi-tenant) + Épico 2 (Autenticação).** Motivo: são
-a única coisa de que *todo o resto* depende — não existe tela de Produto,
+a única coisa de que _todo o resto_ depende — não existe tela de Produto,
 Caixa ou Venda sem um tenant resolvido e um operador autenticado. A
 fundação técnica (guards, `AsyncLocalStorage`, `DomainError`) já foi
 scaffolded justamente esperando por esses dois módulos; começar por eles é
@@ -41,8 +41,8 @@ completar o que já está pela metade, não abrir fronte nova.
 Segunda decisão importante: o **Épico 10 (Validação e Feedback)** não é uma
 sprint própria — os componentes `InlineAlert` e o mapeamento de erro de
 campo entram **na Sprint 2, junto com o primeiro formulário real
-(Produto)**. Construir esse padrão *antes* de existir um formulário para
-testá-lo é trabalho no vácuo; construir *depois* significa retrabalhar toda
+(Produto)**. Construir esse padrão _antes_ de existir um formulário para
+testá-lo é trabalho no vácuo; construir _depois_ significa retrabalhar toda
 tela já feita. Produto é o formulário mais simples do sistema (sem regra de
 "último admin", sem PIN) — é o lugar certo para validar o padrão de erro
 pela primeira vez, barato de errar e corrigir.
@@ -57,16 +57,16 @@ não a venda em si.
 
 **Objetivo:** um operador consegue logar com PIN numa loja específica.
 
-| HU | Descrição curta | Pts |
-|---|---|---|
-| 1.1 | Resolução de tenant por host | 5 |
-| 1.2 | `GET /tenant/current` + tema aplicado no `apps/web` | 3 |
-| 2.1 | Lista de operadores para Login | 2 |
-| 2.2 | Login por PIN (hash argon2, cookie de sessão) | 5 |
-| 2.3 | Rate-limit de tentativas de PIN | 3 |
-| 2.4 | Expiração de sessão (12h) | 2 |
-| 2.5 | Logout | 1 |
-| 0.x | CI (GitHub Actions: lint + typecheck + test em todo PR) | 3 |
+| HU  | Descrição curta                                         | Pts |
+| --- | ------------------------------------------------------- | --- |
+| 1.1 | Resolução de tenant por host                            | 5   |
+| 1.2 | `GET /tenant/current` + tema aplicado no `apps/web`     | 3   |
+| 2.1 | Lista de operadores para Login                          | 2   |
+| 2.2 | Login por PIN (hash argon2, cookie de sessão)           | 5   |
+| 2.3 | Rate-limit de tentativas de PIN                         | 3   |
+| 2.4 | Expiração de sessão (12h)                               | 2   |
+| 2.5 | Logout                                                  | 1   |
+| 0.x | CI (GitHub Actions: lint + typecheck + test em todo PR) | 3   |
 
 **Total: 24 pts.** Entrega: tela de Login funcional de ponta a ponta,
 sessão persistindo, CI protegendo a branch principal a partir daqui.
@@ -77,15 +77,15 @@ sessão persistindo, CI protegendo a branch principal a partir daqui.
 campo/regra de negócio (Épico 10) nasce aqui e vale para todo formulário
 seguinte.
 
-| HU | Descrição curta | Pts |
-|---|---|---|
-| 10.1 | Erro de campo mapeado da resposta da API | 3 |
-| 10.2 | `InlineAlert` para erro de regra de negócio | 3 |
-| 3.1 | Criar produto | 3 |
-| 3.2 | Listar produtos (busca) | 3 |
-| 3.3 | Editar produto | 2 |
-| 10.3 | Botão com estado loading/success | 2 |
-| 1.3 | Seed de novo tenant documentado | 2 |
+| HU   | Descrição curta                             | Pts |
+| ---- | ------------------------------------------- | --- |
+| 10.1 | Erro de campo mapeado da resposta da API    | 3   |
+| 10.2 | `InlineAlert` para erro de regra de negócio | 3   |
+| 3.1  | Criar produto                               | 3   |
+| 3.2  | Listar produtos (busca)                     | 3   |
+| 3.3  | Editar produto                              | 2   |
+| 10.3 | Botão com estado loading/success            | 2   |
+| 1.3  | Seed de novo tenant documentado             | 2   |
 
 **Total: 18 pts.** Entrega: CRUD de Produto completo (exceto foto — Sprint
 3), e o vocabulário de UI de erro/sucesso já reutilizável.
@@ -94,14 +94,14 @@ seguinte.
 
 **Objetivo:** operador abre e fecha caixa; produto ganha foto.
 
-| HU | Descrição curta | Pts |
-|---|---|---|
-| 4.1 | Abrir caixa | 3 |
-| 4.2 | Bloquear ações sem caixa aberto | 2 |
-| 4.3 | Fechar caixa com totais por forma de pagamento | 5 |
-| 4.4 | Histórico de vendas na tela de Fechamento (lista vazia por ora — Sale ainda não existe) | 3 |
-| 3.4 | Upload de foto do produto (MinIO) | 5 |
-| 3.5 | Excluir produto (soft-delete) | 2 |
+| HU  | Descrição curta                                                                         | Pts |
+| --- | --------------------------------------------------------------------------------------- | --- |
+| 4.1 | Abrir caixa                                                                             | 3   |
+| 4.2 | Bloquear ações sem caixa aberto                                                         | 2   |
+| 4.3 | Fechar caixa com totais por forma de pagamento                                          | 5   |
+| 4.4 | Histórico de vendas na tela de Fechamento (lista vazia por ora — Sale ainda não existe) | 3   |
+| 3.4 | Upload de foto do produto (MinIO)                                                       | 5   |
+| 3.5 | Excluir produto (soft-delete)                                                           | 2   |
 
 **Total: 20 pts.**
 
@@ -110,14 +110,14 @@ seguinte.
 **Objetivo:** venda completa, de ponta a ponta, online. **Este é o
 milestone "o sistema já vende de verdade".**
 
-| HU | Descrição curta | Pts |
-|---|---|---|
-| 5.1 | Montar carrinho | 3 |
-| 5.2 | Finalizar venda (Dinheiro/Cartão/Pix) | 5 |
-| 5.3 | Bloqueio de estoque insuficiente | 3 |
-| 5.4 | Tela de Venda Confirmada | 1 |
-| 5.5 | Cancelar carrinho | 1 |
-| 4.4 (retomada) | Histórico de vendas agora com dado real | — |
+| HU             | Descrição curta                         | Pts |
+| -------------- | --------------------------------------- | --- |
+| 5.1            | Montar carrinho                         | 3   |
+| 5.2            | Finalizar venda (Dinheiro/Cartão/Pix)   | 5   |
+| 5.3            | Bloqueio de estoque insuficiente        | 3   |
+| 5.4            | Tela de Venda Confirmada                | 1   |
+| 5.5            | Cancelar carrinho                       | 1   |
+| 4.4 (retomada) | Histórico de vendas agora com dado real | —   |
 
 **Total: 13 pts.** Entrega: fluxo completo Login → Abrir Caixa → Vender →
 Fechar Caixa funcionando contra a API real, sem nenhuma parte simulada.
@@ -128,12 +128,12 @@ Fechar Caixa funcionando contra a API real, sem nenhuma parte simulada.
 na VPS. Não é "polimento" — é o que transforma as 4 sprints anteriores em
 produto de fato usado.
 
-| HU | Descrição curta | Pts |
-|---|---|---|
-| 9.1 | `docker compose up` completo | 3 |
-| 9.2 | HTTPS automático (Caddy + Let's Encrypt) | 2 |
-| 1.4 | RLS no Postgres | 5 |
-| — | Testes E2E Cypress dos fluxos críticos (login → abrir caixa → vender → fechar caixa) | — (já coberto como DoD, formaliza aqui) |
+| HU  | Descrição curta                                                                      | Pts                                     |
+| --- | ------------------------------------------------------------------------------------ | --------------------------------------- |
+| 9.1 | `docker compose up` completo                                                         | 3                                       |
+| 9.2 | HTTPS automático (Caddy + Let's Encrypt)                                             | 2                                       |
+| 1.4 | RLS no Postgres                                                                      | 5                                       |
+| —   | Testes E2E Cypress dos fluxos críticos (login → abrir caixa → vender → fechar caixa) | — (já coberto como DoD, formaliza aqui) |
 
 **Total: 10 pts.** Ao fim desta sprint, o primeiro mercado real pode usar o
 sistema para vender — é aqui que o backlog para de ser "MVP em construção"
@@ -144,12 +144,12 @@ e passa a ser "produto em produção com um cliente".
 **Objetivo:** Administrador gerencia a equipe sem depender do seed, e
 acompanha o negócio pelo Dashboard.
 
-| HU | Descrição curta | Pts |
-|---|---|---|
-| 6.1–6.5 | CRUD de Operador + regra do último admin | 12 |
-| 6.6 | Upload de foto do Operador | 3 |
-| 6.7 | Excluir operador | 2 |
-| 7.1–7.3 | Dashboard (totais, mais vendidos, gráfico da semana) | 8 |
+| HU      | Descrição curta                                      | Pts |
+| ------- | ---------------------------------------------------- | --- |
+| 6.1–6.5 | CRUD de Operador + regra do último admin             | 12  |
+| 6.6     | Upload de foto do Operador                           | 3   |
+| 6.7     | Excluir operador                                     | 2   |
+| 7.1–7.3 | Dashboard (totais, mais vendidos, gráfico da semana) | 8   |
 
 **Total: 25 pts** (dividir em 2 sprints se 25 for grande demais pra 1
 semana — ver nota de recalibração abaixo).
@@ -160,13 +160,13 @@ semana — ver nota de recalibração abaixo).
 isso o produto ainda depende de uma condição que o mercado-alvo já provou
 não ter garantida.
 
-| HU | Descrição curta | Pts |
-|---|---|---|
-| 8.1 | Cache de catálogo offline | 5 |
-| 8.2 | Fila de vendas offline + sincronização idempotente | 8 |
-| 8.3 | PWA instalável com identidade do tenant | 3 |
-| 9.3 | Backup diário do banco | 2 |
-| 9.4 | Deploy automático via CI | 3 |
+| HU  | Descrição curta                                    | Pts |
+| --- | -------------------------------------------------- | --- |
+| 8.1 | Cache de catálogo offline                          | 5   |
+| 8.2 | Fila de vendas offline + sincronização idempotente | 8   |
+| 8.3 | PWA instalável com identidade do tenant            | 3   |
+| 9.3 | Backup diário do banco                             | 2   |
+| 9.4 | Deploy automático via CI                           | 3   |
 
 **Total: 21 pts.**
 

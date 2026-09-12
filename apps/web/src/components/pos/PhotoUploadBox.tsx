@@ -11,7 +11,13 @@ interface PhotoUploadBoxProps {
 }
 
 // Mesma caixa tracejada para Produto e Operador (05-componentizacao).
-export function PhotoUploadBox({ value, onChange, label = 'Adicionar foto', uploading = false, error }: PhotoUploadBoxProps) {
+export function PhotoUploadBox({
+  value,
+  onChange,
+  label = 'Adicionar foto',
+  uploading = false,
+  error,
+}: PhotoUploadBoxProps) {
   const inputId = useId()
   const errorId = `${inputId}-error`
   const inputRef = useRef<HTMLInputElement>(null)
@@ -36,7 +42,11 @@ export function PhotoUploadBox({ value, onChange, label = 'Adicionar foto', uplo
         )}
       </button>
       {value && !uploading && (
-        <button type="button" onClick={() => inputRef.current?.click()} className="self-center font-body text-xs font-medium text-accent">
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          className="self-center font-body text-xs font-medium text-accent"
+        >
           Trocar foto
         </button>
       )}

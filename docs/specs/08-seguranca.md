@@ -3,7 +3,7 @@
 Checklist de atenção por categoria de risco, específico para este sistema
 (multi-tenant, PIN de 4 dígitos, self-hosted numa VPS, dado sensível de
 pequenos negócios reais). Não é uma lista genérica de OWASP — cada item diz
-*onde* no código isso se aplica.
+_onde_ no código isso se aplica.
 
 ## 1. Vazamento de dado entre tenants (o maior risco deste produto)
 
@@ -117,7 +117,7 @@ manual do que seria numa nuvem grande — ser realista sobre isso:
   uma dependência lenta não pode travar o processo Node inteiro
   indefinidamente.
 - **Proteção contra bot em endpoints públicos sensíveis** (`POST
-  /auth/login`, e qualquer form público que existir no futuro): o
+/auth/login`, e qualquer form público que existir no futuro): o
   `@nestjs/throttler` já limita por IP, mas some com um segundo sinal
   barato antes de qualquer CAPTCHA — um **honeypot** (campo invisível no
   formulário que só um bot preenche; se vier preenchido, rejeita
@@ -175,7 +175,7 @@ campo que não devia poder controlar (ex.: virar admin sozinho, mudar o
   `z.object({}).passthrough()` nem qualquer forma de aceitar campos extras
   silenciosamente. Campo que não está no schema é rejeitado, não ignorado.
 - **Nunca repassar o body inteiro pro Prisma** (`prisma.operator.update({
-  data: dto })` só é seguro porque `dto` já passou por um schema com
+data: dto })` só é seguro porque `dto` já passou por um schema com
   allowlist — se algum dia um `Service` receber um objeto que não veio de
   um DTO validado, ele constrói o objeto de `data` campo a campo,
   explicitamente).
@@ -198,7 +198,7 @@ Devolver o registro do Prisma direto na resposta HTTP é o jeito mais fácil
 de vazar campo que nunca devia sair do banco.
 
 - **Nunca retornar `pinHash`** em nenhuma resposta, nem em `GET
-  /operators`, nem em erro, nem em log de request/response. O schema de
+/operators`, nem em erro, nem em log de request/response. O schema de
   resposta (`operatorSchema` em `packages/shared`) não tem esse campo — o
   `Service`/`Controller` monta a resposta a partir do schema de saída, não
   devolve o objeto do Prisma como veio do banco.

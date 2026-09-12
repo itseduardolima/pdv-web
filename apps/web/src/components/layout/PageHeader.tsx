@@ -14,7 +14,11 @@ export function PageHeader({ title, subtitle, backHref, actions }: PageHeaderPro
     <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
       <div className="flex items-center gap-3">
         {backHref && (
-          <Link href={backHref} aria-label="Voltar" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-pill bg-surface md:h-11 md:w-11">
+          <Link
+            href={backHref}
+            aria-label="Voltar"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-pill bg-surface md:h-11 md:w-11"
+          >
             <BackIcon aria-hidden />
           </Link>
         )}

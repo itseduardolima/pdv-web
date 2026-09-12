@@ -50,7 +50,11 @@ export default function LoginPage() {
 
       {page.errorMessage && <InlineAlert onDismiss={page.dismissError}>{page.errorMessage}</InlineAlert>}
 
-      <Button onClick={page.handleSubmit} state={page.isSubmitting ? 'loading' : 'idle'} className="w-full max-w-[340px]">
+      <Button
+        onClick={page.handleSubmit}
+        state={page.isSubmitting ? 'loading' : 'idle'}
+        className="w-full max-w-[340px]"
+      >
         Entrar
       </Button>
     </SplitAuthLayout>

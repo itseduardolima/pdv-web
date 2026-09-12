@@ -30,8 +30,16 @@ export const productSchema = z.object({
 export type Product = z.infer<typeof productSchema>
 
 export const createProductSchema = z.object({
-  name: z.string({ required_error: 'Informe o nome do produto' }).trim().min(2, 'Informe o nome do produto').max(120, 'Nome muito longo'),
-  category: z.string({ required_error: 'Informe a categoria' }).trim().min(1, 'Informe a categoria').max(60, 'Categoria muito longa'),
+  name: z
+    .string({ required_error: 'Informe o nome do produto' })
+    .trim()
+    .min(2, 'Informe o nome do produto')
+    .max(120, 'Nome muito longo'),
+  category: z
+    .string({ required_error: 'Informe a categoria' })
+    .trim()
+    .min(1, 'Informe a categoria')
+    .max(60, 'Categoria muito longa'),
   unit: productUnitSchema,
   // Campo em branco no formulário chega como "" e significa "sem código".
   barcode: z
