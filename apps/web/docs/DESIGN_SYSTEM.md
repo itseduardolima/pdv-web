@@ -380,6 +380,24 @@ zera junto com o carrinho (cancelar / nova venda). "Venda Confirmada" mostra
   excluir). A tela nunca esconde o toggle do próprio usuário nem do último
   admin — quem decide é a API.
 
+### Dashboard — `WeekChart`, `TopProductRow`
+
+- Cabeçalho da tela repete o padrão do Fechamento: cartão escuro
+  (`color-mix` de `--color-ink` com a primária) com "Vendido hoje" e o
+  número de vendas, mais três `StatTile` por forma de pagamento com
+  `PaymentMethodIllustration` e "% do total".
+- `components/pos/WeekChart`: gráfico dos últimos 7 dias em **SVG puro**
+  (sem lib, HU 7.3). Uma barra por dia, altura proporcional ao melhor dia
+  (`lib/utils/chart.ts` → `scaleBars`), `fill-primary` no dia de hoje,
+  `fill-primary/45` nos outros, `fill-border` em traço fino quando não houve
+  venda. Rótulos: dia da semana abreviado (hoje em negrito) e, a partir de
+  `md`, o valor do dia. Cor vem do token — trocar o tema troca o gráfico.
+- `components/pos/TopProductRow`: posição, foto (ou ícone de produto), nome
+  congelado na venda, "N vendidos" e valor. Lista `<ol>` dividida por
+  `--color-border`; sem venda hoje vira `EmptyState size="sm"`.
+- Os dias vêm da API como `YYYY-MM-DD` no fuso da loja; o front formata com
+  `parseDayKey` (meio-dia local) para nunca exibir o dia anterior.
+
 ### Estado vazio — `EmptyState`
 
 Toda lista/grid sem conteúdo usa `components/ui/EmptyState` (`title`,

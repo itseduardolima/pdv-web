@@ -138,15 +138,17 @@ docker compose up -d --build   # sobe web + api + postgres + minio na VPS
 
 ## Estado atual do projeto
 
-Sprints 0 a 5 concluídas (a 9.2, TLS automático, só se prova com domínio
+Sprints 0 a 6 concluídas (a 9.2, TLS automático, só se prova com domínio
 real no primeiro deploy). Pronto: monorepo pnpm + Turborepo,
 `packages/shared` (schemas Zod com mensagens em português), `apps/api`
-(NestJS: `tenant`, `auth`, `product`, `cash-session`, `storage`, `sale`;
+(NestJS: `tenant`, `auth`, `product`, `cash-session`, `storage`, `sale`,
+`operator`, `dashboard`;
 Row-Level Security por tenant via extensão do Prisma + usuário de banco
 sem superusuário; Swagger; seed por env), `apps/web` (tema do tenant,
 Login por PIN, guarda de sessão e de caixa, `AppShell`, Produtos,
-Abertura/Fechamento de Caixa, Vender + Venda Confirmada; Cypress component
+Abertura/Fechamento de Caixa, Vender + Venda Confirmada (com troco),
+Operadores, Dashboard; Cypress component
 e E2E), infra de VPS (`docker-compose.yml` com Caddy on-demand TLS,
 `infra/postgres`, `scripts/deploy-check.sh`, imagens Docker buildando), CI
 com lint/typecheck/test/build + job E2E, Prettier com pre-commit. Próximo
-passo: Sprint 6 — Operadores + Dashboard (ver `TODO.md`).
+passo: Sprint 7 — Offline-first / PWA (ver `TODO.md`).

@@ -24,7 +24,8 @@ frontend) — não quando o código só "existe".
   confirmação e no histórico. Spec 03 § Venda atualizada.
 - Sprint 5 concluída no código (9.1, 1.4, E2E, imagens Docker buildadas).
   9.2 (TLS) fica pendente de validação com domínio real no primeiro deploy.
-  Sprint 6: Operadores (6.1 → 6.7) prontos. Próximo: Dashboard (7.1 → 7.3).
+  Sprint 6 concluída (Operadores 6.1 → 6.7 + Dashboard 7.1 → 7.3).
+  Próximo: Sprint 7 — Offline-first (PWA).
 
 ---
 
@@ -91,9 +92,9 @@ frontend) — não quando o código só "existe".
 - [x] 6.5 — Regra do último Administrador — 409 `LAST_ADMIN` (+ 409 `SELF_CHANGE` para a própria conta), Jest no Service
 - [x] 6.6 — Upload de foto do operador — `PhotoUploadBox` kind `operator`
 - [x] 6.7 — Excluir operador (soft-delete) — `DELETE /operators/:id` + `ConfirmDialog`; E2E `operators.cy.ts`
-- [ ] 7.1 — Dashboard: total do dia por forma de pagamento
-- [ ] 7.2 — Dashboard: mais vendidos hoje
-- [ ] 7.3 — Dashboard: gráfico da semana
+- [x] 7.1 — Dashboard: total do dia por forma de pagamento — `GET /dashboard/summary` (fuso da loja, `Tenant.timezone`) + `/dashboard`
+- [x] 7.2 — Dashboard: mais vendidos hoje — 5 por quantidade, com foto (`TopProductRow`)
+- [x] 7.3 — Dashboard: gráfico da semana — `WeekChart` em SVG puro, 7 dias zerados quando sem venda; E2E `dashboard.cy.ts`
 
 ## Sprint 7 — Offline-first (PWA)
 
