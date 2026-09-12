@@ -16,7 +16,7 @@ interface CashReceivedProps {
 export function CashReceived({ value, onChange, changeCents, error }: CashReceivedProps) {
   const short = changeCents !== null && changeCents < 0
   return (
-    <div className="flex flex-col gap-2 rounded-input bg-canvas p-3" data-cy="cash-received">
+    <div className="flex flex-col gap-2 rounded-input p-3" data-cy="cash-received">
       <Input
         label="Valor recebido"
         leading="R$"
@@ -27,7 +27,6 @@ export function CashReceived({ value, onChange, changeCents, error }: CashReceiv
         value={value}
         error={error}
         onChange={(event: ChangeEvent<HTMLInputElement>) => onChange(maskMoneyInput(event.target.value))}
-        className="[&>div]:bg-surface"
       />
       {changeCents !== null && (
         <p
