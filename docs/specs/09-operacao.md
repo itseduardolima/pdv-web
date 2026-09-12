@@ -82,6 +82,18 @@ Backup que nunca foi restaurado com sucesso não é backup, é uma esperança.
 
 ## 5. Deploy e rollback
 
+- **Primeiro deploy**: passo a passo no `README.md` § Deploy na VPS (DNS
+  com wildcard `*.APP_DOMAIN`, `.env` real validado por
+  `scripts/deploy-check.sh`, `docker compose up -d --build`, seed da
+  primeira loja). TLS é sob demanda: o primeiro acesso a um host novo demora
+  alguns segundos enquanto o Caddy emite o certificado; hosts que a API não
+  reconhece (`GET /tenant/tls-check` → 404) não ganham certificado, o que
+  impede abuso do wildcard.
+- **Banco**: o superusuário `postgres` existe só para administração/backup;
+  a API usa `APP_DB_USER` sem superusuário (RLS). Nunca troque
+  `DATABASE_URL` da API para o superusuário "para resolver rápido" — isso
+  desliga o isolamento entre lojas no banco.
+
 - **Deploy normal**: merge na branch principal → CI builda e testa → deploy
   via SSH (`docker compose pull && docker compose up -d` ou build remoto,
   ver `01-arquitetura.md`) — sem passo manual fora do CI uma vez que a HU

@@ -138,14 +138,15 @@ docker compose up -d --build   # sobe web + api + postgres + minio na VPS
 
 ## Estado atual do projeto
 
-Sprints 0 a 4 concluídas. Pronto: monorepo pnpm + Turborepo,
+Sprints 0 a 5 concluídas (a 9.2, TLS automático, só se prova com domínio
+real no primeiro deploy). Pronto: monorepo pnpm + Turborepo,
 `packages/shared` (schemas Zod com mensagens em português), `apps/api`
-(NestJS com infra de tenant/auth/erros, migrations, **módulos `tenant`,
-`auth`, `product`, `cash-session`, `storage` e `sale`** — venda com preço
-congelado, baixa de estoque transacional e idempotência por uuid —, Swagger
-com schemas Zod, seed parametrizado por env), `apps/web` (tema do tenant,
-Login por PIN, guarda de sessão e de caixa aberto por route group,
-`AppShell`, Produtos com foto/exclusão, Abertura e Fechamento de Caixa,
-Vender com carrinho Zustand e Venda Confirmada, Cypress component tests),
-`docker-compose.yml` + `Caddyfile`, CI, Prettier com pre-commit. Próximo
-passo: Sprint 5 — deploy do primeiro cliente real (ver `TODO.md`).
+(NestJS: `tenant`, `auth`, `product`, `cash-session`, `storage`, `sale`;
+Row-Level Security por tenant via extensão do Prisma + usuário de banco
+sem superusuário; Swagger; seed por env), `apps/web` (tema do tenant,
+Login por PIN, guarda de sessão e de caixa, `AppShell`, Produtos,
+Abertura/Fechamento de Caixa, Vender + Venda Confirmada; Cypress component
+e E2E), infra de VPS (`docker-compose.yml` com Caddy on-demand TLS,
+`infra/postgres`, `scripts/deploy-check.sh`, imagens Docker buildando), CI
+com lint/typecheck/test/build + job E2E, Prettier com pre-commit. Próximo
+passo: Sprint 6 — Operadores + Dashboard (ver `TODO.md`).

@@ -14,10 +14,20 @@ Um mercado nunca pode ver dado de outro. Duas camadas, nunca só uma (ver
   como argumento obrigatório (nunca opcional, nunca "se não vier, busca
   tudo"). Nenhum `findMany` sem filtro de `tenantId` — revisar isso em code
   review é mais importante que revisar estilo.
-- **Camada de banco (RLS)**: Row-Level Security no Postgres como defesa em
-  profundidade — se uma query escapar do filtro de aplicação por um bug, o
-  banco ainda recusa. `SET app.tenant_id` por conexão/transação, policy
-  `USING (tenant_id = current_setting('app.tenant_id')::text)`.
+- **Camada de banco (RLS) — implementada**: policies `tenant_isolation`
+  (USING + WITH CHECK) com `FORCE ROW LEVEL SECURITY` em `Operator`,
+  `Product`, `CashSession`, `Sale` e `SaleItem` (esta via `EXISTS` na venda),
+  migration `20260912180000_row_level_security`. A extensão do Prisma
+  (`apps/api/src/prisma/prisma.client.ts`) roda toda operação numa transação
+  com `set_config('app.tenant_id', <tenant do request>, true)`; transações
+  interativas chamam `setTenantInTransaction` na primeira linha. Sem tenant
+  no contexto, as tabelas não devolvem nem aceitam nenhuma linha. Duas
+  condições para valer: a API conecta como usuário **sem superusuário e sem
+  BYPASSRLS** (`infra/postgres/init-app-role.sh`), e scripts fora de request
+  (seed) setam o tenant explicitamente. Prova manual (psql como o usuário da
+  API): sem `app.tenant_id` → 0 linhas; com o tenant A → só linhas de A;
+  `INSERT` com `tenantId` de outro tenant → "violates row-level security
+  policy".
 - **Sessão nunca atravessa tenant**: o `AuthGuard` já compara
   `session.tenantId` contra o tenant resolvido pelo host a cada request
   (ver `apps/api/src/common/guards/auth.guard.ts`) — um JWT válido de um

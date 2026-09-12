@@ -18,8 +18,9 @@ frontend) — não quando o código só "existe".
 
 ## Em andamento agora
 
-- Sprint 4 concluída (Vender + Venda Confirmada). Próximo: Sprint 5 — deploy
-  do primeiro cliente real (9.1, 9.2, 1.4, E2E).
+- Sprint 5 concluída no código (9.1, 1.4, E2E, imagens Docker buildadas).
+  9.2 (TLS) fica pendente de validação com domínio real no primeiro deploy.
+  Próximo: Sprint 6 — Operadores (6.1 → 6.7) + Dashboard (7.1 → 7.3).
 
 ---
 
@@ -71,10 +72,10 @@ frontend) — não quando o código só "existe".
 
 ## Sprint 5 — Deploy do primeiro cliente real
 
-- [ ] 9.1 — `docker compose up` completo, documentado
-- [ ] 9.2 — HTTPS automático (Caddy + Let's Encrypt)
-- [ ] 1.4 — Row-Level Security no Postgres
-- [ ] Testes E2E Cypress dos fluxos críticos (login → abrir caixa → vender → fechar caixa)
+- [x] 9.1 — `docker compose up` completo, documentado (README § Deploy na VPS + `scripts/deploy-check.sh`)
+- [~] 9.2 — HTTPS automático (Caddy + Let's Encrypt, `on_demand_tls` com `tls-check`) — implementado; **validar com domínio real no primeiro deploy**
+- [x] 1.4 — Row-Level Security no Postgres (policies + extensão do Prisma + usuário sem superusuário)
+- [x] Testes E2E Cypress dos fluxos críticos (login → abrir caixa → vender → fechar caixa) + CRUD de produto (`apps/web/cypress/e2e`, job `e2e` no CI)
 
 ## Sprint 6 — Operadores (gestão completa) + Dashboard
 

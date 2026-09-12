@@ -75,19 +75,46 @@ pnpm --filter api db:studio     # Prisma Studio (inspecionar o banco local)
 pnpm --filter api db:migrate    # nova migration em desenvolvimento
 ```
 
-## Rodando como vai rodar na VPS (produção)
+## Deploy na VPS (produção)
+
+Pré-requisitos na VPS: Docker + Docker Compose, portas 80 e 443 livres, e o
+DNS apontando para o IP da VPS:
+
+| Registro | Nome                      | Uso                                           |
+| -------- | ------------------------- | --------------------------------------------- |
+| A        | `app.seudominio.com.br`   | web (loja padrão)                             |
+| A        | `*.app.seudominio.com.br` | web — um subdomínio por loja (`karol.app...`) |
+| A        | `api.seudominio.com.br`   | API                                           |
+| A        | `media.seudominio.com.br` | fotos/logos (MinIO)                           |
 
 ```bash
-cp .env.example .env   # preencher com valores reais, nunca os default de exemplo
-docker compose up -d --build
+git clone <repo> pdv-web && cd pdv-web
+cp .env.example .env            # preencher TUDO com valores reais
+./scripts/deploy-check.sh       # barra .env ausente ou com placeholder
+docker compose up -d --build    # web + api + postgres + minio + caddy
+docker compose logs -f api      # aguardar "Nest application successfully started"
+
+# primeira loja (ver docs/specs/07-multitenant-whitelabel.md § Onboarding)
+docker compose exec -e SEED_TENANT_SLUG=karol -e SEED_TENANT_NAME='Mercadinho da Karol' \
+  -e SEED_ADMIN_NAME=Karol -e SEED_ADMIN_PIN=4321 api node dist/seed/seed.js
 ```
 
-Sobe `web` + `api` + `postgres` + `minio` + `caddy` (TLS automático) — sem
-publicar porta de banco/storage para fora da rede interna do Docker. Ver
-[`docs/specs/01-arquitetura.md`](./docs/specs/01-arquitetura.md) § Ambientes
-e deploy, e o runbook de operação em
-[`docs/specs/09-operacao.md`](./docs/specs/09-operacao.md) para monitoramento,
-backup/restore e o que fazer quando algo dá errado.
+Depois disso `https://karol.app.seudominio.com.br` abre com certificado
+Let's Encrypt emitido na primeira visita (Caddy `on_demand_tls`: só emite
+para hosts que a API reconhece como loja, via `GET /tenant/tls-check`). Um
+domínio próprio do cliente funciona do mesmo jeito: CNAME para a VPS +
+`SEED_TENANT_DOMAIN=caixa.mercadinho.com.br` no seed.
+
+O que o compose garante: Postgres e MinIO nunca expostos fora da rede
+interna; a API conecta ao banco como usuário **sem superusuário**
+(`APP_DB_USER`, criado por `infra/postgres/init-app-role.sh` na primeira
+subida), condição para a Row-Level Security valer; migrations rodam no
+`CMD` da API antes de subir. Monitoramento, backup/restore e rollback: ver
+[`docs/specs/09-operacao.md`](./docs/specs/09-operacao.md).
+
+Atualizar uma versão: `git pull && ./scripts/deploy-check.sh && docker compose up -d --build`.
+Ambiente local continua em `docker-compose.dev.yml` (defaults `*.localhost`
+e senhas triviais — nunca use esses defaults na VPS).
 
 ## Onde está o quê
 
