@@ -81,6 +81,18 @@ cypress/
 hook compartilhado não-query (`hooks/`, ex. `useCart`). Função pura vai
 para `lib/utils/`, nunca inline num arquivo de componente.
 
+## Formulários: padrão implementado (HU 10.1/10.3)
+
+`hooks/use-product-form.ts` é o modelo para todo formulário: React Hook Form
+sem resolver; o submit sempre chama a API; `apiFieldErrors()` mapeia
+`details.fieldErrors` do 400 para `setError` em cada campo (nomes da API →
+nomes do form, ex. `salePriceCents` → `salePrice`) e foca o primeiro; erro de
+regra de negócio vai para `InlineAlert` via `apiGeneralErrorMessage()`.
+`useSaveState()` dá ao `Button` os estados `loading` → `success` (~600ms)
+antes de navegar. Valores monetários são digitados em reais e convertidos
+para centavos só no submit (`lib/utils/money.ts`) — texto inválido vira
+`NaN`/`null` e a API responde a mensagem do campo.
+
 ## Client HTTP (`lib/api-client.ts`)
 
 - Toda chamada envia `x-tenant-host`: no browser é `window.location.host`;

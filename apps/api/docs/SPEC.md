@@ -14,8 +14,8 @@ NestJS — toda regra de negócio e todo acesso a dado (Prisma/PostgreSQL).
 
 ## Estado atual
 
-Fundação + módulos `tenant` e `auth` implementados (os demais módulos
-entram um por vez, cada um testado antes do próximo):
+Fundação + módulos `tenant`, `auth` e `product` implementados (os demais
+módulos entram um por vez, cada um testado antes do próximo):
 
 - `AppModule` com `ConfigModule`, `ThrottlerModule`, `JwtModule` (global) e
   `PrismaModule`; pipe global `ZodValidationPipe`, filtro global
@@ -48,6 +48,16 @@ entram um por vez, cada um testado antes do próximo):
   com `NODE_ENV=development`. JWT expira 12h fixas após o login (sem
   renovação por atividade — ver `TODO.md` § Backlog P2). `GET /auth/me`
   rebusca o operador: inativado/excluído depois do login recebe 401.
+- `modules/product/`: `GET /products` (query `search` em nome/código/
+  categoria, `category`), `GET /products/categories` (distintas, para o
+  select do form), `GET /products/:id`, `POST` e `PATCH` (só `ADMIN`).
+  Código de barras único por tenant → 409 `BARCODE_IN_USE`; em branco
+  significa "sem código" (o schema normaliza `""` para `null`). Mensagens
+  de campo em português vivem no `createProductSchema` de `packages/shared`.
+  `DELETE` (soft-delete) entra na HU 3.5.
+- `prisma/seed.ts` parametrizado por env (`SEED_TENANT_SLUG`, ...) e
+  compilado em `dist/seed/seed.js` no build, ver
+  `docs/specs/07-multitenant-whitelabel.md` § Onboarding.
 
 Em desenvolvimento a API só resolve tenant para hosts `<slug>.app.localhost`
 (ou o header `x-tenant-host`, que o `apps/web` envia). Acesso direto por
@@ -111,6 +121,7 @@ ao menos 1 admin ativo" (`LAST_ADMIN`), ver `03-regras-negocio.md`.
 | Método | Rota | Descrição | Papel |
 |---|---|---|---|
 | GET | `/products` | Lista (query: `search`, `category`) | operador |
+| GET | `/products/categories` | Categorias distintas em uso | operador |
 | GET | `/products/:id` | Detalhe | operador |
 | POST | `/products` | Cria | admin |
 | PATCH | `/products/:id` | Edita | admin |

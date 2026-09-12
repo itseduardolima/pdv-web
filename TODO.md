@@ -18,8 +18,8 @@ frontend) — não quando o código só "existe".
 
 ## Em andamento agora
 
-- Sprint 1 concluída (tenant + auth). Próximo: Sprint 2, começando por 10.1
-  (erro de campo mapeado) e 3.1 (criar produto). 10.2 já saiu junto do Login.
+- Sprint 2 concluída (produtos + validação/feedback + seed de tenant).
+  Próximo: Sprint 3 — caixa (4.1 → 4.4), foto de produto (3.4) e excluir (3.5).
 
 ---
 
@@ -44,21 +44,21 @@ frontend) — não quando o código só "existe".
 
 ## Sprint 2 — Produtos + padrão de Validação/Feedback
 
-- [ ] 10.1 — Erro de campo mapeado da resposta da API (sem validação no cliente)
+- [x] 10.1 — Erro de campo mapeado da resposta da API (sem validação no cliente)
 - [x] 10.2 — Componente `InlineAlert` (substitui toast)
-- [ ] 3.1 — Criar produto
-- [ ] 3.2 — Listar produtos (busca)
-- [ ] 3.3 — Editar produto
-- [ ] 10.3 — Botão com estado loading/success
-- [ ] 1.3 — Seed de novo tenant documentado
+- [x] 3.1 — Criar produto
+- [x] 3.2 — Listar produtos (busca)
+- [x] 3.3 — Editar produto
+- [x] 10.3 — Botão com estado loading/success
+- [x] 1.3 — Seed de novo tenant documentado
 
 ## Sprint 3 — Caixa (Abertura/Fechamento) + foto de Produto
 
 - [ ] 4.1 — Abrir caixa
-- [ ] 4.2 — Bloquear ações sem caixa aberto
+- [ ] 4.2 — Bloquear ações sem caixa aberto — inclui trocar o redirect de `/` (hoje vai para `/products`) para `/open-register`
 - [ ] 4.3 — Fechar caixa com totais por forma de pagamento
 - [ ] 4.4 — Histórico de vendas na tela de Fechamento
-- [ ] 3.4 — Upload de foto do produto (MinIO)
+- [ ] 3.4 — Upload de foto do produto (MinIO) — `PhotoUploadBox` ainda não existe; o painel esquerdo do form de produto só tem o código de barras
 - [ ] 3.5 — Excluir produto (soft-delete)
 
 ## Sprint 4 — Vender (core do produto)
