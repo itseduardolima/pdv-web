@@ -1,11 +1,17 @@
-import type { ApiError } from '@pdv/shared'
 import { ApiClientError } from '@/lib/api-client'
+import { apiFieldErrors } from './api-field-errors'
 
-// Extrai o texto a exibir de um erro da API: a primeira mensagem de campo
-// (400 VALIDATION) ou a mensagem geral. Nunca inventa texto no cliente.
+// Texto a exibir de um erro da API: a primeira mensagem de campo (400
+// VALIDATION) ou a mensagem geral. Nunca inventa texto no cliente.
 export function apiErrorMessage(error: unknown): string | null {
   if (!(error instanceof ApiClientError)) return null
-  const details = error.error.details as ApiError['details'] & { fieldErrors?: Record<string, string[]> }
-  const fieldMessage = details?.fieldErrors ? Object.values(details.fieldErrors).flat()[0] : undefined
+  const fieldMessage = Object.values(apiFieldErrors(error) ?? {})[0]
   return fieldMessage ?? error.error.message
+}
+
+// Mensagem geral de um erro que NÃO é de campo (regra de negócio, rede) —
+// erros de campo já aparecem embaixo de cada input.
+export function apiGeneralErrorMessage(error: unknown): string | null {
+  if (!(error instanceof ApiClientError)) return null
+  return apiFieldErrors(error) ? null : error.error.message
 }

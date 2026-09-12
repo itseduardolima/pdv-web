@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import type { ReactNode } from 'react'
+import { AppShell } from '@/components/layout/AppShell'
 import { SessionProvider } from '@/components/providers/session-provider'
 import { getCurrentSession } from '@/lib/session.server'
 import { getCurrentTenant } from '@/lib/tenant.server'
@@ -13,5 +14,9 @@ export default async function PosLayout({ children }: { children: ReactNode }) {
 
   const session = await getCurrentSession()
   if (!session) redirect('/login')
-  return <SessionProvider session={session}>{children}</SessionProvider>
+  return (
+    <SessionProvider session={session}>
+      <AppShell>{children}</AppShell>
+    </SessionProvider>
+  )
 }
