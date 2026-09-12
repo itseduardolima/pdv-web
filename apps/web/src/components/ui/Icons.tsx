@@ -202,3 +202,19 @@ export function InfoIcon(props: IconProps) {
     </svg>
   )
 }
+
+export function BarcodeIcon(props: IconProps) {
+  return (
+    <svg {...base} strokeWidth="2" width="18" height="18" {...props}>
+      <path d="M3 5v14M7 5v14M11 5v14M14 5v14M18 5v14M21 5v14" />
+    </svg>
+  )
+}
+
+export function CheckCircleIcon(props: IconProps) {
+  return (
+    <svg {...base} strokeWidth="2.4" width="36" height="36" {...props}>
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  )
+}

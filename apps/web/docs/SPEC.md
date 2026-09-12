@@ -84,6 +84,20 @@ cypress/
 hook compartilhado não-query (`hooks/`, ex. `useCart`). Função pura vai
 para `lib/utils/`, nunca inline num arquivo de componente.
 
+## Carrinho e venda (implementado)
+
+`stores/cart-store.ts` (Zustand) guarda itens, forma de pagamento, o `uuid`
+da venda em andamento e a última venda concluída; `hooks/use-cart.ts` expõe
+isso com total e contagem calculados por `lib/utils/cart.ts`. O `uuid` nasce
+com o carrinho e é reusado em qualquer reenvio — a API é idempotente por
+ele. "Finalizar Venda" sempre chama `POST /sales`; a API decide caixa
+aberto, forma de pagamento e estoque. `INSUFFICIENT_STOCK` chega com
+`details.productId` e a página destaca a `CartLine` correspondente, sem
+recalcular estoque no cliente. Sucesso guarda a venda no store e navega
+para `/sell/confirmed` (split layout, fora do `AppShell`); recarregar essa
+tela sem venda recente volta para `/sell`. Enter na busca com um código de
+barras exato adiciona o produto (leitor de código de barras).
+
 ## Formulários: padrão implementado (HU 10.1/10.3)
 
 `hooks/use-product-form.ts` é o modelo para todo formulário: React Hook Form
