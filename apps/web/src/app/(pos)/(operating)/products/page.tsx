@@ -3,6 +3,7 @@
 import { PageHeader } from '@/components/layout/PageHeader'
 import { ProductCard } from '@/components/pos/ProductCard'
 import { Button } from '@/components/ui/Button'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { PlusIcon } from '@/components/ui/Icons'
 import { InlineAlert } from '@/components/ui/InlineAlert'
 import { SearchBar } from '@/components/ui/SearchBar'
@@ -48,7 +49,22 @@ export default function ProductsPage() {
       </div>
 
       {!page.isLoading && !page.errorMessage && page.products.length === 0 && (
-        <p className="font-body text-sm text-ink/50">Nenhum produto encontrado.</p>
+        <EmptyState
+          title={page.search ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado'}
+          description={
+            page.search
+              ? 'Tente outro nome, categoria ou código de barras.'
+              : 'Cadastre o primeiro produto para começar a vender.'
+          }
+          action={
+            !page.search && page.canManage ? (
+              <Button href="/products/new" size="sm">
+                <PlusIcon aria-hidden />
+                Novo Produto
+              </Button>
+            ) : undefined
+          }
+        />
       )}
     </>
   )

@@ -313,6 +313,15 @@ negócio: `CASH_SESSION_ALREADY_OPEN`, `INSUFFICIENT_STOCK`,
 └───────────────────────────────────────────────┘
 ```
 
+### Estado vazio — `EmptyState`
+
+Toda lista/grid sem conteúdo usa `components/ui/EmptyState` (`title`,
+`description?`, `action?`, `size` `md`/`sm`), nunca um `<p>` solto. A
+ilustração (`EmptyBoxIllustration`, SVG inline) pinta **só a caixa** com a
+cor do tenant: topo em `--color-primary`, lateral em
+`color-mix(... 82%, black)` e abas em `color-mix(... 65%, white)`; interior
+e fundo continuam neutros. Nada de hex fixo — trocar o tema troca a caixa.
+
 ### 3. Sucesso — sem banner nenhum, o próprio fluxo já confirma
 
 Em vez de "salvou, mostra um toast de sucesso", a confirmação é o próprio

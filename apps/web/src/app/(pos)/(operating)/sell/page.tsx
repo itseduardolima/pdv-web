@@ -5,6 +5,7 @@ import { CartLine } from '@/components/pos/CartLine'
 import { PaymentMethodPicker } from '@/components/pos/PaymentMethodPicker'
 import { ProductTile } from '@/components/pos/ProductTile'
 import { Button } from '@/components/ui/Button'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { FieldError } from '@/components/ui/FieldError'
 import { BarcodeIcon, SearchIcon } from '@/components/ui/Icons'
 import { InlineAlert } from '@/components/ui/InlineAlert'
@@ -69,7 +70,12 @@ export default function SellPage() {
               ))}
             </div>
             {!page.isLoadingProducts && page.products.length === 0 && (
-              <p className="p-2 font-body text-sm text-ink/50">Nenhum produto encontrado.</p>
+              <EmptyState
+                title={page.search ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado'}
+                description={
+                  page.search ? 'Tente outro nome ou código de barras.' : 'Cadastre produtos na tela Produtos.'
+                }
+              />
             )}
           </div>
         </section>
@@ -84,7 +90,9 @@ export default function SellPage() {
 
           <ul className="min-h-0 flex-1 overflow-y-auto">
             {page.cart.items.length === 0 ? (
-              <li className="py-6 text-center font-body text-sm text-ink/45">Toque em um produto para adicionar.</li>
+              <li>
+                <EmptyState size="sm" title="Carrinho vazio" description="Toque em um produto para adicionar." />
+              </li>
             ) : (
               page.cart.items.map((item) => (
                 <CartLine

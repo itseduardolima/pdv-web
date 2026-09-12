@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { SaleHistoryRow } from '@/components/pos/SaleHistoryRow'
 import { StatTile } from '@/components/pos/StatTile'
 import { Button } from '@/components/ui/Button'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { CardIcon, CashIcon, PixIcon } from '@/components/ui/Icons'
 import { InlineAlert } from '@/components/ui/InlineAlert'
 import { formatCurrency } from '@/lib/utils/format-currency'
@@ -81,7 +82,7 @@ export default function ClosingPage() {
             {page.isLoadingSales ? (
               <p className="font-body text-sm text-ink/50">Carregando...</p>
             ) : page.sales.length === 0 ? (
-              <p className="font-body text-sm text-ink/50">Nenhuma venda registrada neste caixa ainda.</p>
+              <EmptyState size="sm" title="Nenhuma venda ainda" description="As vendas deste caixa aparecem aqui." />
             ) : (
               <ul>
                 {page.sales.map((sale) => (
