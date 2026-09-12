@@ -11,8 +11,9 @@ import { RolesGuard } from './common/guards/roles.guard'
 import { TenantMiddleware } from './common/middlewares/tenant.middleware'
 import { TenantModule } from './modules/tenant/tenant.module'
 import { AuthModule } from './modules/auth/auth.module'
+import { ProductModule } from './modules/product/product.module'
 
-// Módulos de domínio (operator, product, cash-session, sale) entram
+// Módulos de domínio (operator, cash-session, sale) entram
 // aqui conforme forem criados, um por vez.
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { AuthModule } from './modules/auth/auth.module'
     PrismaModule,
     TenantModule,
     AuthModule,
+    ProductModule,
   ],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },
