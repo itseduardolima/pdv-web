@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@pdv/shared": "workspace:*",
+    "@radix-ui/react-dialog": "^1.1.23",
     "@tanstack/react-query": "^5.90.2",
     "next": "^15.5.4",
     "react": "^19.1.1",

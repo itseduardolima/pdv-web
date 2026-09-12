@@ -33,6 +33,7 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-pdv}:${POSTGRES_PASSWORD:-pdv}@postgres:5432/${POSTGRES_DB:-pdv}?schema=public
       STORAGE_ENDPOINT: http://minio:9000
+      STORAGE_PUBLIC_URL: ${STORAGE_PUBLIC_URL:-https://media.localhost/pdv-media}
     depends_on:
       postgres:
         condition: service_healthy
