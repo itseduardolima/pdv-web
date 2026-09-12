@@ -5,6 +5,7 @@ import { InlineAlert } from '@/components/ui/InlineAlert'
 import { Input } from '@/components/ui/Input'
 import { NumberStepper } from '@/components/ui/NumberStepper'
 import { Select } from '@/components/ui/Select'
+import { PhotoUploadBox } from './PhotoUploadBox'
 import type { ProductFormValues } from '@/hooks/use-product-form'
 
 const UNIT_OPTIONS = [
@@ -23,17 +24,32 @@ interface ProductFormProps {
   errorMessage: string | null
   onDismissError: () => void
   cancelHref: string
+  onPhotoChange: (file: File) => void
+  photoUploading: boolean
+  photoError: string | null
 }
 
-export function ProductForm({ form, categories, onSubmit, submitState, errorMessage, onDismissError, cancelHref }: ProductFormProps) {
+export function ProductForm({
+  form,
+  categories,
+  onSubmit,
+  submitState,
+  errorMessage,
+  onDismissError,
+  cancelHref,
+  onPhotoChange,
+  photoUploading,
+  photoError,
+}: ProductFormProps) {
   const { register, control, formState } = form
+  const photoUrl = form.watch('photoUrl')
   const errors = formState.errors
   const categoriesListId = 'product-categories'
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-1 flex-col gap-4 md:flex-row md:gap-5">
       <aside className="flex flex-col gap-3.5 rounded-card bg-surface p-4 md:w-[260px] md:shrink-0 md:p-[22px]">
-        {/* Upload de foto entra na HU 3.4 (mesma caixa tracejada de Produto/Operador). */}
+        <PhotoUploadBox value={photoUrl} onChange={onPhotoChange} uploading={photoUploading} error={photoError ?? errors.photoUrl?.message} />
         <Input label="Código de barras" inputMode="numeric" error={errors.barcode?.message} {...register('barcode')} />
       </aside>
 

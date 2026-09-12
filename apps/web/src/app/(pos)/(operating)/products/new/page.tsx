@@ -18,6 +18,9 @@ export default function NewProductPage() {
         errorMessage={page.errorMessage}
         onDismissError={page.dismissError}
         cancelHref="/products"
+        onPhotoChange={page.handlePhotoChange}
+        photoUploading={page.photoUploading}
+        photoError={page.photoError}
       />
     </>
   )

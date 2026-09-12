@@ -13,6 +13,7 @@ export interface ProductFormValues {
   costPrice: string
   stockQuantity: number
   minStock: string
+  photoUrl: string | null
 }
 
 export const emptyProductFormValues: ProductFormValues = {
@@ -24,6 +25,7 @@ export const emptyProductFormValues: ProductFormValues = {
   costPrice: '',
   stockQuantity: 0,
   minStock: '',
+  photoUrl: null,
 }
 
 export function productToFormValues(product: Product): ProductFormValues {
@@ -36,6 +38,7 @@ export function productToFormValues(product: Product): ProductFormValues {
     costPrice: formatMoneyInput(product.costPriceCents),
     stockQuantity: product.stockQuantity,
     minStock: String(product.minStock),
+    photoUrl: product.photoUrl,
   }
 }
 
@@ -49,6 +52,7 @@ export function formValuesToInput(values: ProductFormValues): CreateProductInput
     costPriceCents: parseMoneyInput(values.costPrice),
     stockQuantity: values.stockQuantity,
     minStock: parseIntegerInput(values.minStock),
+    photoUrl: values.photoUrl,
   }
 }
 
@@ -62,6 +66,7 @@ const API_TO_FORM_FIELD: Record<string, keyof ProductFormValues> = {
   costPriceCents: 'costPrice',
   stockQuantity: 'stockQuantity',
   minStock: 'minStock',
+  photoUrl: 'photoUrl',
 }
 
 // React Hook Form sem resolver: só estado de campo. Validação é da API; um 400

@@ -116,3 +116,84 @@ export function AlertIcon(props: IconProps) {
     </svg>
   )
 }
+
+export function WalletIcon(props: IconProps) {
+  return (
+    <svg {...base} strokeWidth="2" width="32" height="32" {...props}>
+      <path d="M3 7a2 2 0 012-2h13a1 1 0 011 1v2" />
+      <path d="M3 7v11a2 2 0 002 2h15a1 1 0 001-1V9a1 1 0 00-1-1H5a2 2 0 01-2-2z" />
+      <circle cx="16.5" cy="14" r="1.3" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+export function CashIcon(props: IconProps) {
+  return (
+    <svg {...base} strokeWidth="2" width="24" height="24" {...props}>
+      <rect x="2" y="6" width="20" height="12" rx="2" />
+      <circle cx="12" cy="12" r="3" />
+      <path d="M6 12h.01M18 12h.01" />
+    </svg>
+  )
+}
+
+export function CardIcon(props: IconProps) {
+  return (
+    <svg {...base} strokeWidth="2" width="24" height="24" {...props}>
+      <rect x="2" y="5" width="20" height="14" rx="3" />
+      <path d="M2 10h20" />
+      <path d="M6 15h4" />
+    </svg>
+  )
+}
+
+export function PixIcon(props: IconProps) {
+  return (
+    <svg {...base} strokeWidth="2" width="24" height="24" {...props}>
+      <path d="M12 3l4 4-4 4-4-4z" />
+      <path d="M12 13l4 4-4 4-4-4z" />
+      <path d="M3 12l4-4 4 4-4 4z" />
+      <path d="M13 12l4-4 4 4-4 4z" />
+    </svg>
+  )
+}
+
+export function SaleIcon(props: IconProps) {
+  return (
+    <svg {...base} strokeWidth="2" width="16" height="16" {...props}>
+      <path d="M6 2h12l1 5H5z" />
+      <path d="M5 7v13a1 1 0 001 1h12a1 1 0 001-1V7" />
+      <path d="M9 11v2a3 3 0 006 0v-2" />
+    </svg>
+  )
+}
+
+export function CameraIcon(props: IconProps) {
+  return (
+    <svg {...base} strokeWidth="2" width="28" height="28" {...props}>
+      <path d="M4 8h3l2-3h6l2 3h3a1 1 0 011 1v9a1 1 0 01-1 1H4a1 1 0 01-1-1V9a1 1 0 011-1z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </svg>
+  )
+}
+
+export function TrashIcon(props: IconProps) {
+  return (
+    <svg {...base} strokeWidth="2" width="16" height="16" {...props}>
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M6 6l1 14h10l1-14" />
+    </svg>
+  )
+}
+
+export function InfoIcon(props: IconProps) {
+  return (
+    <svg {...base} strokeWidth="2" width="16" height="16" {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <line x1="12" y1="8" x2="12" y2="12" />
+      <line x1="12" y1="16" x2="12.01" y2="16" />
+    </svg>
+  )
+}
+
