@@ -1,6 +1,7 @@
 import { useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import type { Product } from '@pdv/shared'
+import { useAdjustStock } from '@/hooks/queries/use-adjust-stock'
 import { useCreateSale } from '@/hooks/queries/use-create-sale'
 import { useCurrentCashSession } from '@/hooks/queries/use-current-cash-session'
 import { useProducts } from '@/hooks/queries/use-products'
@@ -19,6 +20,7 @@ export function useSellPage() {
   const cart = useCart()
   const createSale = useCreateSale()
   const [search, setSearch] = useState('')
+  const [adjustingStock, setAdjustingStock] = useState(false)
 
   const visibleProducts = useMemo(
     () => (products.data ?? []).filter((product) => matchesProductSearch(product, search)),
@@ -72,9 +74,29 @@ export function useSellPage() {
 
   const fieldErrors = apiFieldErrors(createSale.error)
   const apiError = createSale.error instanceof ApiClientError ? createSale.error.error : null
-  const details = apiError?.details as { productId?: string } | undefined
+  const details = apiError?.details as { productId?: string; available?: number } | undefined
   // INSUFFICIENT_CASH é erro do campo "Valor recebido", não do carrinho inteiro.
   const insufficientCash = apiError?.code === 'INSUFFICIENT_CASH' ? apiError.message : null
+  // "Sem estoque" no meio da venda: atalho para o admin corrigir sem sair
+  // da tela (03-regras-negocio § Venda). Operador não edita produto (ADMIN_ONLY).
+  const insufficientStock =
+    apiError?.code === 'INSUFFICIENT_STOCK' && details?.productId
+      ? {
+          productId: details.productId,
+          available: details.available ?? 0,
+          productName: cart.items.find((item) => item.productId === details.productId)?.name ?? '',
+        }
+      : null
+  const adjustStock = useAdjustStock(insufficientStock?.productId ?? '')
+
+  function handleAdjustStock(quantity: number) {
+    adjustStock.mutate(quantity, {
+      onSuccess: () => {
+        setAdjustingStock(false)
+        createSale.reset()
+      },
+    })
+  }
 
   return {
     operator,
@@ -97,5 +119,13 @@ export function useSellPage() {
     errorMessage: insufficientCash ? null : apiGeneralErrorMessage(createSale.error),
     highlightedProductId: details?.productId ?? null,
     dismissError: createSale.reset,
+    insufficientStock,
+    canAdjustStock: operator.role === 'ADMIN',
+    adjustingStock,
+    openAdjustStock: () => setAdjustingStock(true),
+    closeAdjustStock: () => setAdjustingStock(false),
+    handleAdjustStock,
+    adjustStockState: adjustStock.isPending ? ('loading' as const) : ('idle' as const),
+    adjustStockError: apiErrorMessage(adjustStock.error),
   }
 }

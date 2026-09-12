@@ -83,6 +83,10 @@ frontend) — não quando o código só "existe".
 - [x] Testes E2E Cypress dos fluxos críticos (login → abrir caixa → vender → fechar caixa) + CRUD de produto (`apps/web/cypress/e2e`, job `e2e` no CI)
 - [x] Troco em venda em Dinheiro (API calcula/valida, front só exibe) — E2E cobre troco ao vivo e recusa de valor menor
 
+## Extra — Atalho "Ajustar estoque" na venda (decisão de 2026-09-12)
+
+- [x] `INSUFFICIENT_STOCK` na venda ganha ação "Ajustar estoque" no `InlineAlert` (só Administrador): abre `QuickStockDialog` pré-preenchido com o estoque atual, salva via `PATCH /products/:id` e deixa finalizar a venda sem sair da tela. Component tests + E2E.
+
 ## Sprint 6 — Operadores (gestão completa) + Dashboard
 
 - [x] 6.1 — Listar operadores (ativos e inativos) — `GET /operators` + `/operators` (`OperatorCard`)

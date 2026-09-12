@@ -90,6 +90,18 @@ describe('Fluxo crítico: login, abrir caixa, vender, fechar caixa', () => {
     cy.contains('button', 'Finalizar Venda').click()
     cy.get('[role=alert]').should('contain', 'Estoque insuficiente').and('contain', 'Feijão')
     cy.get('[data-cy=cart-line][data-highlighted=true]').should('contain', 'Feijão')
+
+    // atalho "Ajustar estoque": corrige sem sair da venda (não altera de
+    // verdade aqui — só confere que abre com o produto e o estoque certos)
+    cy.contains('button', 'Ajustar estoque').click()
+    cy.get('[role=dialog]').within(() => {
+      cy.contains('Ajustar estoque')
+      cy.contains('Feijão 1kg')
+      cy.get('input').should('have.value', '30')
+      cy.contains('button', 'Cancelar').click()
+    })
+    cy.get('[role=dialog]').should('not.exist')
+
     cy.contains('button', 'Cancelar').click()
     cy.get('[data-cy=cart-line]').should('not.exist')
   })
