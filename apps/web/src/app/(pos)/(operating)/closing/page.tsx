@@ -1,18 +1,16 @@
 'use client'
 
 import { PageHeader } from '@/components/layout/PageHeader'
+import { PaymentMethodIllustration } from '@/components/pos/PaymentMethodIllustration'
 import { SaleHistoryRow } from '@/components/pos/SaleHistoryRow'
 import { StatTile } from '@/components/pos/StatTile'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { CardIcon, CashIcon, PixIcon } from '@/components/ui/Icons'
 import { InlineAlert } from '@/components/ui/InlineAlert'
 import { formatCurrency } from '@/lib/utils/format-currency'
 import { formatDayLong, formatTime } from '@/lib/utils/format-date'
 import { PAYMENT_METHOD_LABEL } from '@/lib/utils/payment-method'
 import { useClosingPage } from './use-closing-page'
-
-const ICONS = { CASH: CashIcon, CARD: CardIcon, PIX: PixIcon }
 
 export default function ClosingPage() {
   const page = useClosingPage()
@@ -40,7 +38,7 @@ export default function ClosingPage() {
       {session && (
         <>
           <div className="flex flex-col gap-3 md:flex-row md:gap-[18px]">
-            <div className="relative flex flex-1 flex-col justify-between gap-3 overflow-hidden rounded-card bg-ink p-5 text-surface md:p-6">
+            <div className="relative flex flex-1 flex-col justify-between gap-3 overflow-hidden rounded-card bg-[color-mix(in_srgb,var(--color-ink)_82%,var(--color-primary))] p-5 text-surface md:p-6">
               <span
                 aria-hidden
                 className="pointer-events-none absolute -bottom-24 -right-20 h-64 w-64 rounded-pill bg-primary/20 blur-2xl"
@@ -63,11 +61,10 @@ export default function ClosingPage() {
 
             <div className="grid grid-cols-3 gap-2 md:flex-[1.5] md:gap-3.5">
               {page.tiles.map(({ method, cents, percent }) => {
-                const Icon = ICONS[method]
                 return (
                   <StatTile
                     key={method}
-                    icon={<Icon aria-hidden />}
+                    icon={<PaymentMethodIllustration method={method} className="h-5 w-5 md:h-7 md:w-7" />}
                     amount={formatCurrency(cents)}
                     label={PAYMENT_METHOD_LABEL[method]}
                     detail={`${percent}% do total`}
