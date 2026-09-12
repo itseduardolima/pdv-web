@@ -9,4 +9,5 @@ allowBuilds:
   argon2: true
   cypress: true
   prisma: true
+  simple-git-hooks: false
   unrs-resolver: false
