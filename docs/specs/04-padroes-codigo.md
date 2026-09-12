@@ -249,8 +249,18 @@ reusada agora".
 ## TypeScript
 
 - `strict: true` sempre, nos dois apps.
-- Não usar `any` — se o tipo é genuinamente desconhecido, usar `unknown` e
-  fazer narrowing.
+- **Nunca usar `any` — regra dura, sem exceção.** Nem `: any`, nem
+  `as any`, nem `any[]`, nem `Record<string, any>`, nem `// eslint-disable`
+  para contornar. O ESLint (`@typescript-eslint/no-explicit-any: error`, na
+  config base de `packages/config`) falha o lint e o CI nos dois apps.
+  - Tipo genuinamente desconhecido (payload externo, `catch (error)`): usar
+    `unknown` e fazer narrowing (`instanceof`, `typeof`, schema Zod).
+  - Objeto de forma conhecida: declarar o tipo ou derivá-lo
+    (`z.infer`, `Prisma.XGetPayload`, `Pick`, `ReturnType`).
+  - Mock em teste: tipar o mock com `jest.Mock` e converter uma única vez
+    com `as unknown as Repository` — nunca `as any`.
+  - Se algo "só funciona com `any`", o problema é o tipo do lado de lá:
+    corrigir a origem (schema, assinatura da função), não silenciar.
 - Validação de entrada acontece na borda do Controller, via
   `ZodValidationPipe` global (`nestjs-zod`) sobre DTOs derivados dos schemas
   de `packages/shared`; `Service`/`Repository` recebem dado já validado e não

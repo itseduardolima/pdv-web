@@ -91,6 +91,11 @@ tarefa é, na verdade, "atualizar o spec" (avisar o usuário disso).
   `apps/web/docs/DESIGN_SYSTEM.md` § Validação e feedback.
 - **Um componente por conceito, responsivo — não um componente por
   breakpoint.** Ver spec 05.
+- **Nunca usar `any` no TypeScript — em nenhum arquivo, nem em teste.**
+  Tipo desconhecido é `unknown` com narrowing; forma conhecida é tipo
+  declarado ou derivado (`z.infer`, `Prisma.XGetPayload`). O ESLint falha
+  com `any` explícito nos dois apps. Ver
+  [04-padroes-codigo](./docs/specs/04-padroes-codigo.md) § TypeScript.
 - **Código em inglês, poucos comentários (em português), commits
   Conventional Commits em inglês.** Vocabulário fixo de domínio
   (`Operator`, `Product`, `CashSession`, `Sale`, `PaymentMethod`) na seção

@@ -6,5 +6,7 @@ import prettier from 'eslint-config-prettier'
 export const baseConfig = tseslint.config(js.configs.recommended, ...tseslint.configs.recommended, prettier, {
   rules: {
     '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    // Regra dura do projeto (04-padroes-codigo § TypeScript): nunca `any`.
+    '@typescript-eslint/no-explicit-any': 'error',
   },
 })

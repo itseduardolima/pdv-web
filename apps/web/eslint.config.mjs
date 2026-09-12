@@ -10,6 +10,10 @@ export default [
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   prettier,
   {
+    // Regra dura do projeto (04-padroes-codigo § TypeScript): nunca `any`.
+    rules: { '@typescript-eslint/no-explicit-any': 'error' },
+  },
+  {
     // Padrão idiomático do Cypress para estender tipos globais.
     files: ['cypress/support/**/*.ts'],
     rules: { '@typescript-eslint/no-namespace': 'off' },
