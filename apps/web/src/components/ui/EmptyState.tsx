@@ -16,7 +16,7 @@ export function EmptyState({ title, description, action, size = 'md', className 
   return (
     <div
       data-cy="empty-state"
-      className={`flex flex-col items-center justify-center text-center ${compact ? 'gap-1 py-4' : 'gap-2 py-8'} ${className}`}
+      className={`flex w-full flex-1 flex-col items-center justify-center self-stretch text-center ${compact ? 'gap-1 py-4' : 'gap-2 py-8'} ${className}`}
     >
       <EmptyBoxIllustration className={compact ? 'h-24 w-auto' : 'h-40 w-auto md:h-52'} />
       <p className={`font-heading font-bold tracking-tight ${compact ? 'text-sm' : 'text-lg'}`}>{title}</p>

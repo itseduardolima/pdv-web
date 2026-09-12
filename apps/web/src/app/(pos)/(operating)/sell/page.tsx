@@ -63,7 +63,7 @@ export default function SellPage() {
 
           {page.productsError && <InlineAlert>{page.productsError}</InlineAlert>}
 
-          <div className="min-h-0 flex-1 overflow-y-auto rounded-input bg-canvas bg-[radial-gradient(circle,var(--color-border)_1px,transparent_1.4px)] p-2.5 [background-size:18px_18px] md:p-3.5">
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-input bg-canvas bg-[radial-gradient(circle,var(--color-border)_1px,transparent_1.4px)] p-2.5 [background-size:18px_18px] md:p-3.5">
             <div className="grid grid-cols-3 gap-2.5 md:grid-cols-3 md:gap-3 lg:grid-cols-4">
               {page.products.map((product) => (
                 <ProductTile key={product.id} product={product} onAdd={page.handleAdd} />
@@ -88,9 +88,9 @@ export default function SellPage() {
             </span>
           </div>
 
-          <ul className="min-h-0 flex-1 overflow-y-auto">
+          <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             {page.cart.items.length === 0 ? (
-              <li>
+              <li className="flex flex-1">
                 <EmptyState size="sm" title="Carrinho vazio" description="Toque em um produto para adicionar." />
               </li>
             ) : (
