@@ -15,11 +15,7 @@ export default function EditOperatorPage() {
 
   return (
     <>
-      <PageHeader
-        title="Editar Operador"
-        subtitle={page.isLoading ? 'Carregando...' : page.operatorName}
-        backHref="/operators"
-      />
+      <PageHeader title="Editar Operador" backHref="/operators" />
       {page.loadErrorMessage ? (
         <InlineAlert>{page.loadErrorMessage}</InlineAlert>
       ) : (

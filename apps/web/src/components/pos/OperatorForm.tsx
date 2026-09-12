@@ -115,6 +115,7 @@ export function OperatorForm({
               <Select
                 label="Papel"
                 required
+                placeholder="Selecione o papel"
                 options={ROLE_OPTIONS}
                 hint="Administrador gerencia produtos e equipe"
                 error={errors.role?.message}
