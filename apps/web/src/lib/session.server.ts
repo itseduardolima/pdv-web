@@ -8,7 +8,8 @@ export const getCurrentSession = cache(async (): Promise<CurrentSession | null> 
   try {
     return await apiRequest('/auth/me', { schema: currentSessionSchema, headers: await serverRequestHeaders() })
   } catch (error) {
-    if (error instanceof ApiClientError && error.error.statusCode === 401) return null
+    // Sem sessão (401) ou sem loja resolvida (404 TENANT_NOT_FOUND) é o mesmo: ninguém logado.
+    if (error instanceof ApiClientError && [401, 404].includes(error.error.statusCode)) return null
     throw error
   }
 })
