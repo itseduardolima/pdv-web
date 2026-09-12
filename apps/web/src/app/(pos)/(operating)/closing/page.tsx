@@ -89,14 +89,14 @@ export default function ClosingPage() {
             </Button>
           </div>
 
-          <section className="flex flex-col gap-3 rounded-card bg-surface p-4 md:p-[22px]">
+          <section className="flex min-h-[320px] flex-1 flex-col gap-3 rounded-card bg-surface p-4 md:min-h-0 md:p-[22px]">
             <h2 className="font-heading text-lg font-bold tracking-tight">Histórico de Vendas</h2>
             {page.isLoadingSales ? (
               <p className="font-body text-sm text-ink/50">Carregando...</p>
             ) : page.sales.length === 0 ? (
               <EmptyState size="sm" title="Nenhuma venda ainda" description="As vendas deste caixa aparecem aqui." />
             ) : (
-              <ul>
+              <ul className="min-h-0 flex-1 overflow-y-auto">
                 {page.sales.map((sale) => (
                   <SaleHistoryRow key={sale.id} sale={sale} />
                 ))}
