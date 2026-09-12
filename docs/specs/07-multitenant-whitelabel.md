@@ -62,6 +62,43 @@ Duas camadas de proteção, não uma só:
 3. Pronto — nenhum passo de build/deploy por cliente. O tema já é aplicado em
    runtime (ver [06](./06-design-system-temas.md)).
 
+### Como fazer hoje: seed parametrizado (`apps/api/prisma/seed.ts`)
+
+O seed é idempotente e lê variáveis de ambiente. Rodar de novo com o mesmo
+slug atualiza nome/cores e **nunca** duplica nem troca o PIN de um
+Administrador já existente. Na VPS ele já vem compilado na imagem da API
+(`dist/seed/seed.js`):
+
+```bash
+# local
+SEED_TENANT_SLUG=karol \
+SEED_TENANT_NAME='Mercadinho da Karol' \
+SEED_PRIMARY_COLOR='#1a237e' \
+SEED_ADMIN_NAME='Karol' SEED_ADMIN_PIN=4321 \
+pnpm --filter api db:seed
+
+# VPS (docker compose)
+docker compose exec \
+  -e SEED_TENANT_SLUG=karol -e SEED_TENANT_NAME='Mercadinho da Karol' \
+  -e SEED_PRIMARY_COLOR='#1a237e' -e SEED_ADMIN_NAME='Karol' -e SEED_ADMIN_PIN=4321 \
+  api node dist/seed/seed.js
+```
+
+| Variável | Quando | Default | Uso |
+|---|---|---|---|
+| `SEED_TENANT_SLUG` | sempre (sem ela cria a loja `demo`) | `demo` | subdomínio `<slug>.APP_BASE_DOMAIN` |
+| `SEED_TENANT_NAME` | na criação | `Mercadinho Demo` | nome exibido no app e no título |
+| `SEED_TENANT_DOMAIN` | opcional | — | domínio próprio (CNAME do cliente) |
+| `SEED_TENANT_LOGO_URL` | opcional | — | logo (URL pública no MinIO) |
+| `SEED_PRIMARY_COLOR` / `SEED_ACCENT_COLOR` | opcional | `#e6e51e` / `#466cf3` | tema |
+| `SEED_PRIMARY_INK_COLOR` | opcional | calculado por contraste | texto sobre o primário |
+| `SEED_ADMIN_NAME` / `SEED_ADMIN_PIN` | só se ainda não houver admin | `Administrador` / `1234` | primeiro Administrador |
+
+Depois do seed, o cliente acessa `https://<slug>.app.seudominio.com.br`
+(o wildcard já está no `Caddyfile`) e loga com o PIN informado; a primeira
+ação deve ser trocar esse PIN pela tela de Operadores. Só a loja `demo`
+recebe operadores e produtos de exemplo.
+
 ## O que garante que "trocar de mercado" é fácil
 
 - Nenhuma cor, nome ou logo hardcoded em componente (ver 06).
