@@ -331,11 +331,18 @@ negócio: `CASH_SESSION_ALREADY_OPEN`, `INSUFFICIENT_STOCK`,
 ### Estado vazio — `EmptyState`
 
 Toda lista/grid sem conteúdo usa `components/ui/EmptyState` (`title`,
-`description?`, `action?`, `size` `md`/`sm`), nunca um `<p>` solto. A
-ilustração (`EmptyBoxIllustration`, SVG inline) pinta **só a caixa** com a
-cor do tenant: topo em `--color-primary`, lateral em
-`color-mix(... 82%, black)` e abas em `color-mix(... 65%, white)`; interior
-e fundo continuam neutros. Nada de hex fixo — trocar o tema troca a caixa.
+`description?`, `action?`, `size` `md`/`sm`, `illustration` `box`/`cart`),
+nunca um `<p>` solto. As ilustrações (SVG inline) pintam só o elemento
+principal com a cor do tenant, sempre nas mesmas três variações —
+`--color-primary` no traço/face principal, `color-mix(... ~80%, black)` no
+contorno mais escuro, `color-mix(... ~60%, white)` no detalhe mais claro
+(aba da caixa, trançado da cesta); interior e fundo continuam neutros. Nada
+de hex fixo — trocar o tema troca a ilustração.
+
+- `EmptyBoxIllustration` (`illustration="box"`, padrão): caixa vazia,
+  usada em listas gerais (Produtos, grid de Vender, Histórico de Vendas).
+- `EmptyCartIllustration` (`illustration="cart"`): carrinho vazio, usada
+  só no carrinho da tela Vender.
 
 ### 3. Sucesso — sem banner nenhum, o próprio fluxo já confirma
 

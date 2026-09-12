@@ -91,7 +91,12 @@ export default function SellPage() {
           <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto">
             {page.cart.items.length === 0 ? (
               <li className="flex flex-1">
-                <EmptyState size="sm" title="Carrinho vazio" description="Toque em um produto para adicionar." />
+                <EmptyState
+                  size="sm"
+                  illustration="cart"
+                  title="Carrinho vazio"
+                  description="Toque em um produto para adicionar."
+                />
               </li>
             ) : (
               page.cart.items.map((item) => (

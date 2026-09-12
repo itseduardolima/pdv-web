@@ -34,4 +34,17 @@ describe('EmptyState', () => {
         expect(r + g + b).to.be.greaterThan(26 + 35 + 126)
       })
   })
+
+  it('renders the cart illustration painted with the tenant primary color', () => {
+    cy.mount(
+      <div style={{ ['--color-primary' as string]: 'rgb(26, 35, 126)' }}>
+        <EmptyState title="Carrinho vazio" illustration="cart" />
+      </div>,
+    )
+    cy.get('[data-cy=empty-state] svg [fill="var(--empty-cart-base)"]')
+      .first()
+      .then(($el) => {
+        expect(getComputedStyle($el[0]).fill).to.eq('rgb(26, 35, 126)')
+      })
+  })
 })
