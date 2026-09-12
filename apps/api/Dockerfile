@@ -15,7 +15,7 @@ COPY apps/api ./apps/api
 RUN pnpm --filter @pdv/shared build \
  && pnpm --filter api db:generate \
  && pnpm --filter api build \
- && pnpm --filter api --prod deploy /out
+ && pnpm --filter api --prod deploy --legacy /out
 
 FROM node:22-alpine AS runner
 ENV NODE_ENV=production
