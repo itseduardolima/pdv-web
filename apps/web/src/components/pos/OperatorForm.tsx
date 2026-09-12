@@ -50,9 +50,8 @@ export function OperatorForm({
     // linha tem a altura do card mais alto, e o par se alinha a ela. No celular vira uma coluna só,
     // na ordem foto, dados, PIN, excluir.
     <div className="grid grid-cols-1 gap-4 md:grid-cols-[260px_1fr] md:gap-5">
-      <aside className="flex flex-col rounded-card bg-surface p-4 md:col-start-1 md:row-start-1 md:p-[22px]">
+      <aside className="rounded-card bg-surface p-4 md:col-start-1 md:row-start-1 md:p-[22px]">
         <PhotoUploadBox
-          fill
           value={photoUrl}
           onChange={onPhotoChange}
           uploading={photoUploading}
