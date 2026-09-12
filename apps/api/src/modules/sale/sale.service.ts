@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import type { Product } from '@prisma/client'
 import type { CreateSaleInput, Sale } from '@pdv/shared'
-import { ConflictError, NotFoundError } from '../../common/errors/domain.error'
+import { ConflictError, DomainError, NotFoundError } from '../../common/errors/domain.error'
 import type { OperatorSession } from '../../common/types/request'
 import { CashSessionService } from '../cash-session/cash-session.service'
 import { toSale } from './sale.mapper'
@@ -47,6 +47,7 @@ export class SaleService {
     })
 
     const totalCents = items.reduce((sum, item) => sum + item.quantity * item.unitPriceCents, 0)
+    const change = computeChange(input.paymentMethod, input.amountReceivedCents, totalCents)
 
     try {
       const row = await this.sales.createWithStockDebit(tenantId, {
@@ -55,6 +56,8 @@ export class SaleService {
         operatorId: operator.id,
         paymentMethod: input.paymentMethod,
         totalCents,
+        amountReceivedCents: change.amountReceivedCents,
+        changeCents: change.changeCents,
         soldAt: input.soldAt ? new Date(input.soldAt) : new Date(),
         items,
       })
@@ -68,6 +71,26 @@ export class SaleService {
       throw error
     }
   }
+}
+
+// Troco (03-regras-negocio § Venda): só em Dinheiro e só se o operador
+// informou quanto recebeu. Calculado aqui, nunca aceito pronto do cliente;
+// recebido menor que o total é recusado. Em Cartão/Pix o valor é ignorado.
+function computeChange(
+  paymentMethod: CreateSaleInput['paymentMethod'],
+  amountReceivedCents: number | undefined,
+  totalCents: number,
+): { amountReceivedCents: number | null; changeCents: number | null } {
+  if (paymentMethod !== 'CASH' || amountReceivedCents === undefined) {
+    return { amountReceivedCents: null, changeCents: null }
+  }
+  if (amountReceivedCents < totalCents) {
+    throw new DomainError('INSUFFICIENT_CASH', 'Valor recebido menor que o total da venda.', 400, {
+      totalCents,
+      amountReceivedCents,
+    })
+  }
+  return { amountReceivedCents, changeCents: amountReceivedCents - totalCents }
 }
 
 // Mesmo produto em duas linhas vira uma só (a checagem de estoque é por produto).

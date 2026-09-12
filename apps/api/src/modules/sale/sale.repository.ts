@@ -16,6 +16,8 @@ export interface NewSale {
   operatorId: string
   paymentMethod: PaymentMethod
   totalCents: number
+  amountReceivedCents: number | null
+  changeCents: number | null
   soldAt: Date
   items: NewSaleItem[]
 }
@@ -59,6 +61,8 @@ export class SaleRepository {
           operatorId: sale.operatorId,
           paymentMethod: sale.paymentMethod,
           totalCents: sale.totalCents,
+          amountReceivedCents: sale.amountReceivedCents,
+          changeCents: sale.changeCents,
           soldAt: sale.soldAt,
           items: { create: sale.items },
         },

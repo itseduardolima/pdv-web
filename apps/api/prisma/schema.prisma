@@ -109,9 +109,12 @@ model Sale {
   tenantId      String
   cashSessionId String
   operatorId    String
-  paymentMethod PaymentMethod
-  totalCents    Int
-  soldAt        DateTime      @default(now())
+  paymentMethod       PaymentMethod
+  totalCents          Int
+  // Troco: só em Dinheiro com valor recebido informado (03-regras-negocio § Venda).
+  amountReceivedCents Int?
+  changeCents         Int?
+  soldAt              DateTime      @default(now())
 
   tenant      Tenant      @relation(fields: [tenantId], references: [id])
   cashSession CashSession @relation(fields: [cashSessionId], references: [id])

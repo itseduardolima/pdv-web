@@ -14,6 +14,8 @@ export function toSale(row: SaleRow): Sale {
     operatorName: row.operator.name,
     paymentMethod: row.paymentMethod,
     totalCents: row.totalCents,
+    amountReceivedCents: row.amountReceivedCents,
+    changeCents: row.changeCents,
     soldAt: row.soldAt.toISOString(),
     items: row.items.map((item) => ({
       productId: item.productId,

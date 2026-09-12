@@ -57,6 +57,14 @@ servidor (`src/server/domain`), nunca só escondendo botão na UI.
   altera vendas passadas).
 - Forma de pagamento: Dinheiro, Cartão ou Pix — obrigatório escolher uma antes
   de finalizar (sem split de pagamento em v1).
+- Troco (decisão de 2026-09-12): em venda em Dinheiro o operador pode
+  informar quanto o cliente entregou (`amountReceivedCents`, opcional). A
+  API calcula o troco (`changeCents = recebido − total`) e grava os dois na
+  venda — nunca aceita o troco pronto do cliente. Recebido menor que o total
+  é recusado (400 `INSUFFICIENT_CASH`). Em Cartão/Pix os campos ficam nulos.
+  O saldo do caixa não muda com o troco (líquido continua sendo o total da
+  venda); registrar serve para rastrear, no Fechamento, uma venda com troco
+  dado errado quando o caixa fecha com sobra ou falta.
 - Ao finalizar a venda:
   - Debita o estoque do(s) produto(s) vendido(s).
   - Gera um registro de venda com UUID (importante para sync offline, ver

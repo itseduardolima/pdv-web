@@ -172,6 +172,48 @@ describe('SaleService.create', () => {
     })
   })
 
+  describe('change (troco) for cash sales', () => {
+    it('stores the received amount and computes the change server-side', async () => {
+      const { service, repository } = makeService()
+      const sale = await service.create('t1', operator, { ...input, paymentMethod: 'CASH', amountReceivedCents: 5000 })
+      expect(repository.createWithStockDebit).toHaveBeenCalledWith(
+        't1',
+        expect.objectContaining({ totalCents: 3688, amountReceivedCents: 5000, changeCents: 1312 }),
+      )
+      expect(sale).toMatchObject({ amountReceivedCents: 5000, changeCents: 1312 })
+    })
+
+    it('rejects a received amount below the total with INSUFFICIENT_CASH, without creating the sale', async () => {
+      const { service, repository } = makeService()
+      await expect(
+        service.create('t1', operator, { ...input, paymentMethod: 'CASH', amountReceivedCents: 3000 }),
+      ).rejects.toMatchObject({
+        code: 'INSUFFICIENT_CASH',
+        statusCode: 400,
+        details: { totalCents: 3688, amountReceivedCents: 3000 },
+      })
+      expect(repository.createWithStockDebit).not.toHaveBeenCalled()
+    })
+
+    it('accepts the exact total as received (zero change)', async () => {
+      const { service } = makeService()
+      const sale = await service.create('t1', operator, { ...input, paymentMethod: 'CASH', amountReceivedCents: 3688 })
+      expect(sale.changeCents).toBe(0)
+    })
+
+    it('leaves both fields null when the operator did not enter the received amount', async () => {
+      const { service } = makeService()
+      const sale = await service.create('t1', operator, { ...input, paymentMethod: 'CASH' })
+      expect(sale).toMatchObject({ amountReceivedCents: null, changeCents: null })
+    })
+
+    it('ignores the received amount for card and pix', async () => {
+      const { service } = makeService()
+      const sale = await service.create('t1', operator, { ...input, paymentMethod: 'PIX', amountReceivedCents: 100 })
+      expect(sale).toMatchObject({ amountReceivedCents: null, changeCents: null })
+    })
+  })
+
   it('keeps soldAt from the client when provided (offline queue)', async () => {
     const { service, repository } = makeService()
     await service.create('t1', operator, { ...input, soldAt: '2026-09-12T10:00:00.000Z' })

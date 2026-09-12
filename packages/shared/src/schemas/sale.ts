@@ -15,6 +15,13 @@ export const createSaleSchema = z.object({
   uuid: z.string().uuid('Identificador da venda inválido'),
   items: z.array(saleItemInputSchema).min(1, 'Adicione ao menos um item ao carrinho'),
   paymentMethod: paymentMethodSchema,
+  // Só para Dinheiro e opcional: quanto o cliente entregou. A API calcula o
+  // troco e recusa se for menor que o total; em Cartão/Pix é ignorado.
+  amountReceivedCents: z
+    .number({ invalid_type_error: 'Informe um valor válido' })
+    .int('Informe um valor válido')
+    .nonnegative('O valor não pode ser negativo')
+    .optional(),
   soldAt: z.string().datetime().optional(),
 })
 export type CreateSaleInput = z.infer<typeof createSaleSchema>
@@ -39,6 +46,9 @@ export const saleSchema = z.object({
   operatorName: z.string(),
   paymentMethod: paymentMethodSchema,
   totalCents: cents,
+  // Preenchidos só em venda em Dinheiro com valor recebido informado.
+  amountReceivedCents: cents.nullable(),
+  changeCents: cents.nullable(),
   soldAt: z.string().datetime(),
   items: z.array(saleItemSchema),
 })
