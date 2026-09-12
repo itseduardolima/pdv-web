@@ -79,15 +79,22 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         {error ? <AlertIcon aria-hidden className="shrink-0 text-danger" /> : trailing}
       </div>
       <FieldError id={errorId} message={error} />
-      {hint && !error && (
-        <p id={hintId} className="font-body text-xs text-ink/45">
-          {hint}
-        </p>
-      )}
-      {maxLength !== undefined && (
-        <p id={counterId} className="text-right font-body text-xs tabular-nums text-ink/40">
-          {length}/{maxLength}
-        </p>
+      {/* Texto de apoio e contador na mesma linha: apoio à esquerda, contador à direita. */}
+      {((hint && !error) || maxLength !== undefined) && (
+        <div className="flex items-baseline justify-between gap-3">
+          {hint && !error ? (
+            <p id={hintId} className="font-body text-xs text-ink/45">
+              {hint}
+            </p>
+          ) : (
+            <span />
+          )}
+          {maxLength !== undefined && (
+            <p id={counterId} className="shrink-0 font-body text-xs tabular-nums text-ink/40">
+              {length}/{maxLength}
+            </p>
+          )}
+        </div>
       )}
     </div>
   )
