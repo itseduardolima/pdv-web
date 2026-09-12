@@ -24,7 +24,7 @@ frontend) — não quando o código só "existe".
   confirmação e no histórico. Spec 03 § Venda atualizada.
 - Sprint 5 concluída no código (9.1, 1.4, E2E, imagens Docker buildadas).
   9.2 (TLS) fica pendente de validação com domínio real no primeiro deploy.
-  Próximo: Sprint 6 — Operadores (6.1 → 6.7) + Dashboard (7.1 → 7.3).
+  Sprint 6: Operadores (6.1 → 6.7) prontos. Próximo: Dashboard (7.1 → 7.3).
 
 ---
 
@@ -84,13 +84,13 @@ frontend) — não quando o código só "existe".
 
 ## Sprint 6 — Operadores (gestão completa) + Dashboard
 
-- [ ] 6.1 — Listar operadores (ativos e inativos)
-- [ ] 6.2 — Criar operador
-- [ ] 6.3 — Resetar PIN de operador
-- [ ] 6.4 — Ativar/inativar operador
-- [ ] 6.5 — Regra do último Administrador
-- [ ] 6.6 — Upload de foto do operador
-- [ ] 6.7 — Excluir operador (soft-delete)
+- [x] 6.1 — Listar operadores (ativos e inativos) — `GET /operators` + `/operators` (`OperatorCard`)
+- [x] 6.2 — Criar operador — `POST /operators` (PIN argon2) + `/operators/new` (`OperatorForm`)
+- [x] 6.3 — Resetar PIN de operador — `PATCH /operators/:id/pin` + bloco "Resetar PIN" na edição
+- [x] 6.4 — Ativar/inativar operador — `PATCH /operators/:id/active` + `Toggle` na lista; inativo some do Login
+- [x] 6.5 — Regra do último Administrador — 409 `LAST_ADMIN` (+ 409 `SELF_CHANGE` para a própria conta), Jest no Service
+- [x] 6.6 — Upload de foto do operador — `PhotoUploadBox` kind `operator`
+- [x] 6.7 — Excluir operador (soft-delete) — `DELETE /operators/:id` + `ConfirmDialog`; E2E `operators.cy.ts`
 - [ ] 7.1 — Dashboard: total do dia por forma de pagamento
 - [ ] 7.2 — Dashboard: mais vendidos hoje
 - [ ] 7.3 — Dashboard: gráfico da semana

@@ -1,0 +1,58 @@
+// Gestão de operadores pela tela (HU 6.1–6.7): criar, inativar, resetar
+// PIN, regra do último admin e excluir. Mensagens vêm da API.
+describe('Operadores: criar, ativar/inativar, PIN e excluir', () => {
+  const name = `E2E Maria ${Date.now()}`
+
+  beforeEach(() => {
+    cy.loginAs('Administrador', '1234')
+    cy.ensureRegisterOpen()
+  })
+
+  it('manages an operator end to end', () => {
+    cy.visit('/operators/new')
+    cy.contains('h1', 'Novo Operador')
+
+    // submit vazio: erros de campo da API
+    cy.contains('button', 'Salvar Operador').click()
+    cy.contains('O nome precisa ter pelo menos 2 caracteres')
+    cy.contains('O PIN deve ter exatamente 4 dígitos')
+
+    cy.get('input[name=name]').type(name)
+    // só dígitos, no máximo 4
+    cy.get('input[name=pin]').type('8a8')
+    cy.get('input[name=pin]').should('have.value', '88')
+    cy.get('input[name=pin]').type('88')
+    cy.get('input[name=pin]').should('have.value', '8888')
+    cy.contains('button', 'Salvar Operador').click()
+    cy.contains('Salvo')
+    cy.location('pathname').should('eq', '/operators')
+
+    // inativar pelo toggle: some da tela de Login
+    cy.contains('[data-cy=operator-card]', name).as('card')
+    cy.get('@card').find('[role=switch]').should('have.attr', 'aria-checked', 'true').click()
+    cy.get('@card').find('[role=switch]').should('have.attr', 'aria-checked', 'false')
+    cy.get('@card').should('contain', 'inativo')
+
+    // ninguém inativa a própria conta (e o último admin nunca cai) — a API recusa e a tela mostra
+    cy.contains('[data-cy=operator-card]', 'Administrador').find('[role=switch]').click()
+    cy.contains('[role=alert]', 'própria conta')
+    cy.contains('[data-cy=operator-card]', 'Administrador')
+      .find('[role=switch]')
+      .should('have.attr', 'aria-checked', 'true')
+
+    // resetar PIN
+    cy.get('@card').find('a[aria-label^="Editar"]').click()
+    cy.contains('h1', 'Editar Operador')
+    cy.contains('button', 'Salvar PIN').click()
+    cy.contains('O PIN deve ter exatamente 4 dígitos')
+    cy.get('input[name=newPin]').type('4444')
+    cy.contains('button', 'Salvar PIN').click()
+    cy.contains('PIN salvo')
+
+    // excluir
+    cy.contains('button', 'Excluir Operador').click()
+    cy.get('[role=dialog]').contains('button', 'Excluir').click()
+    cy.location('pathname').should('eq', '/operators')
+    cy.contains('[data-cy=operator-card]', name).should('not.exist')
+  })
+})

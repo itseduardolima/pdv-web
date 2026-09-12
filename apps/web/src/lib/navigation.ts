@@ -1,5 +1,5 @@
 import type { ComponentType, SVGProps } from 'react'
-import type { OperatorRole } from '@pdv/shared'
+import { OPERATOR_ROLE_LABEL, type OperatorRole } from '@pdv/shared'
 import { ClosingIcon, DashboardIcon, OperatorsIcon, ProductsIcon, SellIcon } from '@/components/ui/Icons'
 
 export interface NavItem {
@@ -27,4 +27,4 @@ export function isNavItemActive(item: NavItem, pathname: string): boolean {
   return pathname === item.href || pathname.startsWith(`${item.href}/`)
 }
 
-export const ROLE_LABEL: Record<OperatorRole, string> = { ADMIN: 'Administrador', OPERATOR: 'Operador' }
+export const ROLE_LABEL = OPERATOR_ROLE_LABEL

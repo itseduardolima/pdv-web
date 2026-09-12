@@ -361,6 +361,25 @@ zera junto com o carrinho (cancelar / nova venda). "Venda Confirmada" mostra
 "Recebido" e "Troco" abaixo do total, e o Histórico de Vendas acrescenta
 "· troco R$ X" na linha da venda em dinheiro que teve troco.
 
+### Operadores — `Toggle`, `OperatorCard`, `OperatorForm`
+
+- `components/ui/Toggle`: interruptor em pílula (`role="switch"`,
+  `aria-checked`, `aria-label` obrigatório), `--color-primary` ligado,
+  `--color-border` desligado. Só o `active` de operador usa hoje.
+- `components/pos/OperatorCard`: avatar (`Avatar`, iniciais ou foto), nome,
+  papel em **texto simples** (HU 6.1 — não é badge), toggle de ativo e
+  lápis para editar. Inativo fica com 60% de opacidade e "· inativo" no
+  papel. Uma linha no celular, card em duas colunas a partir de `md`.
+- `components/pos/OperatorForm`: mesmo layout do `ProductForm` (foto à
+  esquerda via `PhotoUploadBox` kind `operator`, campos à direita). O PIN só
+  existe na criação (`withPin`); na edição ele é trocado no bloco "Resetar
+  PIN" (formulário próprio, botão preto "Salvar PIN" → "PIN salvo"). O
+  campo de PIN é `type="password"`, só dígitos, `maxLength` 4.
+- Erros de regra (`LAST_ADMIN`, `SELF_CHANGE`) chegam da API e aparecem
+  como `InlineAlert` acima da lista (toggle) ou do formulário (editar /
+  excluir). A tela nunca esconde o toggle do próprio usuário nem do último
+  admin — quem decide é a API.
+
 ### Estado vazio — `EmptyState`
 
 Toda lista/grid sem conteúdo usa `components/ui/EmptyState` (`title`,
