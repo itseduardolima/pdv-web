@@ -46,12 +46,13 @@ export function OperatorForm({
   const photoUrl = form.watch('photoUrl')
 
   return (
-    // Grade de altura natural (nada estica): foto | dados na primeira linha,
-    // zona de risco | Resetar PIN na segunda. No celular vira uma coluna só,
+    // Grade em duas linhas: foto | dados, zona de risco | Resetar PIN. Cada
+    // linha tem a altura do card mais alto, e o par se alinha a ela. No celular vira uma coluna só,
     // na ordem foto, dados, PIN, excluir.
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-[260px_1fr] md:items-start md:gap-5">
-      <aside className="rounded-card bg-surface p-4 md:col-start-1 md:row-start-1 md:p-[22px]">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-[260px_1fr] md:gap-5">
+      <aside className="flex flex-col rounded-card bg-surface p-4 md:col-start-1 md:row-start-1 md:p-[22px]">
         <PhotoUploadBox
+          fill
           value={photoUrl}
           onChange={onPhotoChange}
           uploading={photoUploading}

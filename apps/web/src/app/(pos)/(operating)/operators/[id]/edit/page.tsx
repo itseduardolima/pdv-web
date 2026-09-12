@@ -37,7 +37,7 @@ export default function EditOperatorPage() {
             <form
               onSubmit={page.handlePinSubmit}
               noValidate
-              className="flex flex-col gap-3 rounded-card bg-surface p-4 md:p-[26px]"
+              className="flex h-full flex-col gap-3 rounded-card bg-surface p-4 md:p-[26px]"
             >
               <div>
                 <h2 className="font-heading text-lg font-bold tracking-tight">Resetar PIN</h2>
@@ -73,7 +73,7 @@ export default function EditOperatorPage() {
             </form>
           }
           asideExtra={
-            <section className="flex flex-col gap-3 rounded-card bg-surface p-4 md:p-[22px]">
+            <section className="flex h-full flex-col gap-3 rounded-card bg-surface p-4 md:p-[22px]">
               <div>
                 <h2 className="font-heading text-base font-bold tracking-tight">Zona de risco</h2>
                 <p className="font-body text-xs text-ink/45">
@@ -84,7 +84,7 @@ export default function EditOperatorPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => page.setConfirmingDelete(true)}
-                className="w-full !border-danger !text-danger"
+                className="mt-auto w-full !border-danger !text-danger"
               >
                 <TrashIcon aria-hidden />
                 Excluir Operador
