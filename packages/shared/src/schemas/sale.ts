@@ -33,6 +33,7 @@ export const saleSchema = z.object({
   uuid: z.string().uuid(),
   cashSessionId: idSchema,
   operatorId: idSchema,
+  operatorName: z.string(),
   paymentMethod: paymentMethodSchema,
   totalCents: cents,
   soldAt: z.string().datetime(),

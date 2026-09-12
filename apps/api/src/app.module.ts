@@ -12,8 +12,10 @@ import { TenantMiddleware } from './common/middlewares/tenant.middleware'
 import { TenantModule } from './modules/tenant/tenant.module'
 import { AuthModule } from './modules/auth/auth.module'
 import { ProductModule } from './modules/product/product.module'
+import { CashSessionModule } from './modules/cash-session/cash-session.module'
+import { StorageModule } from './modules/storage/storage.module'
 
-// Módulos de domínio (operator, cash-session, sale) entram
+// Módulos de domínio (operator, sale) entram
 // aqui conforme forem criados, um por vez.
 @Module({
   imports: [
@@ -31,6 +33,8 @@ import { ProductModule } from './modules/product/product.module'
     TenantModule,
     AuthModule,
     ProductModule,
+    CashSessionModule,
+    StorageModule,
   ],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },
