@@ -55,9 +55,9 @@ pnpm dev
   pelo subdomínio (`<slug>.APP_BASE_DOMAIN`), então `localhost:3000` puro
   mostra "Loja não encontrada". `*.localhost` resolve para 127.0.0.1 sem
   configurar `/etc/hosts` no Chrome, Firefox e macOS.
-- `apps/api` fica em http://localhost:3001 (Swagger em `/docs`; toda outra
-  rota exige o header `x-tenant-host: demo.app.localhost` — ver
-  `apps/api/docs/SPEC.md`)
+- `apps/api` fica em http://localhost:3001 — Swagger em `/docs`, já com o
+  header `x-tenant-host` da loja demo preenchido; faça `POST /auth/login`
+  por lá e as rotas com cadeado funcionam (ver `apps/api/docs/SPEC.md`)
 - Console do MinIO em http://localhost:9001 (login: `STORAGE_ACCESS_KEY` /
   `STORAGE_SECRET_KEY` do `.env`)
 

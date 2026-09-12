@@ -51,8 +51,16 @@ entram um por vez, cada um testado antes do próximo):
 
 Em desenvolvimento a API só resolve tenant para hosts `<slug>.app.localhost`
 (ou o header `x-tenant-host`, que o `apps/web` envia). Acesso direto por
-`localhost:3001` responde 404 `TENANT_NOT_FOUND` por design — testar com
-`curl -H 'x-tenant-host: demo.app.localhost' http://localhost:3001/tenant/current`.
+`localhost:3001` responde 404 `TENANT_NOT_FOUND` por design.
+
+**Swagger em `http://localhost:3001/docs`** é o jeito de testar à mão: o
+header `x-tenant-host` é parâmetro global já preenchido com
+`demo.<APP_BASE_DOMAIN>`, o `POST /auth/login` seta o cookie `pdv_session`
+no próprio navegador e as rotas com cadeado passam a funcionar. Schemas de
+request/response são gerados dos Zod de `packages/shared` via
+`zodToOpenAPI` (`common/openapi.ts`) — todo endpoint novo declara
+`@ApiOkResponse({ schema: openApi(...) })` e os erros com `apiErrorOpenApi`.
+Por `curl`: `curl -H 'x-tenant-host: demo.app.localhost' http://localhost:3001/tenant/current`.
 
 ## Ordem sugerida de criação dos módulos
 
