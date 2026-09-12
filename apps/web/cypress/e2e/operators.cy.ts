@@ -56,4 +56,44 @@ describe('Operadores: criar, ativar/inativar, PIN e excluir', () => {
     cy.location('pathname').should('eq', '/operators')
     cy.contains('[data-cy=operator-card]', name).should('not.exist')
   })
+
+  it('creates an operator by e-mail (first access pending) and resends the link', () => {
+    const email = `e2e-${Date.now()}@exemplo.com`
+    cy.visit('/operators/new')
+    cy.get('input[name=name]').type('E2E Por E-mail')
+    cy.get('input[name=email]').type(email)
+    // com e-mail, o PIN deixa de ser obrigatório
+    cy.contains('button', 'Salvar Operador').click()
+    cy.location('pathname').should('eq', '/operators')
+    cy.contains('[data-cy=operator-card]', 'E2E Por E-mail').as('card')
+    cy.get('@card').find('[data-cy=pending-first-access]').should('contain', 'Primeiro acesso pendente')
+
+    // enquanto não define o PIN, não aparece no Login
+    cy.request({ url: '/api/auth/operators', headers: { 'x-tenant-host': 'demo.app.localhost' } })
+      .its('body')
+      .should((body) => {
+        expect((body as { name: string }[]).map((o) => o.name)).not.to.include('E2E Por E-mail')
+      })
+
+    cy.get('@card').find('a[aria-label^="Editar"]').click()
+    cy.contains('h2', 'Primeiro acesso')
+    cy.contains('button', 'Reenviar link').click()
+    cy.contains('Enviado')
+    // sem e-mail não há reset manual na tela
+    cy.contains('button', 'Salvar PIN').should('not.exist')
+
+    cy.contains('button', 'Excluir Operador').click()
+    cy.get('[role=dialog]').contains('button', 'Excluir').click()
+    cy.location('pathname').should('eq', '/operators')
+  })
+
+  it('an Administrador must have an e-mail', () => {
+    cy.visit('/operators/new')
+    cy.get('input[name=name]').type('E2E Chefe')
+    cy.contains('label', 'Papel').click()
+    cy.contains('[role=option]', 'Administrador').click()
+    cy.get('input[name=pin]').type('1111')
+    cy.contains('button', 'Salvar Operador').click()
+    cy.contains('Administrador precisa de e-mail para recuperar o PIN')
+  })
 })

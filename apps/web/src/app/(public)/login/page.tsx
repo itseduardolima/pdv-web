@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { SplitAuthLayout } from '@/components/layout/SplitAuthLayout'
 import { OperatorAvatarPicker } from '@/components/pos/OperatorAvatarPicker'
 import { PinKeypad } from '@/components/pos/PinKeypad'
@@ -57,6 +58,9 @@ export default function LoginPage() {
       >
         Entrar
       </Button>
+      <Link href="/forgot-pin" className="font-body text-sm font-medium text-ink/60 underline-offset-4 hover:underline">
+        Esqueci meu PIN
+      </Link>
     </SplitAuthLayout>
   )
 }

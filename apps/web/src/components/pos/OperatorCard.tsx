@@ -26,6 +26,14 @@ export function OperatorCard({ operator, editHref, onActiveChange, changingActiv
           {OPERATOR_ROLE_LABEL[operator.role]}
           {!operator.active && ' · inativo'}
         </p>
+        {!operator.hasPin && (
+          <span
+            data-cy="pending-first-access"
+            className="mt-1 inline-block rounded-pill bg-warning/15 px-2 py-0.5 font-body text-[10px] font-semibold text-ink md:text-[11px]"
+          >
+            Primeiro acesso pendente
+          </span>
+        )}
       </div>
       <Toggle
         checked={operator.active}

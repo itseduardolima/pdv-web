@@ -386,6 +386,26 @@ zera junto com o carrinho (cancelar / nova venda). "Venda Confirmada" mostra
   excluir). A tela nunca esconde o toggle do próprio usuário nem do último
   admin — quem decide é a API.
 
+### PIN por e-mail — `/forgot-pin`, `/set-pin`, cadastro de operador
+
+- Login ganha o link discreto "Esqueci meu PIN" abaixo de "Entrar".
+  `/forgot-pin` (mesmo `SplitAuthLayout`) pede só o e-mail e, enviado,
+  mostra sempre a mesma confirmação ("se houver um cadastro ativo com
+  esse e-mail…") — nunca diz se existe.
+- `/set-pin?token=` reaproveita o `PinKeypad` do Login: "Bem-vindo ao
+  caixa" no primeiro acesso, "Novo PIN" na redefinição. Link inválido vira
+  `InlineAlert` com a mensagem da API e botão "Pedir um novo link"; a tela
+  não tem texto próprio de erro (sem token ela consulta a API do mesmo
+  jeito).
+- Cadastro de operador: campo E-mail entre Nome e Papel. O `*` de
+  obrigatório é dinâmico e só visual: E-mail marca quando Papel =
+  Administrador, PIN inicial marca quando E-mail está vazio; o `hint`
+  explica o porquê. Quem valida é a API.
+- `OperatorCard` mostra a pílula "Primeiro acesso pendente" (`--color-warning`
+  a 15%) enquanto `hasPin` é falso. Na edição, o bloco abaixo dos dados é
+  "Esqueceu o PIN?" / "Primeiro acesso" com botão preto de enviar link
+  quando há e-mail, e o "Resetar PIN" manual só quando não há.
+
 ### Dashboard — `WeekChart`, `TopProductRow`
 
 - Cabeçalho da tela repete o padrão do Fechamento: cartão escuro

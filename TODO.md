@@ -99,7 +99,7 @@ frontend) — não quando o código só "existe".
 ## Extra — E-mail: primeiro acesso e "esqueci meu PIN" (decisão de 2026-09-12)
 
 - [x] API: `Operator.email` (único por tenant, obrigatório p/ admin), `pinHash` nulo = primeiro acesso, `PinToken` com RLS, módulo `mail` (`log`/`smtp`), `POST /auth/forgot-pin`, `GET /auth/pin-token/:token`, `POST /auth/set-pin`, `POST /operators/:id/send-pin-link`; specs 01/03/08/09 atualizadas; Jest
-- [ ] Web: e-mail no cadastro de operador (PIN opcional quando há e-mail), "Esqueci meu PIN" no Login, tela `/set-pin?token=`, "Reenviar link" na edição (reset manual só sem e-mail), indicador "primeiro acesso pendente" na lista; E2E
+- [x] Web: e-mail no cadastro de operador (PIN opcional quando há e-mail), "Esqueci meu PIN" no Login → `/forgot-pin`, tela `/set-pin?token=`, "Enviar/Reenviar link" na edição (reset manual só sem e-mail), pílula "Primeiro acesso pendente" na lista; E2E `pin-recovery.cy.ts` + `operators.cy.ts`
 
 ## Sprint 7 — Offline-first (PWA)
 

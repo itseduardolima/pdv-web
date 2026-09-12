@@ -2,6 +2,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useDeleteOperator } from '@/hooks/queries/use-delete-operator'
 import { useOperator } from '@/hooks/queries/use-operator'
+import { useSendPinLink } from '@/hooks/queries/use-send-pin-link'
 import { useSetOperatorPin } from '@/hooks/queries/use-set-operator-pin'
 import { useUpdateOperator } from '@/hooks/queries/use-update-operator'
 import { useUploadImage } from '@/hooks/queries/use-upload-image'
@@ -16,6 +17,8 @@ export function useEditOperatorPage() {
   const operator = useOperator(id)
   const update = useUpdateOperator(id)
   const setPin = useSetOperatorPin(id)
+  const sendLink = useSendPinLink(id)
+  const linkSave = useSaveState(sendLink.isPending)
   const remove = useDeleteOperator(id)
   const upload = useUploadImage('operator')
   const { form, applyApiErrors } = useOperatorForm()
@@ -45,6 +48,11 @@ export function useEditOperatorPage() {
     setPin.mutate({ pin: newPin }, { onSuccess: () => pinSave.markSaved(() => setNewPin('')) })
   }
 
+  // Com e-mail, o admin reenvia o link em vez de digitar um PIN por alguém.
+  function handleSendLink() {
+    sendLink.mutate(undefined, { onSuccess: () => linkSave.markSaved(() => undefined) })
+  }
+
   function handlePhotoChange(file: File) {
     upload.mutate(file, { onSuccess: (url) => form.setValue('photoUrl', url, { shouldDirty: true }) })
   }
@@ -59,6 +67,8 @@ export function useEditOperatorPage() {
   return {
     form,
     operatorName: operator.data?.name ?? '',
+    operatorEmail: operator.data?.email ?? null,
+    hasPin: operator.data?.hasPin ?? true,
     isLoading: operator.isPending,
     loadErrorMessage: apiErrorMessage(operator.error),
     handleSubmit,
@@ -76,6 +86,10 @@ export function useEditOperatorPage() {
     handlePinSubmit,
     pinState: pinSave.state,
     pinError: apiFieldErrors(setPin.error)?.pin ?? apiGeneralErrorMessage(setPin.error),
+    handleSendLink,
+    linkState: linkSave.state,
+    linkError: apiErrorMessage(sendLink.error),
+    dismissLinkError: sendLink.reset,
     confirmingDelete,
     setConfirmingDelete,
     handleDelete,

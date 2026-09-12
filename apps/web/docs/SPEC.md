@@ -31,6 +31,9 @@ src/app/
     operators/page.tsx
     operators/new/page.tsx
     operators/[id]/edit/page.tsx
+  (public)/
+    forgot-pin/page.tsx                 # "Esqueci meu PIN": pede e-mail, resposta sempre genérica
+    set-pin/page.tsx                    # ?token= — primeiro acesso ou redefinição, teclado de PIN
 ```
 
 Rotas (URLs) em inglês, como o resto do código (ver `04-padroes-codigo.md`,

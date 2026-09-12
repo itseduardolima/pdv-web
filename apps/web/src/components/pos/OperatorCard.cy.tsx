@@ -5,6 +5,8 @@ const operator: Operator = {
   id: 'o1',
   name: 'Maria Souza',
   role: 'OPERATOR',
+  email: null,
+  hasPin: true,
   active: true,
   photoUrl: null,
   createdAt: '2026-01-01T00:00:00.000Z',
@@ -25,5 +27,10 @@ describe('OperatorCard', () => {
     cy.mount(<OperatorCard operator={{ ...operator, active: false }} editHref="/x" onActiveChange={() => undefined} />)
     cy.contains('inativo')
     cy.get('[role=switch]').should('have.attr', 'aria-checked', 'false')
+  })
+
+  it('flags an operator who has not set a PIN yet', () => {
+    cy.mount(<OperatorCard operator={{ ...operator, hasPin: false }} editHref="/x" onActiveChange={() => undefined} />)
+    cy.get('[data-cy=pending-first-access]').should('contain', 'Primeiro acesso pendente')
   })
 })

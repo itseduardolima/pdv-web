@@ -44,6 +44,9 @@ export function OperatorForm({
   const { control, formState } = form
   const errors = formState.errors
   const photoUrl = form.watch('photoUrl')
+  // Só marcação visual (o `*`): a regra em si é da API (03 § Autenticação).
+  const role = form.watch('role')
+  const email = form.watch('email')
 
   return (
     // Grade em duas linhas: foto | dados, zona de risco | Resetar PIN. Cada
@@ -81,6 +84,29 @@ export function OperatorForm({
           )}
         />
 
+        <Controller
+          control={control}
+          name="email"
+          render={({ field }) => (
+            <Input
+              label="E-mail"
+              required={role === 'ADMIN'}
+              type="email"
+              inputMode="email"
+              autoComplete="off"
+              placeholder="Ex.: maria@exemplo.com"
+              hint={
+                role === 'ADMIN'
+                  ? 'Obrigatório para Administrador: é por ele que se recupera o PIN'
+                  : 'Opcional · recebe o link para definir ou recuperar o PIN'
+              }
+              maxLength={OPERATOR_LIMITS.email.max}
+              error={errors.email?.message}
+              {...field}
+            />
+          )}
+        />
+
         <div className={`grid grid-cols-1 gap-4 ${withPin ? 'sm:grid-cols-2' : ''}`}>
           <Controller
             control={control}
@@ -106,12 +132,16 @@ export function OperatorForm({
               render={({ field }) => (
                 <Input
                   label="PIN inicial"
-                  required
+                  required={email.trim() === ''}
                   type="password"
                   inputMode="numeric"
                   autoComplete="new-password"
                   placeholder="••••"
-                  hint={`${OPERATOR_LIMITS.pinLength} dígitos, usado para entrar no caixa`}
+                  hint={
+                    email.trim() === ''
+                      ? `${OPERATOR_LIMITS.pinLength} dígitos, usado para entrar no caixa`
+                      : 'Opcional: sem PIN, o operador define o dele pelo link do e-mail'
+                  }
                   maxLength={OPERATOR_LIMITS.pinLength}
                   error={errors.pin?.message}
                   name={field.name}
