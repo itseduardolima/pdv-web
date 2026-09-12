@@ -14,8 +14,8 @@ NestJS — toda regra de negócio e todo acesso a dado (Prisma/PostgreSQL).
 
 ## Estado atual
 
-Fundação + módulos `tenant`, `auth`, `product`, `cash-session` e `storage`
-implementados (falta `sale` e `operator`, um por vez, testados antes do próximo):
+Fundação + módulos `tenant`, `auth`, `product`, `cash-session`, `storage` e
+`sale` implementados (falta `operator` e o resumo do dashboard):
 
 - `AppModule` com `ConfigModule`, `ThrottlerModule`, `JwtModule` (global) e
   `PrismaModule`; pipe global `ZodValidationPipe`, filtro global
@@ -77,6 +77,18 @@ implementados (falta `sale` e `operator`, um por vez, testados antes do próximo
   gravadas em `photoUrl`/`logoUrl` (na VPS, `media.<domínio>` no Caddy).
 - `DELETE /products/:id` (só `ADMIN`): soft-delete que também libera o
   código de barras (`barcode = null`) para um cadastro novo.
+- `modules/sale/`: `POST /sales` exige caixa aberto (409
+  `CASH_SESSION_NOT_OPEN`, via `CashSessionService.requireOpen`), congela
+  `unitPriceCents` a partir do produto (qualquer preço vindo do cliente é
+  ignorado), calcula o total no servidor e debita o estoque dentro da
+  transação com `updateMany ... stockQuantity >= quantity` — se outra venda
+  levou o estoque no meio, a transação inteira é desfeita. Estoque
+  insuficiente responde 409 `INSUFFICIENT_STOCK` com `details.productId` e
+  `details.available` (o front destaca a linha do carrinho). Linhas
+  repetidas do mesmo produto são somadas antes da checagem. Idempotente:
+  o mesmo `uuid` devolve a venda já gravada sem debitar de novo (base da
+  fila offline da Sprint 7). `DomainError` aceita `details`, repassado no
+  corpo do erro pelo `DomainExceptionFilter`.
 
 Em desenvolvimento a API só resolve tenant para hosts `<slug>.app.localhost`
 (ou o header `x-tenant-host`, que o `apps/web` envia). Acesso direto por
@@ -165,11 +177,11 @@ ao menos 1 admin ativo" (`LAST_ADMIN`), ver `03-regras-negocio.md`.
 
 ### `sale`
 
-| Método | Rota                 | Descrição                                               | Papel    |
-| ------ | -------------------- | ------------------------------------------------------- | -------- |
-| POST   | `/sales`             | Cria venda (`CreateSaleInput`) — idempotente por `uuid` | operador |
-| POST   | `/sales/sync`        | Lote de vendas da fila offline, upsert por `uuid`       | operador |
-| GET    | `/dashboard/summary` | Totais do dia, mais vendidos, semana                    | operador |
+| Método | Rota                 | Descrição                                                                                                   | Papel    |
+| ------ | -------------------- | ----------------------------------------------------------------------------------------------------------- | -------- |
+| POST   | `/sales`             | Cria venda (`CreateSaleInput`) — idempotente por `uuid`; 409 `CASH_SESSION_NOT_OPEN` / `INSUFFICIENT_STOCK` | operador |
+| POST   | `/sales/sync`        | Lote de vendas da fila offline, upsert por `uuid`                                                           | operador |
+| GET    | `/dashboard/summary` | Totais do dia, mais vendidos, semana                                                                        | operador |
 
 ## Convenções de DTO e erro
 

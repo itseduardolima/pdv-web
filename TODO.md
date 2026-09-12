@@ -18,8 +18,8 @@ frontend) — não quando o código só "existe".
 
 ## Em andamento agora
 
-- Sprint 3 concluída (caixa, foto e exclusão de produto). Próximo: Sprint 4 —
-  Vender (5.1 → 5.5), o core do produto.
+- Sprint 4 concluída (Vender + Venda Confirmada). Próximo: Sprint 5 — deploy
+  do primeiro cliente real (9.1, 9.2, 1.4, E2E).
 
 ---
 
@@ -63,11 +63,11 @@ frontend) — não quando o código só "existe".
 
 ## Sprint 4 — Vender (core do produto)
 
-- [ ] 5.1 — Montar carrinho
-- [ ] 5.2 — Finalizar venda (Dinheiro/Cartão/Pix) — a API precisa recusar venda sem caixa aberto e em caixa fechado (`CASH_SESSION_CLOSED`)
-- [ ] 5.3 — Bloqueio de estoque insuficiente
-- [ ] 5.4 — Tela de Venda Confirmada
-- [ ] 5.5 — Cancelar carrinho
+- [x] 5.1 — Montar carrinho
+- [x] 5.2 — Finalizar venda (Dinheiro/Cartão/Pix) — sem caixa aberto a API responde 409 `CASH_SESSION_NOT_OPEN`
+- [x] 5.3 — Bloqueio de estoque insuficiente
+- [x] 5.4 — Tela de Venda Confirmada
+- [x] 5.5 — Cancelar carrinho
 
 ## Sprint 5 — Deploy do primeiro cliente real
 
@@ -92,7 +92,7 @@ frontend) — não quando o código só "existe".
 ## Sprint 7 — Offline-first (PWA)
 
 - [ ] 8.1 — Cache de catálogo offline (Dexie)
-- [ ] 8.2 — Fila de vendas offline + sincronização idempotente
+- [ ] 8.2 — Fila de vendas offline + sincronização idempotente — `POST /sales` já é idempotente por `uuid` (gerado no carrinho); falta `POST /sales/sync` em lote e a fila Dexie
 - [ ] 8.3 — PWA instalável com identidade do tenant
   - [ ] Favicon: usar `~/Downloads/favicon.ico` (256×256, PNG dentro de .ico) como favicon **default** da plataforma em `apps/web/src/app/`; quando o tenant tiver logo, o ícone passa a ser o logo dele (white-label, spec 06/07)
 - [ ] 9.3 — Backup diário do banco
