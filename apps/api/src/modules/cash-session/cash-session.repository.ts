@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common'
+import { Inject, Injectable } from '@nestjs/common'
 import type { CashSession, PaymentMethod } from '@prisma/client'
 import type { OpenCashSessionInput } from '@pdv/shared'
-import { PrismaService } from '../../prisma/prisma.service'
+import { PRISMA, type PrismaService } from '../../prisma/prisma.client'
 import { saleInclude, type SaleRow } from '../sale/sale.mapper'
 
 export type CashSessionRow = CashSession & { openedBy: { name: string } }
@@ -11,7 +11,7 @@ const withOpener = { openedBy: { select: { name: true } } } as const
 
 @Injectable()
 export class CashSessionRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PRISMA) private readonly prisma: PrismaService) {}
 
   findOpen(tenantId: string): Promise<CashSessionRow | null> {
     return this.prisma.cashSession.findFirst({ where: { tenantId, closedAt: null }, include: withOpener })

@@ -1,3 +1,6 @@
+# Defaults valem só para desenvolvimento local (hosts *.localhost, senhas
+# triviais). Em produção o .env é obrigatório — rode ./scripts/deploy-check.sh
+# antes de `docker compose up`, ele barra .env ausente ou com placeholder.
 services:
   caddy:
     image: caddy:2-alpine
@@ -5,6 +8,10 @@ services:
     ports:
       - '80:80'
       - '443:443'
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL:-internal@localhost}
+      API_DOMAIN: ${API_DOMAIN:-api.localhost}
+      MEDIA_DOMAIN: ${MEDIA_DOMAIN:-media.localhost}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -17,10 +24,12 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        # Inlinado no bundle do browser em build time (NEXT_PUBLIC_*).
+        NEXT_PUBLIC_API_URL: https://${API_DOMAIN:-api.localhost}
     restart: unless-stopped
     environment:
       API_INTERNAL_URL: http://api:3001
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.localhost}
     depends_on:
       - api
 
@@ -31,9 +40,13 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-pdv}:${POSTGRES_PASSWORD:-pdv}@postgres:5432/${POSTGRES_DB:-pdv}?schema=public
+      NODE_ENV: production
+      # Usuário da aplicação (não-superusuário, criado por infra/postgres/init-app-role.sh).
+      DATABASE_URL: postgresql://${APP_DB_USER:-pdv}:${APP_DB_PASSWORD:-pdv}@postgres:5432/${APP_DB_NAME:-pdv}?schema=public
+      APP_BASE_DOMAIN: ${APP_DOMAIN:-app.localhost}
+      CORS_ORIGIN: https://${APP_DOMAIN:-app.localhost},https://*.${APP_DOMAIN:-app.localhost}
       STORAGE_ENDPOINT: http://minio:9000
-      STORAGE_PUBLIC_URL: ${STORAGE_PUBLIC_URL:-https://media.localhost/pdv-media}
+      STORAGE_PUBLIC_URL: https://${MEDIA_DOMAIN:-media.localhost}/${STORAGE_BUCKET:-pdv-media}
     depends_on:
       postgres:
         condition: service_healthy
@@ -44,13 +57,18 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-pdv}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pdv}
-      POSTGRES_DB: ${POSTGRES_DB:-pdv}
+      # Superusuário só para administração/backup; a API usa APP_DB_USER.
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: postgres
+      APP_DB_USER: ${APP_DB_USER:-pdv}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:-pdv}
+      APP_DB_NAME: ${APP_DB_NAME:-pdv}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init-app-role.sh:/docker-entrypoint-initdb.d/10-app-role.sh:ro
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-pdv} -d ${POSTGRES_DB:-pdv}']
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 5s
       timeout: 5s
       retries: 10

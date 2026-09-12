@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common'
+import { Inject, Injectable } from '@nestjs/common'
 import type { Operator } from '@prisma/client'
-import { PrismaService } from '../../prisma/prisma.service'
+import { PRISMA, type PrismaService } from '../../prisma/prisma.client'
 
 export type LoginOperatorRow = Pick<Operator, 'id' | 'name' | 'photoUrl'>
 export type SessionOperatorRow = Pick<Operator, 'id' | 'name' | 'role' | 'photoUrl'>
@@ -8,7 +8,7 @@ export type OperatorForLogin = SessionOperatorRow & Pick<Operator, 'pinHash' | '
 
 @Injectable()
 export class AuthRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PRISMA) private readonly prisma: PrismaService) {}
 
   // Só o necessário para a tela de Login: nunca role nem pinHash.
   findActiveOperators(tenantId: string): Promise<LoginOperatorRow[]> {

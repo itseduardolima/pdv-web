@@ -1,11 +1,11 @@
-import { Injectable } from '@nestjs/common'
+import { Inject, Injectable } from '@nestjs/common'
 import type { Prisma, Product } from '@prisma/client'
 import type { CreateProductInput, ProductListQuery, UpdateProductInput } from '@pdv/shared'
-import { PrismaService } from '../../prisma/prisma.service'
+import { PRISMA, type PrismaService } from '../../prisma/prisma.client'
 
 @Injectable()
 export class ProductRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PRISMA) private readonly prisma: PrismaService) {}
 
   findMany(tenantId: string, query: ProductListQuery): Promise<Product[]> {
     const where: Prisma.ProductWhereInput = { tenantId, deletedAt: null }

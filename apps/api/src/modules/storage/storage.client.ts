@@ -49,27 +49,28 @@ export class StorageClient implements OnModuleInit {
   // Garante bucket com leitura pública (as fotos são servidas direto do MinIO).
   async onModuleInit() {
     try {
-      await this.s3.send(new HeadBucketCommand({ Bucket: this.bucket }))
-    } catch {
-      await this.s3.send(new CreateBucketCommand({ Bucket: this.bucket }))
-      this.logger.log(`Bucket "${this.bucket}" created`)
+      try {
+        await this.s3.send(new HeadBucketCommand({ Bucket: this.bucket }))
+      } catch {
+        await this.s3.send(new CreateBucketCommand({ Bucket: this.bucket }))
+        this.logger.log(`Bucket "${this.bucket}" created`)
+      }
+      const policy = {
+        Version: '2012-10-17',
+        Statement: [
+          {
+            Effect: 'Allow',
+            Principal: { AWS: ['*'] },
+            Action: ['s3:GetObject'],
+            Resource: [`arn:aws:s3:::${this.bucket}/*`],
+          },
+        ],
+      }
+      await this.s3.send(new PutBucketPolicyCommand({ Bucket: this.bucket, Policy: JSON.stringify(policy) }))
+    } catch (error) {
+      // Sem storage a API sobe mesmo assim; só o upload de foto falha.
+      this.logger.warn(`Storage unavailable at startup (uploads will fail until it is back): ${String(error)}`)
     }
-    const policy = {
-      Version: '2012-10-17',
-      Statement: [
-        {
-          Effect: 'Allow',
-          Principal: { AWS: ['*'] },
-          Action: ['s3:GetObject'],
-          Resource: [`arn:aws:s3:::${this.bucket}/*`],
-        },
-      ],
-    }
-    await this.s3
-      .send(new PutBucketPolicyCommand({ Bucket: this.bucket, Policy: JSON.stringify(policy) }))
-      .catch((error: unknown) => {
-        this.logger.warn(`Could not set public-read policy on "${this.bucket}": ${String(error)}`)
-      })
   }
 
   presignPost(key: string, contentType: string, maxBytes: number, expiresInSeconds: number): Promise<PresignedPost> {

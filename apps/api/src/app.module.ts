@@ -49,6 +49,6 @@ import { SaleModule } from './modules/sale/sale.module'
 export class AppModule implements NestModule {
   // Toda rota exige tenant resolvido; só o Swagger fica fora.
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(TenantMiddleware).exclude('docs', 'docs/{*path}').forRoutes('*path')
+    consumer.apply(TenantMiddleware).exclude('docs', 'docs/{*path}', 'tenant/tls-check').forRoutes('*path')
   }
 }

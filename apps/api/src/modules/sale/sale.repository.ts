@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common'
+import { Inject, Injectable } from '@nestjs/common'
 import type { PaymentMethod, Product } from '@prisma/client'
-import { PrismaService } from '../../prisma/prisma.service'
+import { PRISMA, setTenantInTransaction, type PrismaService } from '../../prisma/prisma.client'
 import { saleInclude, type SaleRow } from './sale.mapper'
 
 export interface NewSaleItem {
@@ -28,7 +28,7 @@ export class StockRaceError extends Error {
 
 @Injectable()
 export class SaleRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PRISMA) private readonly prisma: PrismaService) {}
 
   findByUuid(tenantId: string, uuid: string): Promise<SaleRow | null> {
     return this.prisma.sale.findUnique({ where: { tenantId_uuid: { tenantId, uuid } }, include: saleInclude })
@@ -43,6 +43,7 @@ export class SaleRepository {
   // com duas vendas simultâneas — se falhar, a transação inteira é desfeita.
   createWithStockDebit(tenantId: string, sale: NewSale): Promise<SaleRow> {
     return this.prisma.$transaction(async (tx) => {
+      await setTenantInTransaction(tx, tenantId)
       for (const item of sale.items) {
         const debited = await tx.product.updateMany({
           where: { tenantId, id: item.productId, deletedAt: null, stockQuantity: { gte: item.quantity } },

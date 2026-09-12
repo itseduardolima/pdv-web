@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import cookieParser from 'cookie-parser'
 import { AppModule } from './app.module'
+import { corsOriginMatcher } from './common/cors'
 import { SESSION_COOKIE } from './common/types/request'
 
 async function bootstrap() {
@@ -10,8 +11,10 @@ async function bootstrap() {
   const config = app.get(ConfigService)
 
   app.use(cookieParser())
+  // CORS_ORIGIN aceita lista separada por vírgula e curinga de subdomínio
+  // (https://*.app.exemplo.com.br) — cada tenant tem o próprio host.
   app.enableCors({
-    origin: config.get<string>('CORS_ORIGIN', 'http://localhost:3000').split(','),
+    origin: corsOriginMatcher(config.get<string>('CORS_ORIGIN', 'http://localhost:3000')),
     credentials: true,
   })
 

@@ -1,15 +1,27 @@
-# Substitua os hosts pelo domínio real na VPS. Caddy emite/renova TLS (Let's Encrypt) sozinho.
-# Subdomínios de tenant (<slug>.app.exemplo.com.br) caem no bloco do web via wildcard.
+# Domínios vêm do .env (APP_DOMAIN, API_DOMAIN, MEDIA_DOMAIN). Caddy emite e
+# renova Let's Encrypt sozinho. Subdomínios de tenant (<slug>.APP_DOMAIN) e
+# domínios próprios de cliente ganham certificado sob demanda, só depois que
+# a API confirma que o host é uma loja cadastrada (tenant/tls-check).
+{
+	email {$ACME_EMAIL}
+	on_demand_tls {
+		ask http://api:3001/tenant/tls-check
+	}
+}
 
-*.app.localhost, app.localhost {
+# Loja: qualquer host que a API reconheça (subdomínio ou domínio próprio).
+https:// {
+	tls {
+		on_demand
+	}
 	reverse_proxy web:3000
 }
 
-api.localhost {
+{$API_DOMAIN} {
 	reverse_proxy api:3001
 }
 
 # Fotos/logos servidas direto do MinIO (nunca pela API, ver 08-seguranca § 6).
-media.localhost {
+{$MEDIA_DOMAIN} {
 	reverse_proxy minio:9000
 }

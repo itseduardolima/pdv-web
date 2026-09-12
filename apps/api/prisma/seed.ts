@@ -10,6 +10,7 @@ const slug = env.SEED_TENANT_SLUG ?? 'demo'
 const isDemo = slug === 'demo'
 
 const prisma = new PrismaClient()
+type Tx = Parameters<Parameters<PrismaClient['$transaction']>[0]>[0]
 
 async function main() {
   const tenant = await prisma.tenant.upsert({
@@ -33,37 +34,45 @@ async function main() {
     },
   })
 
-  // Nunca deixa um tenant sem Administrador ativo; nunca troca PIN de um admin existente.
-  const admin = await prisma.operator.findFirst({
-    where: { tenantId: tenant.id, role: 'ADMIN', active: true, deletedAt: null },
-  })
-  const adminPin = env.SEED_ADMIN_PIN ?? '1234'
-  if (!admin) {
-    await prisma.operator.create({
-      data: {
-        tenantId: tenant.id,
-        name: env.SEED_ADMIN_NAME ?? 'Administrador',
-        role: 'ADMIN',
-        pinHash: await argon2.hash(adminPin),
-      },
+  // Daqui em diante as tabelas têm RLS: tudo numa transação com o tenant setado.
+  const createdAdminPin = await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenant.id}, true)`
+
+    // Nunca deixa um tenant sem Administrador ativo; nunca troca PIN de um admin existente.
+    const admin = await tx.operator.findFirst({
+      where: { tenantId: tenant.id, role: 'ADMIN', active: true, deletedAt: null },
     })
-  }
+    const adminPin = env.SEED_ADMIN_PIN ?? '1234'
+    if (!admin) {
+      await tx.operator.create({
+        data: {
+          tenantId: tenant.id,
+          name: env.SEED_ADMIN_NAME ?? 'Administrador',
+          role: 'ADMIN',
+          pinHash: await argon2.hash(adminPin),
+        },
+      })
+    }
 
-  if (isDemo) await seedDemoData(tenant.id)
+    if (isDemo) await seedDemoData(tx, tenant.id)
+    return admin ? null : adminPin
+  })
 
-  console.log(`Seed done for tenant "${tenant.slug}" (${tenant.name})${admin ? '' : ` — admin PIN: ${adminPin}`}`)
+  console.log(
+    `Seed done for tenant "${tenant.slug}" (${tenant.name})${createdAdminPin ? ` — admin PIN: ${createdAdminPin}` : ''}`,
+  )
 }
 
 // Dados de exemplo só para a loja demo (desenvolvimento e E2E).
-async function seedDemoData(tenantId: string) {
+async function seedDemoData(tx: Tx, tenantId: string) {
   const extraOperators = [
     { name: 'Rafael', role: 'OPERATOR' as const, active: true, pin: '2222' },
     { name: 'Luana', role: 'OPERATOR' as const, active: false, pin: '3333' },
   ]
   for (const extra of extraOperators) {
-    const exists = await prisma.operator.findFirst({ where: { tenantId, name: extra.name } })
+    const exists = await tx.operator.findFirst({ where: { tenantId, name: extra.name } })
     if (!exists) {
-      await prisma.operator.create({
+      await tx.operator.create({
         data: {
           tenantId,
           name: extra.name,
@@ -87,7 +96,7 @@ async function seedDemoData(tenantId: string) {
     },
     {
       name: 'Cerveja Lata 350ml',
-      category: 'Bebidas',
+      category: 'Bebidas alcoólicas',
       salePriceCents: 399,
       costPriceCents: 260,
       stockQuantity: 120,
@@ -114,7 +123,7 @@ async function seedDemoData(tenantId: string) {
     },
   ]
   for (const product of products) {
-    await prisma.product.upsert({
+    await tx.product.upsert({
       where: { tenantId_barcode: { tenantId, barcode: product.barcode } },
       update: {},
       create: { ...product, tenantId, unit: 'UN' },
