@@ -32,6 +32,15 @@ const config: Config = {
         heading: 'var(--font-heading)',
         body: 'var(--font-body)',
       },
+      keyframes: {
+        'slide-down': {
+          from: { opacity: '0', transform: 'translateY(-6px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
+      animation: {
+        'slide-down': 'slide-down 150ms ease-out',
+      },
     },
   },
   plugins: [],

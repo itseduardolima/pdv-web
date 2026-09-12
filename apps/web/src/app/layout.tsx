@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
+import { QueryProvider } from '@/components/providers/query-provider'
 import { TenantProvider } from '@/components/providers/tenant-provider'
 import { getCurrentTenant } from '@/lib/tenant.server'
 import { tenantThemeCss } from '@/lib/tenant-theme'
@@ -34,7 +35,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <style dangerouslySetInnerHTML={{ __html: tenantThemeCss(tenant) }} />
       </head>
       <body>
-        <TenantProvider tenant={tenant}>{children}</TenantProvider>
+        <QueryProvider>
+          <TenantProvider tenant={tenant}>{children}</TenantProvider>
+        </QueryProvider>
       </body>
     </html>
   )
