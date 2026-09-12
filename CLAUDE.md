@@ -133,10 +133,12 @@ docker compose up -d --build   # sobe web + api + postgres + minio na VPS
 
 ## Estado atual do projeto
 
-Sprint 0 concluída e Sprint 1 em andamento. Pronto: monorepo pnpm +
-Turborepo, `packages/shared` (schemas Zod), `apps/api` (NestJS com infra de
-tenant/auth/erros, migration inicial e o **módulo `tenant`** — resolução por
-host com cache e `GET /tenant/current`), `apps/web` (Next.js + Tailwind com
-tema do tenant aplicado no layout raiz, `api-client`, Cypress configurado),
-`docker-compose.yml` + `Caddyfile`, CI. Próximo passo: módulo `auth` na API
-(ver ordem em `apps/api/docs/SPEC.md` e o estado em `TODO.md`).
+Sprints 0 e 1 concluídas. Pronto: monorepo pnpm + Turborepo,
+`packages/shared` (schemas Zod), `apps/api` (NestJS com infra de
+tenant/auth/erros, migration inicial, **módulos `tenant` e `auth`** —
+resolução por host, `GET /tenant/current`, login por PIN com cookie de
+sessão, rate-limit, logout), `apps/web` (Next.js + Tailwind com tema do
+tenant no layout raiz, tela de Login, guarda de sessão em `(pos)`,
+`InlineAlert`, Cypress component tests rodando), `docker-compose.yml` +
+`Caddyfile`, CI. Próximo passo: Sprint 2 — produtos + padrão de
+validação/feedback (ver `TODO.md`).

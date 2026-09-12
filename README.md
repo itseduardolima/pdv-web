@@ -50,7 +50,8 @@ pnpm --filter api db:seed
 pnpm dev
 ```
 
-- `apps/web` fica em http://demo.app.localhost:3000 — o tenant é resolvido
+- `apps/web` fica em http://demo.app.localhost:3000 (login: Administrador,
+  PIN 1234; Rafael, PIN 2222) — o tenant é resolvido
   pelo subdomínio (`<slug>.APP_BASE_DOMAIN`), então `localhost:3000` puro
   mostra "Loja não encontrada". `*.localhost` resolve para 127.0.0.1 sem
   configurar `/etc/hosts` no Chrome, Firefox e macOS.

@@ -83,6 +83,16 @@ para `lib/utils/`, nunca inline num arquivo de componente.
 
 ## Client HTTP (`lib/api-client.ts`)
 
+- Toda chamada envia `x-tenant-host`: no browser é `window.location.host`;
+  em Server Components é o `host` do request, junto com o cookie de sessão
+  (`lib/server-headers.ts`, usado por `lib/tenant.server.ts` e
+  `lib/session.server.ts`).
+- **Só em desenvolvimento** o browser chama a API pela mesma origem
+  (`NEXT_PUBLIC_API_URL=/api`, rewrite em `next.config.mjs` para
+  `API_INTERNAL_URL`), porque `demo.app.localhost:3000` e `localhost:3001`
+  são sites diferentes e o cookie `SameSite=Lax` não atravessaria. Em
+  produção web e API compartilham o domínio pai e o rewrite não existe.
+
 - Um único client tipado sobre `fetch`, que:
   - injeta o cookie de sessão automaticamente (`credentials: 'include'`);
   - lança um erro tipado (`ApiError`) quando a resposta não é 2xx, com o

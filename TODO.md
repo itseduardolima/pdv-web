@@ -18,8 +18,8 @@ frontend) — não quando o código só "existe".
 
 ## Em andamento agora
 
-- Sprint 1 em andamento. Módulo `tenant` concluído (1.1 e 1.2); próximo é o
-  módulo `auth` (2.1 → 2.5).
+- Sprint 1 concluída (tenant + auth). Próximo: Sprint 2, começando por 10.1
+  (erro de campo mapeado) e 3.1 (criar produto). 10.2 já saiu junto do Login.
 
 ---
 
@@ -36,16 +36,16 @@ frontend) — não quando o código só "existe".
 
 - [x] 1.1 — Resolução de tenant por host (`TenantResolver` + módulo `tenant`)
 - [x] 1.2 — `GET /tenant/current` + tema aplicado no `apps/web`
-- [ ] 2.1 — Lista de operadores para a tela de Login
-- [ ] 2.2 — Login por PIN (hash argon2, cookie de sessão)
-- [ ] 2.3 — Rate-limit de tentativas de PIN
-- [ ] 2.4 — Expiração de sessão (12h)
-- [ ] 2.5 — Logout
+- [x] 2.1 — Lista de operadores para a tela de Login
+- [x] 2.2 — Login por PIN (hash argon2, cookie de sessão)
+- [x] 2.3 — Rate-limit de tentativas de PIN
+- [x] 2.4 — Expiração de sessão (12h)
+- [x] 2.5 — Logout
 
 ## Sprint 2 — Produtos + padrão de Validação/Feedback
 
 - [ ] 10.1 — Erro de campo mapeado da resposta da API (sem validação no cliente)
-- [ ] 10.2 — Componente `InlineAlert` (substitui toast)
+- [x] 10.2 — Componente `InlineAlert` (substitui toast)
 - [ ] 3.1 — Criar produto
 - [ ] 3.2 — Listar produtos (busca)
 - [ ] 3.3 — Editar produto
@@ -98,6 +98,9 @@ frontend) — não quando o código só "existe".
 - [ ] 9.4 — Deploy automático via CI
 
 ## Backlog P2 (sem sprint fixa ainda)
+
+- [ ] Sessão com renovação deslizante por inatividade (hoje o JWT expira 12h fixas após o login — decisão da Sprint 1)
+- [ ] Carregar Poppins/Inter via `next/font` (hoje `--font-heading`/`--font-body` caem no fallback do sistema)
 
 - [ ] Storybook para `components/ui` e `components/pos`
 - [ ] Hard-delete de dado pessoal sob pedido (LGPD) — ver `docs/specs/08-seguranca.md` § 11

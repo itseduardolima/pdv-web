@@ -14,8 +14,8 @@ NestJS — toda regra de negócio e todo acesso a dado (Prisma/PostgreSQL).
 
 ## Estado atual
 
-Fundação + módulo `tenant` implementados (os demais módulos entram um por
-vez, cada um testado antes do próximo):
+Fundação + módulos `tenant` e `auth` implementados (os demais módulos
+entram um por vez, cada um testado antes do próximo):
 
 - `AppModule` com `ConfigModule`, `ThrottlerModule`, `JwtModule` (global) e
   `PrismaModule`; pipe global `ZodValidationPipe`, filtro global
@@ -36,6 +36,18 @@ vez, cada um testado antes do próximo):
   tema é lido fresco a cada chamada, sem cache). `TenantMiddleware` está
   aplicado em todas as rotas exceto `/docs`.
 - `prisma/migrations/` com a migration inicial (`init`).
+- `modules/auth/`: `GET /auth/operators`, `POST /auth/login`,
+  `POST /auth/logout`, `GET /auth/me`. Login verifica o PIN com argon2 e
+  responde 401 `INVALID_CREDENTIALS` ("PIN incorreto.") para qualquer causa
+  (id inexistente, outro tenant, inativo, excluído, PIN errado) — quando o
+  operador não existe ainda roda o `verify` contra um hash fictício.
+  `LoginAttemptTracker` (em memória, uma instância) bloqueia a 6ª tentativa
+  em 60s por `tenantId:operatorId` com 429 `TOO_MANY_ATTEMPTS`; `@Throttle`
+  mais estrito por IP no login. Cookie `pdv_session`: `HttpOnly`,
+  `SameSite=Lax`, `Path=/`, `maxAge` = `SESSION_TTL_HOURS`, `Secure` exceto
+  com `NODE_ENV=development`. JWT expira 12h fixas após o login (sem
+  renovação por atividade — ver `TODO.md` § Backlog P2). `GET /auth/me`
+  rebusca o operador: inativado/excluído depois do login recebe 401.
 
 Em desenvolvimento a API só resolve tenant para hosts `<slug>.app.localhost`
 (ou o header `x-tenant-host`, que o `apps/web` envia). Acesso direto por
