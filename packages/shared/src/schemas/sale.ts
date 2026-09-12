@@ -5,12 +5,15 @@ const cents = z.number().int().nonnegative()
 
 export const saleItemInputSchema = z.object({
   productId: idSchema,
-  quantity: z.number().int().positive(),
+  quantity: z
+    .number({ invalid_type_error: 'Quantidade inválida' })
+    .int('Quantidade inválida')
+    .positive('A quantidade deve ser maior que zero'),
 })
 
 export const createSaleSchema = z.object({
-  uuid: z.string().uuid(),
-  items: z.array(saleItemInputSchema).min(1, 'Adicione ao menos um item'),
+  uuid: z.string().uuid('Identificador da venda inválido'),
+  items: z.array(saleItemInputSchema).min(1, 'Adicione ao menos um item ao carrinho'),
   paymentMethod: paymentMethodSchema,
   soldAt: z.string().datetime().optional(),
 })

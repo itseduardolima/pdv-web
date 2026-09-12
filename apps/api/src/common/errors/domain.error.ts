@@ -3,6 +3,8 @@ export class DomainError extends Error {
     public readonly code: string,
     message: string,
     public readonly statusCode: number = 400,
+    // Dado estruturado para o frontend agir (ex.: qual item está sem estoque).
+    public readonly details?: Record<string, unknown>,
   ) {
     super(message)
     this.name = 'DomainError'
@@ -10,14 +12,14 @@ export class DomainError extends Error {
 }
 
 export class NotFoundError extends DomainError {
-  constructor(code: string, message: string) {
-    super(code, message, 404)
+  constructor(code: string, message: string, details?: Record<string, unknown>) {
+    super(code, message, 404, details)
   }
 }
 
 export class ConflictError extends DomainError {
-  constructor(code: string, message: string) {
-    super(code, message, 409)
+  constructor(code: string, message: string, details?: Record<string, unknown>) {
+    super(code, message, 409, details)
   }
 }
 

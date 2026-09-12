@@ -1,0 +1,183 @@
+import type { Product } from '@prisma/client'
+import type { CashSessionService } from '../cash-session/cash-session.service'
+import { ConflictError } from '../../common/errors/domain.error'
+import { SaleRepository, StockRaceError, type NewSale } from './sale.repository'
+import { SaleService } from './sale.service'
+
+const operator = { id: 'op1', tenantId: 't1', role: 'OPERATOR' as const }
+const uuid = '8f0e1a3c-4c5b-4d6e-8f70-0123456789ab'
+
+const beer: Product = {
+  id: 'p1',
+  tenantId: 't1',
+  name: 'Cerveja Lata 350ml',
+  category: 'Bebidas',
+  unit: 'UN',
+  barcode: null,
+  salePriceCents: 399,
+  costPriceCents: 260,
+  stockQuantity: 3,
+  minStock: 24,
+  photoUrl: null,
+  createdAt: new Date(),
+  deletedAt: null,
+}
+const rice: Product = { ...beer, id: 'p2', name: 'Arroz 5kg', salePriceCents: 2890, stockQuantity: 20 }
+
+function makeService(overrides: Partial<Record<keyof SaleRepository, jest.Mock>> = {}, openSession: boolean = true) {
+  const repository = {
+    findByUuid: jest.fn().mockResolvedValue(null),
+    findProducts: jest.fn().mockResolvedValue([beer, rice]),
+    createWithStockDebit: jest.fn().mockImplementation(async (_t: string, sale: NewSale) => ({
+      id: 's1',
+      tenantId: 't1',
+      ...sale,
+      operator: { name: 'Karol' },
+      items: sale.items.map((item, index) => ({ id: `i${index}`, saleId: 's1', ...item })),
+    })),
+    ...overrides,
+  }
+  const cashSessions = {
+    requireOpen: openSession
+      ? jest.fn().mockResolvedValue({ id: 'cs1' })
+      : jest.fn().mockRejectedValue(new ConflictError('CASH_SESSION_NOT_OPEN', 'Abra o caixa antes de vender.')),
+  }
+  const service = new SaleService(
+    repository as unknown as SaleRepository,
+    cashSessions as unknown as CashSessionService,
+  )
+  return { service, repository, cashSessions }
+}
+
+describe('SaleService.create', () => {
+  const input = {
+    uuid,
+    paymentMethod: 'PIX' as const,
+    items: [
+      { productId: 'p1', quantity: 2 },
+      { productId: 'p2', quantity: 1 },
+    ],
+  }
+
+  it('creates the sale in the open session with frozen prices, computed total and stock debit', async () => {
+    const { service, repository } = makeService()
+    const sale = await service.create('t1', operator, input)
+    expect(repository.createWithStockDebit).toHaveBeenCalledWith(
+      't1',
+      expect.objectContaining({
+        uuid,
+        cashSessionId: 'cs1',
+        operatorId: 'op1',
+        paymentMethod: 'PIX',
+        totalCents: 2 * 399 + 2890,
+        items: [
+          { productId: 'p1', productName: 'Cerveja Lata 350ml', quantity: 2, unitPriceCents: 399 },
+          { productId: 'p2', productName: 'Arroz 5kg', quantity: 1, unitPriceCents: 2890 },
+        ],
+      }),
+    )
+    expect(sale).toMatchObject({ uuid, totalCents: 3688, operatorName: 'Karol', paymentMethod: 'PIX' })
+  })
+
+  it('is idempotent: an existing uuid returns the stored sale without creating or debiting again', async () => {
+    const existing = {
+      id: 's0',
+      uuid,
+      tenantId: 't1',
+      cashSessionId: 'cs1',
+      operatorId: 'op1',
+      paymentMethod: 'CASH',
+      totalCents: 100,
+      soldAt: new Date(),
+      operator: { name: 'Karol' },
+      items: [],
+    }
+    const { service, repository, cashSessions } = makeService({ findByUuid: jest.fn().mockResolvedValue(existing) })
+    const sale = await service.create('t1', operator, input)
+    expect(sale.id).toBe('s0')
+    expect(repository.createWithStockDebit).not.toHaveBeenCalled()
+    expect(cashSessions.requireOpen).not.toHaveBeenCalled()
+  })
+
+  it('refuses to sell without an open cash session', async () => {
+    const { service, repository } = makeService({}, false)
+    await expect(service.create('t1', operator, input)).rejects.toMatchObject({
+      code: 'CASH_SESSION_NOT_OPEN',
+      statusCode: 409,
+    })
+    expect(repository.createWithStockDebit).not.toHaveBeenCalled()
+  })
+
+  it('rejects an unknown or deleted product with PRODUCT_NOT_FOUND and its id', async () => {
+    const { service } = makeService({ findProducts: jest.fn().mockResolvedValue([beer]) })
+    await expect(service.create('t1', operator, input)).rejects.toMatchObject({
+      code: 'PRODUCT_NOT_FOUND',
+      statusCode: 404,
+      details: { productId: 'p2' },
+    })
+  })
+
+  it('blocks a quantity above stock with INSUFFICIENT_STOCK naming the product and the available amount', async () => {
+    const { service, repository } = makeService()
+    await expect(
+      service.create('t1', operator, { ...input, items: [{ productId: 'p1', quantity: 4 }] }),
+    ).rejects.toMatchObject({
+      code: 'INSUFFICIENT_STOCK',
+      statusCode: 409,
+      message: 'Estoque insuficiente: só há 3 unidades de "Cerveja Lata 350ml".',
+      details: { productId: 'p1', available: 3 },
+    })
+    expect(repository.createWithStockDebit).not.toHaveBeenCalled()
+  })
+
+  it('says "sem estoque" when there is nothing left', async () => {
+    const { service } = makeService({
+      findProducts: jest.fn().mockResolvedValue([{ ...beer, stockQuantity: 0 }, rice]),
+    })
+    await expect(
+      service.create('t1', operator, { ...input, items: [{ productId: 'p1', quantity: 1 }] }),
+    ).rejects.toMatchObject({
+      message: '"Cerveja Lata 350ml" está sem estoque.',
+    })
+  })
+
+  it('merges repeated product lines before checking stock', async () => {
+    const { service, repository } = makeService()
+    await expect(
+      service.create('t1', operator, {
+        ...input,
+        items: [
+          { productId: 'p1', quantity: 2 },
+          { productId: 'p1', quantity: 2 },
+        ],
+      }),
+    ).rejects.toMatchObject({ code: 'INSUFFICIENT_STOCK' })
+    expect(repository.createWithStockDebit).not.toHaveBeenCalled()
+  })
+
+  it('uses the current product price, ignoring any price the client might send', async () => {
+    const { service, repository } = makeService()
+    await service.create('t1', operator, {
+      ...input,
+      items: [{ productId: 'p2', quantity: 1, unitPriceCents: 1 } as never],
+    })
+    expect(repository.createWithStockDebit).toHaveBeenCalledWith('t1', expect.objectContaining({ totalCents: 2890 }))
+  })
+
+  it('maps a concurrent stock race into INSUFFICIENT_STOCK', async () => {
+    const { service } = makeService({ createWithStockDebit: jest.fn().mockRejectedValue(new StockRaceError('p1')) })
+    await expect(service.create('t1', operator, input)).rejects.toMatchObject({
+      code: 'INSUFFICIENT_STOCK',
+      details: { productId: 'p1', available: null },
+    })
+  })
+
+  it('keeps soldAt from the client when provided (offline queue)', async () => {
+    const { service, repository } = makeService()
+    await service.create('t1', operator, { ...input, soldAt: '2026-09-12T10:00:00.000Z' })
+    expect(repository.createWithStockDebit).toHaveBeenCalledWith(
+      't1',
+      expect.objectContaining({ soldAt: new Date('2026-09-12T10:00:00.000Z') }),
+    )
+  })
+})

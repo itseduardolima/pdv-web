@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common'
-import { Prisma, type CashSession, type PaymentMethod } from '@prisma/client'
+import type { CashSession, PaymentMethod } from '@prisma/client'
 import type { OpenCashSessionInput } from '@pdv/shared'
 import { PrismaService } from '../../prisma/prisma.service'
+import { saleInclude, type SaleRow } from '../sale/sale.mapper'
 
 export type CashSessionRow = CashSession & { openedBy: { name: string } }
-export type SaleRow = Prisma.SaleGetPayload<{ include: { items: true; operator: { select: { name: true } } } }>
 export type PaymentTotals = Record<PaymentMethod, number>
 
 const withOpener = { openedBy: { select: { name: true } } } as const
@@ -63,7 +63,7 @@ export class CashSessionRepository {
   findSales(tenantId: string, cashSessionId: string): Promise<SaleRow[]> {
     return this.prisma.sale.findMany({
       where: { tenantId, cashSessionId },
-      include: { items: true, operator: { select: { name: true } } },
+      include: saleInclude,
       orderBy: { soldAt: 'desc' },
     })
   }

@@ -5,7 +5,9 @@ export const idSchema = z.string().min(1)
 export const operatorRoleSchema = z.enum(['ADMIN', 'OPERATOR'])
 export type OperatorRole = z.infer<typeof operatorRoleSchema>
 
-export const paymentMethodSchema = z.enum(['CASH', 'CARD', 'PIX'])
+export const paymentMethodSchema = z.enum(['CASH', 'CARD', 'PIX'], {
+  errorMap: () => ({ message: 'Escolha a forma de pagamento' }),
+})
 export type PaymentMethod = z.infer<typeof paymentMethodSchema>
 
 export const pinSchema = z.string().regex(/^\d{4}$/, 'O PIN deve ter exatamente 4 dígitos')

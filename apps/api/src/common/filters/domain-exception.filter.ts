@@ -14,7 +14,12 @@ export class DomainExceptionFilter implements ExceptionFilter {
 
   private toBody(exception: unknown): ApiError {
     if (exception instanceof DomainError) {
-      return { statusCode: exception.statusCode, code: exception.code, message: exception.message }
+      return {
+        statusCode: exception.statusCode,
+        code: exception.code,
+        message: exception.message,
+        ...(exception.details ? { details: exception.details } : {}),
+      }
     }
     if (exception instanceof ZodValidationException) {
       return {

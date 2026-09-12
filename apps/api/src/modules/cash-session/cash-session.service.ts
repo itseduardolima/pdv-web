@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common'
 import type { CashSessionSummary, OpenCashSessionInput, Sale } from '@pdv/shared'
 import { ConflictError, ForbiddenError, NotFoundError } from '../../common/errors/domain.error'
 import type { OperatorSession } from '../../common/types/request'
-import { CashSessionRepository, type CashSessionRow, type PaymentTotals, type SaleRow } from './cash-session.repository'
+import { toSale } from '../sale/sale.mapper'
+import { CashSessionRepository, type CashSessionRow, type PaymentTotals } from './cash-session.repository'
 
 const sessionNotFound = () => new NotFoundError('CASH_SESSION_NOT_FOUND', 'Caixa não encontrado.')
 
@@ -13,6 +14,13 @@ export class CashSessionService {
   async getCurrent(tenantId: string): Promise<CashSessionSummary | null> {
     const row = await this.sessions.findOpen(tenantId)
     return row ? this.toSummary(tenantId, row) : null
+  }
+
+  // Vender exige caixa aberto (03-regras-negocio § Caixa).
+  async requireOpen(tenantId: string): Promise<CashSessionRow> {
+    const row = await this.sessions.findOpen(tenantId)
+    if (!row) throw new ConflictError('CASH_SESSION_NOT_OPEN', 'Abra o caixa antes de vender.')
+    return row
   }
 
   async get(tenantId: string, id: string): Promise<CashSessionSummary> {
@@ -75,24 +83,5 @@ export class CashSessionService {
       totalCents: totals.CASH + totals.CARD + totals.PIX,
       salesCount: live.count,
     }
-  }
-}
-
-function toSale(row: SaleRow): Sale {
-  return {
-    id: row.id,
-    uuid: row.uuid,
-    cashSessionId: row.cashSessionId,
-    operatorId: row.operatorId,
-    operatorName: row.operator.name,
-    paymentMethod: row.paymentMethod,
-    totalCents: row.totalCents,
-    soldAt: row.soldAt.toISOString(),
-    items: row.items.map((item) => ({
-      productId: item.productId,
-      productName: item.productName,
-      quantity: item.quantity,
-      unitPriceCents: item.unitPriceCents,
-    })),
   }
 }

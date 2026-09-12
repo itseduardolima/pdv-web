@@ -63,6 +63,18 @@ describe('CashSessionService', () => {
     })
   })
 
+  describe('requireOpen', () => {
+    it('returns the open session', async () => {
+      const { service } = makeService({ findOpen: jest.fn().mockResolvedValue(openRow) })
+      await expect(service.requireOpen('t1')).resolves.toMatchObject({ id: 'cs1' })
+    })
+
+    it('throws 409 CASH_SESSION_NOT_OPEN when there is none', async () => {
+      const { service } = makeService()
+      await expect(service.requireOpen('t1')).rejects.toMatchObject({ code: 'CASH_SESSION_NOT_OPEN', statusCode: 409 })
+    })
+  })
+
   describe('open', () => {
     it('creates the session for the logged operator', async () => {
       const { service, repository } = makeService()
