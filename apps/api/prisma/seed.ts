@@ -49,6 +49,8 @@ async function main() {
           tenantId: tenant.id,
           name: env.SEED_ADMIN_NAME ?? 'Administrador',
           role: 'ADMIN',
+          // E-mail é como o admin recupera o PIN sem depender de ninguém.
+          email: env.SEED_ADMIN_EMAIL ?? (isDemo ? 'admin@mercadinho-demo.com.br' : null),
           pinHash: await argon2.hash(adminPin),
         },
       })

@@ -10,6 +10,13 @@ export const paymentMethodSchema = z.enum(['CASH', 'CARD', 'PIX'], {
 })
 export type PaymentMethod = z.infer<typeof paymentMethodSchema>
 
+export const emailSchema = z
+  .string({ required_error: 'Informe o e-mail' })
+  .trim()
+  .toLowerCase()
+  .email('Informe um e-mail válido')
+  .max(160, 'O e-mail pode ter no máximo 160 caracteres')
+
 export const pinSchema = z.string().regex(/^\d{4}$/, 'O PIN deve ter exatamente 4 dígitos')
 
 export const hexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Cor deve estar no formato #RRGGBB')

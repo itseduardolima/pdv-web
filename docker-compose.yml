@@ -47,6 +47,8 @@ services:
       CORS_ORIGIN: https://${APP_DOMAIN:-app.localhost},https://*.${APP_DOMAIN:-app.localhost}
       STORAGE_ENDPOINT: http://minio:9000
       STORAGE_PUBLIC_URL: https://${MEDIA_DOMAIN:-media.localhost}/${STORAGE_BUCKET:-pdv-media}
+      # Link dos e-mails de PIN aponta para a loja em HTTPS.
+      WEB_ORIGIN_TEMPLATE: https://{host}
     depends_on:
       postgres:
         condition: service_healthy

@@ -1,11 +1,12 @@
 import { Injectable, OnModuleInit } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import argon2 from 'argon2'
-import type { CurrentSession, LoginInput, LoginOperator } from '@pdv/shared'
+import type { CurrentSession, ForgotPinInput, LoginInput, LoginOperator } from '@pdv/shared'
 import { DomainError, UnauthorizedError } from '../../common/errors/domain.error'
 import type { OperatorSession } from '../../common/types/request'
 import { AuthRepository, type SessionOperatorRow } from './auth.repository'
 import { LoginAttemptTracker } from './login-attempt.tracker'
+import { PinTokenService } from './pin-token.service'
 
 export interface LoginResult {
   token: string
@@ -30,6 +31,7 @@ export class AuthService implements OnModuleInit {
     private readonly operators: AuthRepository,
     private readonly attempts: LoginAttemptTracker,
     private readonly jwt: JwtService,
+    private readonly pinTokens: PinTokenService,
   ) {}
 
   async onModuleInit() {
@@ -44,7 +46,8 @@ export class AuthService implements OnModuleInit {
     if (this.attempts.isLocked(tenantId, input.operatorId)) throw new TooManyAttemptsError()
 
     const operator = await this.operators.findOperatorForLogin(tenantId, input.operatorId)
-    const usable = operator !== null && operator.active && operator.deletedAt === null
+    // Sem pinHash = primeiro acesso pendente: não entra até definir o PIN.
+    const usable = operator !== null && operator.active && operator.deletedAt === null && operator.pinHash !== null
     const hash = operator?.pinHash ?? this.dummyHash
     const pinMatches = await argon2.verify(hash, input.pin)
 
@@ -57,6 +60,13 @@ export class AuthService implements OnModuleInit {
     this.attempts.reset(tenantId, input.operatorId)
     const token = await this.jwt.signAsync({ sub: operator.id, tenantId, role: operator.role })
     return { token, session: this.toSession(tenantId, operator) }
+  }
+
+  // Sempre resolve sem erro: a resposta não pode dizer se o e-mail existe.
+  async forgotPin(tenantId: string, input: ForgotPinInput): Promise<void> {
+    const operator = await this.operators.findOperatorByEmail(tenantId, input.email)
+    if (!operator || !operator.active || operator.deletedAt !== null) return
+    await this.pinTokens.sendPinLink(tenantId, operator)
   }
 
   async me(session: OperatorSession): Promise<CurrentSession> {

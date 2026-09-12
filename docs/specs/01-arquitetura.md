@@ -132,6 +132,14 @@ cobrança por uso) e controle total do ambiente, adequado ao estágio do
 produto (poucos tenants, orçamento apertado de quem está começando a
 revender o sistema).
 
+Única exceção (decisão de 2026-09-12): **e-mail transacional** sai por um
+provedor SMTP externo (Resend, Brevo, Amazon SES ou similar), configurado
+por `MAIL_TRANSPORT=smtp` + `SMTP_*` no `.env`. Motivo: servidor de e-mail
+próprio numa VPS cai em spam com frequência, e o e-mail é o que tira um
+Administrador que esqueceu o PIN da dependência do suporte. O uso é
+mínimo (primeiro acesso e "esqueci meu PIN"), então qualquer plano gratuito
+atende. Em dev/teste `MAIL_TRANSPORT=log` só escreve o link no console.
+
 ```
 VPS (Hostinger)
 ├── Nginx (ou Caddy)         — reverse proxy + TLS (Let's Encrypt), roteia

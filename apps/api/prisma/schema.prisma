@@ -50,7 +50,10 @@ model Operator {
   tenantId  String
   name      String
   role      OperatorRole @default(OPERATOR)
-  pinHash   String
+  // Nulo = primeiro acesso pendente: o operador define o PIN pelo link do e-mail.
+  pinHash   String?
+  // Opcional; obrigatório para Administrador (recuperação do PIN). Único por tenant.
+  email     String?
   active    Boolean      @default(true)
   photoUrl  String?
   createdAt DateTime     @default(now())
@@ -59,8 +62,32 @@ model Operator {
   tenant       Tenant        @relation(fields: [tenantId], references: [id])
   cashSessions CashSession[]
   sales        Sale[]
+  pinTokens    PinToken[]
 
+  @@unique([tenantId, email])
   @@index([tenantId, active])
+}
+
+enum PinTokenPurpose {
+  FIRST_ACCESS
+  RESET
+}
+
+// Link de "primeiro acesso" / "esqueci o PIN": guarda só o hash do token,
+// uso único, com validade curta (08-seguranca § 4).
+model PinToken {
+  id         String          @id @default(cuid())
+  tenantId   String
+  operatorId String
+  tokenHash  String          @unique
+  purpose    PinTokenPurpose
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime        @default(now())
+
+  operator Operator @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, operatorId])
 }
 
 model Product {

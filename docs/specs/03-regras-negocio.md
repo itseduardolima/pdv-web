@@ -32,6 +32,18 @@ servidor (`src/server/domain`), nunca só escondendo botão na UI.
   bloquear novas tentativas por 60s (mitiga brute-force de PIN curto).
 - Sessão expira por inatividade (definir: 12h é um bom padrão para não deslogar
   no meio do expediente, mas não persistir "para sempre" num tablet compartilhado).
+- Primeiro acesso e "esqueci meu PIN" (decisão de 2026-09-12): o operador
+  pode ter **e-mail** (opcional; **obrigatório para Administrador**, senão
+  o único admin da loja fica trancado sem ninguém para resetar). Ao criar
+  um operador o admin informa um PIN inicial **ou** um e-mail: com e-mail e
+  sem PIN, o sistema envia um link de **primeiro acesso** (vale 3 dias) e o
+  operador define o próprio PIN; até lá ele não aparece na tela de Login.
+  Na tela de Login existe "Esqueci meu PIN": pede o e-mail e responde
+  sempre a mesma coisa, exista ou não; se existir operador ativo com ele,
+  chega um link de redefinição (vale 1 hora). Todo link é de uso único e
+  emitir um novo invalida o anterior. O admin também pode reenviar o link
+  pela tela de Operadores. O reset manual de PIN pelo admin continua
+  existindo **só para quem não tem e-mail**.
 
 ## Caixa (abertura / fechamento)
 

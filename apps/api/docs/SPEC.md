@@ -48,6 +48,15 @@ Fundação + módulos `tenant`, `auth`, `product`, `cash-session`, `storage` e
   com `NODE_ENV=development`. JWT expira 12h fixas após o login (sem
   renovação por atividade — ver `TODO.md` § Backlog P2). `GET /auth/me`
   rebusca o operador: inativado/excluído depois do login recebe 401.
+  `PinTokenService` (exportado para o módulo `operator`) emite os links de
+  primeiro acesso / redefinição: `POST /auth/forgot-pin` (sempre 204),
+  `GET /auth/pin-token/:token` (nome + finalidade, ou 400 `INVALID_TOKEN`),
+  `POST /auth/set-pin` (`{ token, pin }`, define o PIN e queima o token na
+  mesma transação). Operador com `pinHash` nulo (primeiro acesso pendente)
+  não aparece em `/auth/operators` e recebe `INVALID_CREDENTIALS` no login.
+- `modules/mail/`: `MailService.send` (global). `MAIL_TRANSPORT=log`
+  (padrão) escreve no console; `smtp` usa nodemailer com `SMTP_*`.
+  `WEB_ORIGIN_TEMPLATE` (`https://{host}`) monta o link para o host da loja.
 - `modules/product/`: `GET /products` (query `search` em nome/código/
   categoria, `category`), `GET /products/categories` (distintas, para o
   select do form), `GET /products/:id`, `POST` e `PATCH` (só `ADMIN`).
@@ -129,12 +138,15 @@ nunca vai na URL — é resolvido pelo host (`TenantMiddleware`).
 
 ### `auth`
 
-| Método | Rota              | Descrição                                            | Papel    |
-| ------ | ----------------- | ---------------------------------------------------- | -------- |
-| GET    | `/auth/operators` | Operadores ativos (avatar+nome) para a tela de Login | público  |
-| POST   | `/auth/login`     | `{ operatorId, pin }` → seta cookie `pdv_session`    | público  |
-| POST   | `/auth/logout`    | Encerra sessão                                       | operador |
-| GET    | `/auth/me`        | Operador logado + papel + tenant                     | operador |
+| Método | Rota                     | Descrição                                                                    | Papel    |
+| ------ | ------------------------ | ---------------------------------------------------------------------------- | -------- |
+| GET    | `/auth/operators`        | Operadores ativos (avatar+nome) para a tela de Login                         | público  |
+| POST   | `/auth/login`            | `{ operatorId, pin }` → seta cookie `pdv_session`                            | público  |
+| POST   | `/auth/logout`           | Encerra sessão                                                               | operador |
+| GET    | `/auth/me`               | Operador logado + papel + tenant                                             | operador |
+| POST   | `/auth/forgot-pin`       | `{ email }` → sempre 204; envia link de redefinição se houver operador ativo | público  |
+| GET    | `/auth/pin-token/:token` | Nome do operador + finalidade do link (400 `INVALID_TOKEN`)                  | público  |
+| POST   | `/auth/set-pin`          | `{ token, pin }` → 204; primeiro acesso ou redefinição                       | público  |
 
 ### `tenant`
 
@@ -144,15 +156,16 @@ nunca vai na URL — é resolvido pelo host (`TenantMiddleware`).
 
 ### `operator`
 
-| Método | Rota                    | Descrição                    | Papel |
-| ------ | ----------------------- | ---------------------------- | ----- |
-| GET    | `/operators`            | Lista (inclui inativos)      | admin |
-| GET    | `/operators/:id`        | Detalhe                      | admin |
-| POST   | `/operators`            | Cria (`CreateOperatorInput`) | admin |
-| PATCH  | `/operators/:id`        | Edita dados/foto             | admin |
-| PATCH  | `/operators/:id/pin`    | Define novo PIN              | admin |
-| PATCH  | `/operators/:id/active` | Ativa/inativa                | admin |
-| DELETE | `/operators/:id`        | Soft-delete                  | admin |
+| Método | Rota                           | Descrição                                                                                                                           | Papel |
+| ------ | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| GET    | `/operators`                   | Lista (inclui inativos)                                                                                                             | admin |
+| GET    | `/operators/:id`               | Detalhe                                                                                                                             | admin |
+| POST   | `/operators`                   | Cria (`CreateOperatorInput`): PIN inicial **ou** e-mail (sem PIN → link de primeiro acesso); admin exige e-mail; 409 `EMAIL_IN_USE` | admin |
+| POST   | `/operators/:id/send-pin-link` | Reenvia link (primeiro acesso ou redefinição); 409 `NO_EMAIL` / `OPERATOR_INACTIVE`                                                 | admin |
+| PATCH  | `/operators/:id`               | Edita dados/foto                                                                                                                    | admin |
+| PATCH  | `/operators/:id/pin`           | Define novo PIN (para quem não tem e-mail)                                                                                          | admin |
+| PATCH  | `/operators/:id/active`        | Ativa/inativa                                                                                                                       | admin |
+| DELETE | `/operators/:id`               | Soft-delete                                                                                                                         | admin |
 
 Todas as mutações validam no `OperatorService` a regra "sempre deve existir
 ao menos 1 admin ativo" (409 `LAST_ADMIN`, só quando a ação tira um admin

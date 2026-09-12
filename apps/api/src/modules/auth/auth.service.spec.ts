@@ -3,6 +3,7 @@ import argon2 from 'argon2'
 import { AuthRepository, type OperatorForLogin } from './auth.repository'
 import { AuthService } from './auth.service'
 import { LoginAttemptTracker } from './login-attempt.tracker'
+import type { PinTokenService } from './pin-token.service'
 
 jest.mock('argon2', () => ({ hash: jest.fn(), verify: jest.fn() }))
 const argon = argon2 as jest.Mocked<typeof argon2>
@@ -22,14 +23,21 @@ async function makeService(overrides: Partial<Record<keyof AuthRepository, jest.
     findActiveOperators: jest.fn().mockResolvedValue([]),
     findOperatorForLogin: jest.fn().mockResolvedValue(null),
     findSessionOperator: jest.fn().mockResolvedValue(null),
+    findOperatorByEmail: jest.fn().mockResolvedValue(null),
     ...overrides,
   }
   const jwt = { signAsync: jest.fn().mockResolvedValue('signed-token') } as unknown as JwtService
   const tracker = new LoginAttemptTracker()
-  const service = new AuthService(repository as unknown as AuthRepository, tracker, jwt)
+  const pinTokens = { sendPinLink: jest.fn().mockResolvedValue(undefined) }
+  const service = new AuthService(
+    repository as unknown as AuthRepository,
+    tracker,
+    jwt,
+    pinTokens as unknown as PinTokenService,
+  )
   argon.hash.mockResolvedValue('dummy-hash')
   await service.onModuleInit()
-  return { service, repository, jwt, tracker }
+  return { service, repository, jwt, tracker, pinTokens }
 }
 
 describe('AuthService', () => {
@@ -146,6 +154,38 @@ describe('AuthService', () => {
     it('rejects with 401 when the operator was deactivated or deleted after login', async () => {
       const { service } = await makeService()
       await expect(service.me(session)).rejects.toMatchObject({ code: 'INVALID_SESSION', statusCode: 401 })
+    })
+  })
+
+  describe('first access pending (no PIN yet)', () => {
+    it('refuses login with the generic error, like a wrong PIN', async () => {
+      const { service, repository } = await makeService({
+        findOperatorForLogin: jest.fn().mockResolvedValue({ ...operator, pinHash: null }),
+      })
+      await expect(service.login('t1', { operatorId: 'op1', pin: '1234' })).rejects.toMatchObject({
+        code: 'INVALID_CREDENTIALS',
+      })
+      expect(repository.findOperatorForLogin).toHaveBeenCalledWith('t1', 'op1')
+    })
+  })
+
+  describe('forgotPin', () => {
+    const withEmail = { id: 'op1', name: 'Karol', email: 'k@x.com', pinHash: 'h', active: true, deletedAt: null }
+
+    it('sends the link when an active operator has that e-mail', async () => {
+      const { service, pinTokens } = await makeService({
+        findOperatorByEmail: jest.fn().mockResolvedValue(withEmail),
+      })
+      await expect(service.forgotPin('t1', { email: 'k@x.com' })).resolves.toBeUndefined()
+      expect(pinTokens.sendPinLink).toHaveBeenCalledWith('t1', withEmail)
+    })
+
+    it('resolves silently (never errors) for unknown, inactive or deleted e-mails', async () => {
+      for (const row of [null, { ...withEmail, active: false }, { ...withEmail, deletedAt: new Date() }]) {
+        const { service, pinTokens } = await makeService({ findOperatorByEmail: jest.fn().mockResolvedValue(row) })
+        await expect(service.forgotPin('t1', { email: 'k@x.com' })).resolves.toBeUndefined()
+        expect(pinTokens.sendPinLink).not.toHaveBeenCalled()
+      }
     })
   })
 })

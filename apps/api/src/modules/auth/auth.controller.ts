@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Post, Res } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, Param, Post, Res } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import {
   ApiBadRequestResponse,
@@ -14,10 +14,14 @@ import { Throttle } from '@nestjs/throttler'
 import type { CookieOptions, Response } from 'express'
 import {
   currentSessionSchema,
+  forgotPinInputSchema,
   loginInputSchema,
   loginOperatorSchema,
+  pinTokenInfoSchema,
+  setPinWithTokenInputSchema,
   type CurrentSession,
   type LoginOperator,
+  type PinTokenInfo,
 } from '@pdv/shared'
 import { z } from 'zod'
 import { CurrentOperator } from '../../common/decorators/current-operator.decorator'
@@ -26,7 +30,10 @@ import { Public } from '../../common/decorators/public.decorator'
 import { apiErrorOpenApi, openApi } from '../../common/openapi'
 import { SESSION_COOKIE, type OperatorSession } from '../../common/types/request'
 import { AuthService } from './auth.service'
+import { ForgotPinDto } from './dto/forgot-pin.dto'
 import { LoginDto } from './dto/login.dto'
+import { SetPinWithTokenDto } from './dto/set-pin-with-token.dto'
+import { PinTokenService } from './pin-token.service'
 
 @ApiTags('auth')
 @Controller('auth')
@@ -35,6 +42,7 @@ export class AuthController {
 
   constructor(
     private readonly auth: AuthService,
+    private readonly pinTokens: PinTokenService,
     config: ConfigService,
   ) {
     // Todos os flags de 08-seguranca § 4; Secure só cai em desenvolvimento
@@ -78,6 +86,36 @@ export class AuthController {
     const { token, session } = await this.auth.login(tenantId, body)
     response.cookie(SESSION_COOKIE, token, this.cookieOptions)
     return session
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post('forgot-pin')
+  @HttpCode(204)
+  @ApiBody({ schema: openApi(forgotPinInputSchema) })
+  @ApiNoContentResponse({ description: 'Sempre 204: se houver operador ativo com esse e-mail, recebe o link' })
+  @ApiTooManyRequestsResponse({ schema: apiErrorOpenApi })
+  forgotPin(@CurrentTenant() tenantId: string, @Body() body: ForgotPinDto): Promise<void> {
+    return this.auth.forgotPin(tenantId, body)
+  }
+
+  @Public()
+  @Get('pin-token/:token')
+  @ApiOkResponse({ schema: openApi(pinTokenInfoSchema), description: 'Nome do operador e finalidade do link' })
+  @ApiBadRequestResponse({ schema: apiErrorOpenApi, description: 'INVALID_TOKEN — inexistente, usado ou expirado' })
+  inspectPinToken(@CurrentTenant() tenantId: string, @Param('token') token: string): Promise<PinTokenInfo> {
+    return this.pinTokens.inspect(tenantId, token)
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('set-pin')
+  @HttpCode(204)
+  @ApiBody({ schema: openApi(setPinWithTokenInputSchema) })
+  @ApiNoContentResponse({ description: 'PIN definido; o link deixa de valer' })
+  @ApiBadRequestResponse({ schema: apiErrorOpenApi, description: 'VALIDATION ou INVALID_TOKEN' })
+  setPin(@CurrentTenant() tenantId: string, @Body() body: SetPinWithTokenDto): Promise<void> {
+    return this.pinTokens.setPin(tenantId, body.token, body.pin)
   }
 
   @Post('logout')

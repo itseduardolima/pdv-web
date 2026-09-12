@@ -136,6 +136,26 @@ Backup que nunca foi restaurado com sucesso não é backup, é uma esperança.
 - **Verificação mensal de restore** (item 4) — colocar num calendário, não
   depender de lembrar.
 
+## 8. E-mail transacional (SMTP)
+
+A API só envia dois e-mails: link de primeiro acesso e link de "esqueci
+meu PIN" (ver `03-regras-negocio.md` § Autenticação). Em produção
+`MAIL_TRANSPORT=smtp` com um provedor externo (`01-arquitetura.md`):
+
+- Preencher `MAIL_FROM` (remetente com o domínio verificado no provedor) e
+  `SMTP_HOST/PORT/SECURE/USER/PASSWORD` no `.env` da VPS.
+- Configurar SPF/DKIM do domínio no provedor, senão o link cai em spam e o
+  admin liga para o suporte do mesmo jeito.
+- Teste após o deploy: criar um operador de teste com e-mail e sem PIN pela
+  tela de Operadores, conferir se o e-mail chega, excluir o operador.
+- **Se o provedor cair**: `POST /auth/forgot-pin` continua respondendo 204
+  (não vaza o problema) mas o e-mail não sai; o log da API mostra o erro do
+  SMTP. Enquanto isso o admin pode resetar o PIN de um operador pela tela;
+  para o único admin, suporte com `MAIL_TRANSPORT=log` temporário e o link
+  lido no log (`docker compose logs api`).
+- Sem SMTP configurado a API sobe com `log` e nada quebra — só não chega
+  e-mail nenhum.
+
 ## O que fica fora de escopo por ora (e por quê)
 
 - **Stack de observabilidade completa** (Grafana/Prometheus, agregador de

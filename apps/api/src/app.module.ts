@@ -17,6 +17,7 @@ import { StorageModule } from './modules/storage/storage.module'
 import { SaleModule } from './modules/sale/sale.module'
 import { OperatorModule } from './modules/operator/operator.module'
 import { DashboardModule } from './modules/dashboard/dashboard.module'
+import { MailModule } from './modules/mail/mail.module'
 
 // Módulos de domínio (operator) entram
 // aqui conforme forem criados, um por vez.
@@ -43,6 +44,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module'
       }),
     }),
     PrismaModule,
+    MailModule,
     TenantModule,
     AuthModule,
     ProductModule,

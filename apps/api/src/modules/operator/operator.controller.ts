@@ -57,6 +57,7 @@ export class OperatorController {
   @ApiBody({ schema: openApi(createOperatorSchema) })
   @ApiCreatedResponse({ schema: openApi(operatorSchema) })
   @ApiBadRequestResponse({ schema: apiErrorOpenApi, description: 'VALIDATION — details.fieldErrors por campo' })
+  @ApiConflictResponse({ schema: apiErrorOpenApi, description: 'EMAIL_IN_USE' })
   create(@CurrentTenant() tenantId: string, @Body() body: CreateOperatorDto): Promise<Operator> {
     return this.operators.create(tenantId, body)
   }
@@ -65,7 +66,10 @@ export class OperatorController {
   @ApiBody({ schema: openApi(updateOperatorSchema) })
   @ApiOkResponse({ schema: openApi(operatorSchema) })
   @ApiNotFoundResponse({ schema: apiErrorOpenApi, description: 'OPERATOR_NOT_FOUND' })
-  @ApiConflictResponse({ schema: apiErrorOpenApi, description: 'LAST_ADMIN / SELF_CHANGE (ao rebaixar)' })
+  @ApiConflictResponse({
+    schema: apiErrorOpenApi,
+    description: 'LAST_ADMIN / SELF_CHANGE (ao rebaixar) / EMAIL_IN_USE',
+  })
   update(
     @CurrentTenant() tenantId: string,
     @Param('id') id: string,
@@ -73,6 +77,15 @@ export class OperatorController {
     @CurrentOperator() actor: OperatorSession,
   ): Promise<Operator> {
     return this.operators.update(tenantId, id, body, actor)
+  }
+
+  @Post(':id/send-pin-link')
+  @HttpCode(204)
+  @ApiNoContentResponse({ description: 'E-mail com link de primeiro acesso (sem PIN) ou de redefinição (com PIN)' })
+  @ApiNotFoundResponse({ schema: apiErrorOpenApi, description: 'OPERATOR_NOT_FOUND' })
+  @ApiConflictResponse({ schema: apiErrorOpenApi, description: 'NO_EMAIL / OPERATOR_INACTIVE' })
+  sendPinLink(@CurrentTenant() tenantId: string, @Param('id') id: string): Promise<void> {
+    return this.operators.sendPinLink(tenantId, id)
   }
 
   @Patch(':id/pin')

@@ -15,7 +15,8 @@ describe('Operadores: criar, ativar/inativar, PIN e excluir', () => {
     // submit vazio: erros de campo da API
     cy.contains('button', 'Salvar Operador').click()
     cy.contains('O nome precisa ter pelo menos 2 caracteres')
-    cy.contains('O PIN deve ter exatamente 4 dígitos')
+    // sem e-mail, o PIN inicial é obrigatório (03-regras-negocio § Autenticação)
+    cy.contains('Informe um PIN inicial ou um e-mail para o primeiro acesso')
 
     cy.get('input[name=name]').type(name)
     // só dígitos, no máximo 4

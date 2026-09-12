@@ -1,4 +1,4 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common'
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common'
 import type { Response } from 'express'
 import { ZodValidationException } from 'nestjs-zod'
 import type { ApiError } from '@pdv/shared'
@@ -6,9 +6,15 @@ import { DomainError } from '../errors/domain.error'
 
 @Catch()
 export class DomainExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(DomainExceptionFilter.name)
+
   catch(exception: unknown, host: ArgumentsHost) {
     const response = host.switchToHttp().getResponse<Response>()
     const body = this.toBody(exception)
+    // Erro inesperado: o cliente recebe a mensagem genérica, o log recebe a causa (09-operacao § 3).
+    if (body.code === 'INTERNAL_ERROR') {
+      this.logger.error(exception instanceof Error ? (exception.stack ?? exception.message) : String(exception))
+    }
     response.status(body.statusCode).json(body)
   }
 

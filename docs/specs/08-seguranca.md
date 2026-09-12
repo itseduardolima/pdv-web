@@ -89,6 +89,15 @@ o PIN é uma senha forte:
 - **Nunca expor lista de operadores fora do tenant resolvido** — o endpoint
   `GET /auth/operators` (público, mas escopado ao tenant) não pode aceitar
   um `tenantId` vindo de query param; é sempre o do host.
+- **Links de PIN por e-mail** (primeiro acesso / esqueci meu PIN): token de
+  32 bytes aleatórios (`crypto.randomBytes`), o banco guarda só o SHA-256
+  (`PinToken.tokenHash`, com RLS como as outras tabelas); uso único,
+  validade curta (1h reset, 72h primeiro acesso), emitir novo invalida o
+  anterior; o link é sempre para o host da própria loja. `POST
+/auth/forgot-pin` responde 204 **sempre** (não confirma se o e-mail
+  existe) e tem `@Throttle` próprio (5/min); `POST /auth/set-pin` idem
+  (10/min). O e-mail é texto puro, sem HTML. Um operador sem PIN definido
+  não aparece na lista de Login nem consegue logar.
 
 ### Cookie de sessão — todos os flags, sempre
 
