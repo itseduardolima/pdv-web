@@ -14,8 +14,8 @@ NestJS — toda regra de negócio e todo acesso a dado (Prisma/PostgreSQL).
 
 ## Estado atual
 
-Fundação + módulos `tenant`, `auth` e `product` implementados (os demais
-módulos entram um por vez, cada um testado antes do próximo):
+Fundação + módulos `tenant`, `auth`, `product`, `cash-session` e `storage`
+implementados (falta `sale` e `operator`, um por vez, testados antes do próximo):
 
 - `AppModule` com `ConfigModule`, `ThrottlerModule`, `JwtModule` (global) e
   `PrismaModule`; pipe global `ZodValidationPipe`, filtro global
@@ -58,6 +58,25 @@ módulos entram um por vez, cada um testado antes do próximo):
 - `prisma/seed.ts` parametrizado por env (`SEED_TENANT_SLUG`, ...) e
   compilado em `dist/seed/seed.js` no build, ver
   `docs/specs/07-multitenant-whitelabel.md` § Onboarding.
+- `modules/cash-session/`: `GET /cash-sessions/current` devolve
+  `{ session | null }` (envelope: um `null` solto vira corpo vazio no Nest)
+  com totais ao vivo por forma de pagamento, `totalCents`, `salesCount` e
+  `sequence` ("Caixa #N"); `POST` abre (409 `CASH_SESSION_ALREADY_OPEN`;
+  índice único parcial `CashSession_one_open_per_tenant` como segunda
+  camada); `POST /:id/close` soma as vendas, congela os totais e
+  responde 409 `CASH_SESSION_ALREADY_CLOSED` numa segunda vez — Operador só
+  fecha o caixa que abriu (403 `NOT_CASH_SESSION_OWNER`), Administrador
+  fecha qualquer um; `GET /:id/sales` lista as vendas com itens e nome do
+  operador.
+- `modules/storage/`: `POST /uploads` (só `ADMIN`) emite um presigned POST
+  do MinIO preso ao content-type (JPEG/PNG/WebP) e a 5 MB, com chave
+  `tenants/<tenantId>/<kind>/<uuid>.<ext>` gerada no servidor;
+  `POST /uploads/confirm` confere tamanho e magic bytes do objeto e apaga o
+  que não for imagem (400 `INVALID_UPLOAD`). `StorageClient` cria o bucket
+  com leitura pública no boot; `STORAGE_PUBLIC_URL` é a base das URLs
+  gravadas em `photoUrl`/`logoUrl` (na VPS, `media.<domínio>` no Caddy).
+- `DELETE /products/:id` (só `ADMIN`): soft-delete que também libera o
+  código de barras (`barcode = null`) para um cadastro novo.
 
 Em desenvolvimento a API só resolve tenant para hosts `<slug>.app.localhost`
 (ou o header `x-tenant-host`, que o `apps/web` envia). Acesso direto por
@@ -89,60 +108,68 @@ nunca vai na URL — é resolvido pelo host (`TenantMiddleware`).
 
 ### `auth`
 
-| Método | Rota | Descrição | Papel |
-|---|---|---|---|
-| GET | `/auth/operators` | Operadores ativos (avatar+nome) para a tela de Login | público |
-| POST | `/auth/login` | `{ operatorId, pin }` → seta cookie `pdv_session` | público |
-| POST | `/auth/logout` | Encerra sessão | operador |
-| GET | `/auth/me` | Operador logado + papel + tenant | operador |
+| Método | Rota              | Descrição                                            | Papel    |
+| ------ | ----------------- | ---------------------------------------------------- | -------- |
+| GET    | `/auth/operators` | Operadores ativos (avatar+nome) para a tela de Login | público  |
+| POST   | `/auth/login`     | `{ operatorId, pin }` → seta cookie `pdv_session`    | público  |
+| POST   | `/auth/logout`    | Encerra sessão                                       | operador |
+| GET    | `/auth/me`        | Operador logado + papel + tenant                     | operador |
 
 ### `tenant`
 
-| Método | Rota | Descrição | Papel |
-|---|---|---|---|
-| GET | `/tenant/current` | Nome, logo e cores do tenant resolvido (usado pelo `apps/web` para montar o tema) | público |
+| Método | Rota              | Descrição                                                                         | Papel   |
+| ------ | ----------------- | --------------------------------------------------------------------------------- | ------- |
+| GET    | `/tenant/current` | Nome, logo e cores do tenant resolvido (usado pelo `apps/web` para montar o tema) | público |
 
 ### `operator`
 
-| Método | Rota | Descrição | Papel |
-|---|---|---|---|
-| GET | `/operators` | Lista (inclui inativos) | admin |
-| POST | `/operators` | Cria (`CreateOperatorInput`) | admin |
-| PATCH | `/operators/:id` | Edita dados/foto | admin |
-| PATCH | `/operators/:id/pin` | Define novo PIN | admin |
-| PATCH | `/operators/:id/active` | Ativa/inativa | admin |
-| DELETE | `/operators/:id` | Soft-delete | admin |
+| Método | Rota                    | Descrição                    | Papel |
+| ------ | ----------------------- | ---------------------------- | ----- |
+| GET    | `/operators`            | Lista (inclui inativos)      | admin |
+| POST   | `/operators`            | Cria (`CreateOperatorInput`) | admin |
+| PATCH  | `/operators/:id`        | Edita dados/foto             | admin |
+| PATCH  | `/operators/:id/pin`    | Define novo PIN              | admin |
+| PATCH  | `/operators/:id/active` | Ativa/inativa                | admin |
+| DELETE | `/operators/:id`        | Soft-delete                  | admin |
 
 Todas as mutações validam no `OperatorService` a regra "sempre deve existir
 ao menos 1 admin ativo" (`LAST_ADMIN`), ver `03-regras-negocio.md`.
 
 ### `product`
 
-| Método | Rota | Descrição | Papel |
-|---|---|---|---|
-| GET | `/products` | Lista (query: `search`, `category`) | operador |
-| GET | `/products/categories` | Categorias distintas em uso | operador |
-| GET | `/products/:id` | Detalhe | operador |
-| POST | `/products` | Cria | admin |
-| PATCH | `/products/:id` | Edita | admin |
-| DELETE | `/products/:id` | Soft-delete | admin |
+| Método | Rota                   | Descrição                               | Papel    |
+| ------ | ---------------------- | --------------------------------------- | -------- |
+| GET    | `/products`            | Lista (query: `search`, `category`)     | operador |
+| GET    | `/products/categories` | Categorias distintas em uso             | operador |
+| GET    | `/products/:id`        | Detalhe                                 | operador |
+| POST   | `/products`            | Cria                                    | admin    |
+| PATCH  | `/products/:id`        | Edita                                   | admin    |
+| DELETE | `/products/:id`        | Soft-delete (libera o código de barras) | admin    |
 
 ### `cash-session`
 
-| Método | Rota | Descrição | Papel |
-|---|---|---|---|
-| GET | `/cash-sessions/current` | Sessão aberta, se houver | operador |
-| POST | `/cash-sessions` | Abre (`OpenCashSessionInput`) — 409 `CASH_SESSION_ALREADY_OPEN` se já existe uma aberta | operador |
-| POST | `/cash-sessions/:id/close` | Fecha e calcula totais por forma de pagamento | operador |
-| GET | `/cash-sessions/:id/sales` | Vendas da sessão (tela de Fechamento) | operador |
+| Método | Rota                       | Descrição                                                                               | Papel    |
+| ------ | -------------------------- | --------------------------------------------------------------------------------------- | -------- |
+| GET    | `/cash-sessions/current`   | `{ session }` aberta com totais ao vivo, ou `{ session: null }`                         | operador |
+| GET    | `/cash-sessions/:id`       | Detalhe com totais (congelados se fechada)                                              | operador |
+| POST   | `/cash-sessions`           | Abre (`OpenCashSessionInput`) — 409 `CASH_SESSION_ALREADY_OPEN` se já existe uma aberta | operador |
+| POST   | `/cash-sessions/:id/close` | Fecha e calcula totais por forma de pagamento                                           | operador |
+| GET    | `/cash-sessions/:id/sales` | Vendas da sessão (tela de Fechamento)                                                   | operador |
+
+### `uploads`
+
+| Método | Rota               | Descrição                                                    | Papel |
+| ------ | ------------------ | ------------------------------------------------------------ | ----- |
+| POST   | `/uploads`         | Presigned POST do MinIO (`kind`, `contentType`, `sizeBytes`) | admin |
+| POST   | `/uploads/confirm` | Valida o objeto enviado e devolve a URL pública              | admin |
 
 ### `sale`
 
-| Método | Rota | Descrição | Papel |
-|---|---|---|---|
-| POST | `/sales` | Cria venda (`CreateSaleInput`) — idempotente por `uuid` | operador |
-| POST | `/sales/sync` | Lote de vendas da fila offline, upsert por `uuid` | operador |
-| GET | `/dashboard/summary` | Totais do dia, mais vendidos, semana | operador |
+| Método | Rota                 | Descrição                                               | Papel    |
+| ------ | -------------------- | ------------------------------------------------------- | -------- |
+| POST   | `/sales`             | Cria venda (`CreateSaleInput`) — idempotente por `uuid` | operador |
+| POST   | `/sales/sync`        | Lote de vendas da fila offline, upsert por `uuid`       | operador |
+| GET    | `/dashboard/summary` | Totais do dia, mais vendidos, semana                    | operador |
 
 ## Convenções de DTO e erro
 

@@ -18,8 +18,8 @@ frontend) — não quando o código só "existe".
 
 ## Em andamento agora
 
-- Sprint 2 concluída (produtos + validação/feedback + seed de tenant).
-  Próximo: Sprint 3 — caixa (4.1 → 4.4), foto de produto (3.4) e excluir (3.5).
+- Sprint 3 concluída (caixa, foto e exclusão de produto). Próximo: Sprint 4 —
+  Vender (5.1 → 5.5), o core do produto.
 
 ---
 
@@ -54,17 +54,17 @@ frontend) — não quando o código só "existe".
 
 ## Sprint 3 — Caixa (Abertura/Fechamento) + foto de Produto
 
-- [ ] 4.1 — Abrir caixa
-- [ ] 4.2 — Bloquear ações sem caixa aberto — inclui trocar o redirect de `/` (hoje vai para `/products`) para `/open-register`
-- [ ] 4.3 — Fechar caixa com totais por forma de pagamento
-- [ ] 4.4 — Histórico de vendas na tela de Fechamento
-- [ ] 3.4 — Upload de foto do produto (MinIO) — `PhotoUploadBox` ainda não existe; o painel esquerdo do form de produto só tem o código de barras
-- [ ] 3.5 — Excluir produto (soft-delete)
+- [x] 4.1 — Abrir caixa
+- [x] 4.2 — Bloquear ações sem caixa aberto (route group `(operating)`; a checagem na API acontece ao criar venda, HU 5.2)
+- [x] 4.3 — Fechar caixa com totais por forma de pagamento
+- [x] 4.4 — Histórico de vendas na tela de Fechamento
+- [x] 3.4 — Upload de foto do produto (MinIO)
+- [x] 3.5 — Excluir produto (soft-delete)
 
 ## Sprint 4 — Vender (core do produto)
 
 - [ ] 5.1 — Montar carrinho
-- [ ] 5.2 — Finalizar venda (Dinheiro/Cartão/Pix)
+- [ ] 5.2 — Finalizar venda (Dinheiro/Cartão/Pix) — a API precisa recusar venda sem caixa aberto e em caixa fechado (`CASH_SESSION_CLOSED`)
 - [ ] 5.3 — Bloqueio de estoque insuficiente
 - [ ] 5.4 — Tela de Venda Confirmada
 - [ ] 5.5 — Cancelar carrinho

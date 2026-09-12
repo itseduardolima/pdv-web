@@ -39,8 +39,11 @@ seção Idioma); o título visível de cada tela continua em português.
 Regra de navegação: se o operador logado não tem uma `CashSession` aberta e
 tenta acessar `sell`, `products`, `closing`, `dashboard` ou `operators`,
 redireciona para `open-register` (ver spec de negócio
-`03-regras-negocio.md`, seção Caixa). Essa checagem é feita num
-`layout.tsx`/middleware de rota, não repetida em cada página.
+`03-regras-negocio.md`, seção Caixa). **Implementado** com route groups:
+`(pos)/layout.tsx` exige sessão de operador; `(pos)/(operating)/layout.tsx`
+exige caixa aberto e monta o `AppShell`; `(pos)/open-register/` fica fora de
+`(operating)` e redireciona para `/` quando já há caixa aberto. Nenhuma
+página repete a checagem.
 
 ## Estrutura de código
 

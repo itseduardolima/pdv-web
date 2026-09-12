@@ -133,12 +133,14 @@ docker compose up -d --build   # sobe web + api + postgres + minio na VPS
 
 ## Estado atual do projeto
 
-Sprints 0, 1 e 2 concluídas. Pronto: monorepo pnpm + Turborepo,
+Sprints 0 a 3 concluídas. Pronto: monorepo pnpm + Turborepo,
 `packages/shared` (schemas Zod com mensagens em português), `apps/api`
 (NestJS com infra de tenant/auth/erros, migration inicial, **módulos
-`tenant`, `auth` e `product`**, Swagger com schemas Zod, seed parametrizado
-por env), `apps/web` (tema do tenant, Login por PIN, guarda de sessão,
-`AppShell` sidebar/bottom-nav, lista e formulário de Produtos com erro de
-campo vindo da API e `Button` loading/success, Cypress component tests),
-`docker-compose.yml` + `Caddyfile`, CI. Próximo passo: Sprint 3 — caixa
-(abertura/fechamento), foto e exclusão de produto (ver `TODO.md`).
+`tenant`, `auth`, `product`, `cash-session` e `storage`** (upload assinado
+no MinIO), Swagger com schemas Zod, seed parametrizado por env), `apps/web`
+(tema do tenant, Login por PIN, guarda de sessão e de caixa aberto por route
+group, `AppShell`, Produtos com foto/exclusão e erro de campo vindo da API,
+Abertura e Fechamento de Caixa, Cypress component tests), `docker-compose.yml`
+
+- `Caddyfile`, CI, Prettier com pre-commit. Próximo passo: Sprint 4 — Vender
+  (ver `TODO.md`).
