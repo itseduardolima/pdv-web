@@ -75,6 +75,10 @@ Fundação + módulos `tenant`, `auth`, `product`, `cash-session`, `storage` e
   que não for imagem (400 `INVALID_UPLOAD`). `StorageClient` cria o bucket
   com leitura pública no boot; `STORAGE_PUBLIC_URL` é a base das URLs
   gravadas em `photoUrl`/`logoUrl` (na VPS, `media.<domínio>` no Caddy).
+- `POST/PATCH /products`: `costPriceCents` e `minStock` são opcionais e a
+  API preenche 0 e 5 (`PRODUCT_LIMITS.defaultMinStock`); `GET
+/products/categories` devolve `DEFAULT_PRODUCT_CATEGORIES` + categorias em
+  uso, sem repetição, em ordem alfabética.
 - `DELETE /products/:id` (só `ADMIN`): soft-delete que também libera o
   código de barras (`barcode = null`) para um cadastro novo.
 - `modules/sale/`: `POST /sales` exige caixa aberto (409

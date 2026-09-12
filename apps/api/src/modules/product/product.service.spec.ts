@@ -62,6 +62,17 @@ describe('ProductService', () => {
     })
   })
 
+  describe('listCategories', () => {
+    it('merges the default categories with the ones in use, case-insensitively, sorted', async () => {
+      const { service } = makeService({ findCategories: jest.fn().mockResolvedValue(['bebidas', 'Artesanato']) })
+      const categories = await service.listCategories('t1')
+      expect(categories.filter((c) => c.toLowerCase() === 'bebidas')).toHaveLength(1)
+      expect(categories).toContain('Artesanato')
+      expect(categories).toContain('Limpeza')
+      expect(categories).toEqual([...categories].sort((a, b) => a.localeCompare(b, 'pt-BR')))
+    })
+  })
+
   describe('create', () => {
     it('creates when the barcode is free', async () => {
       const { service, repository } = makeService()

@@ -71,11 +71,20 @@ servidor (`src/server/domain`), nunca só escondendo botão na UI.
 ## Produtos
 
 - Campos obrigatórios: nome, categoria, unidade de medida, preço de venda,
-  preço de custo, estoque atual, estoque mínimo, código de barras (opcional,
-  mas se informado deve ser único dentro do tenant), foto (opcional).
-- Estoque mínimo é usado só para alerta/indicador visual (ex: no Dashboard ou
-  na lista de Produtos) — não bloqueia venda por si só, só some com o estoque
-  atual no momento da venda.
+  estoque atual. Opcionais: código de barras (se informado, único dentro do
+  tenant), foto, preço de custo (fica 0 quando não informado — decisão de
+  produto de 2026-09-12: o cadastro precisa ser rápido, custo pode vir
+  depois).
+- Categoria vem de uma lista padrão de mercadinho (`DEFAULT_PRODUCT_CATEGORIES`
+  em `packages/shared`) somada às categorias que a loja já usa; texto novo
+  continua aceito.
+- Estoque mínimo **não é campo do cadastro**: todo produto nasce com 5
+  (`PRODUCT_LIMITS.defaultMinStock`). É usado só para alerta/indicador
+  visual (ex: no Dashboard ou na lista de Produtos) — não bloqueia venda por
+  si só, só some com o estoque atual no momento da venda. Um ajuste por
+  produto pode virar campo avançado no futuro, se um cliente pedir.
+- Limites de tamanho de campo vivem em `PRODUCT_LIMITS` (`packages/shared`):
+  o schema valida com eles e o formulário só os mostra como texto de apoio.
 - Excluir produto é soft-delete (mantém histórico de vendas legível) — nunca
   apagar a linha do banco.
 

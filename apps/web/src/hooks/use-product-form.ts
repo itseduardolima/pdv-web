@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form'
-import type { CreateProductInput, Product, ProductUnit } from '@pdv/shared'
+import type { CreateProductRequest, Product, ProductUnit } from '@pdv/shared'
 import { apiFieldErrors } from '@/lib/utils/api-field-errors'
-import { formatMoneyInput, parseIntegerInput, parseMoneyInput } from '@/lib/utils/money'
+import { formatMoneyInput, parseMoneyInput } from '@/lib/utils/money'
 
 // Valores como o usuário digita; a conversão para a API acontece no submit.
 export interface ProductFormValues {
@@ -10,9 +10,7 @@ export interface ProductFormValues {
   unit: ProductUnit
   barcode: string
   salePrice: string
-  costPrice: string
   stockQuantity: number
-  minStock: string
   photoUrl: string | null
 }
 
@@ -22,9 +20,7 @@ export const emptyProductFormValues: ProductFormValues = {
   unit: 'UN',
   barcode: '',
   salePrice: '',
-  costPrice: '',
   stockQuantity: 0,
-  minStock: '',
   photoUrl: null,
 }
 
@@ -35,23 +31,21 @@ export function productToFormValues(product: Product): ProductFormValues {
     unit: product.unit,
     barcode: product.barcode ?? '',
     salePrice: formatMoneyInput(product.salePriceCents),
-    costPrice: formatMoneyInput(product.costPriceCents),
     stockQuantity: product.stockQuantity,
-    minStock: String(product.minStock),
     photoUrl: product.photoUrl,
   }
 }
 
-export function formValuesToInput(values: ProductFormValues): CreateProductInput {
+// Custo e estoque mínimo não são campos do formulário: a API aplica os
+// padrões (0 e 5) — ver createProductSchema em packages/shared.
+export function formValuesToInput(values: ProductFormValues): CreateProductRequest {
   return {
     name: values.name,
     category: values.category,
     unit: values.unit,
     barcode: values.barcode,
     salePriceCents: parseMoneyInput(values.salePrice),
-    costPriceCents: parseMoneyInput(values.costPrice),
     stockQuantity: values.stockQuantity,
-    minStock: parseIntegerInput(values.minStock),
     photoUrl: values.photoUrl,
   }
 }
@@ -63,9 +57,7 @@ const API_TO_FORM_FIELD: Record<string, keyof ProductFormValues> = {
   unit: 'unit',
   barcode: 'barcode',
   salePriceCents: 'salePrice',
-  costPriceCents: 'costPrice',
   stockQuantity: 'stockQuantity',
-  minStock: 'minStock',
   photoUrl: 'photoUrl',
 }
 

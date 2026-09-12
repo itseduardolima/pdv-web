@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common'
 import type { Product as ProductRow } from '@prisma/client'
-import type { CreateProductInput, Product, ProductListQuery, UpdateProductInput } from '@pdv/shared'
+import {
+  DEFAULT_PRODUCT_CATEGORIES,
+  type CreateProductInput,
+  type Product,
+  type ProductListQuery,
+  type UpdateProductInput,
+} from '@pdv/shared'
 import { ConflictError, NotFoundError } from '../../common/errors/domain.error'
 import { ProductRepository } from './product.repository'
 
@@ -22,8 +28,15 @@ export class ProductService {
     return toPublic(row)
   }
 
-  listCategories(tenantId: string): Promise<string[]> {
-    return this.products.findCategories(tenantId)
+  // Padrão do mercadinho + o que a loja já usa, sem repetição, em ordem alfabética.
+  async listCategories(tenantId: string): Promise<string[]> {
+    const used = await this.products.findCategories(tenantId)
+    const merged = new Map<string, string>()
+    for (const category of [...DEFAULT_PRODUCT_CATEGORIES, ...used]) {
+      const key = category.trim().toLocaleLowerCase('pt-BR')
+      if (key && !merged.has(key)) merged.set(key, category.trim())
+    }
+    return [...merged.values()].sort((a, b) => a.localeCompare(b, 'pt-BR'))
   }
 
   async create(tenantId: string, input: CreateProductInput): Promise<Product> {

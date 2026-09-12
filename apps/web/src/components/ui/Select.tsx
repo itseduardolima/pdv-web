@@ -1,29 +1,33 @@
-import { forwardRef, useId, type SelectHTMLAttributes } from 'react'
+import { forwardRef, useId, type ReactNode, type SelectHTMLAttributes } from 'react'
 import { FieldError } from './FieldError'
+import { FieldLabel } from './FieldLabel'
 
 interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   label: string
+  hint?: string
   error?: string
   options: { value: string; label: string }[]
+  labelAction?: ReactNode
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
-  { label, error, options, className = '', id, ...rest },
+  { label, hint, error, options, labelAction, className = '', id, required, ...rest },
   ref,
 ) {
   const generatedId = useId()
   const selectId = id ?? generatedId
   const errorId = `${selectId}-error`
+  const hintId = `${selectId}-hint`
   return (
     <div className={`flex flex-col gap-1.5 ${className}`}>
-      <label htmlFor={selectId} className="font-body text-[13px] font-semibold text-ink">
+      <FieldLabel htmlFor={selectId} required={required} action={labelAction}>
         {label}
-      </label>
+      </FieldLabel>
       <select
         ref={ref}
         id={selectId}
         aria-invalid={error ? true : undefined}
-        aria-describedby={error ? errorId : undefined}
+        aria-describedby={[error ? errorId : null, hint ? hintId : null].filter(Boolean).join(' ') || undefined}
         className={`h-12 rounded-input bg-canvas px-4 font-body text-[15px] text-ink outline-none md:h-[52px] ${error ? 'border-2 border-danger' : 'border-2 border-transparent'}`}
         {...rest}
       >
@@ -34,6 +38,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
         ))}
       </select>
       <FieldError id={errorId} message={error} />
+      {hint && !error && (
+        <p id={hintId} className="font-body text-xs text-ink/45">
+          {hint}
+        </p>
+      )}
     </div>
   )
 })

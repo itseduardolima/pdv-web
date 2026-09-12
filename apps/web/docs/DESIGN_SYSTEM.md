@@ -279,6 +279,21 @@ Nome completo
 Informe o nome completo
 ```
 
+### Texto de apoio, obrigatório e ajuda
+
+- Todo campo tem `hint` (texto de apoio abaixo, `--color-ink` a 45%, 12px)
+  com o que o usuário precisa saber antes de digitar: limites (vindos de
+  constantes de `packages/shared`, ex. `PRODUCT_LIMITS`), formato e um
+  exemplo. O `hint` some enquanto houver erro no campo — o erro ocupa o
+  lugar dele.
+- Campo obrigatório leva `*` em `--color-danger` ao lado do rótulo
+  (`FieldLabel required`), com "(obrigatório)" só para leitor de tela.
+- Escolha que exige conhecimento (ex.: unidade de medida) tem um botão
+  "Qual escolher?" ao lado do rótulo que abre um balão (Radix Popover) com
+  uma frase simples por opção — texto em `PRODUCT_UNIT_INFO`, nunca inline.
+- Lista longa de opções (categoria) usa `Combobox`: digitar filtra, Enter ou
+  clique escolhe, texto novo continua válido.
+
 ### 2. `InlineAlert` — erro de regra de negócio / ação bloqueada
 
 Substitui completamente o toast para erros que vêm da API (regra de

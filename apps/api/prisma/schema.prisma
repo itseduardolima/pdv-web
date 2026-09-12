@@ -69,9 +69,9 @@ model Product {
   unit           ProductUnit @default(UN)
   barcode        String?
   salePriceCents Int
-  costPriceCents Int
+  costPriceCents Int         @default(0)
   stockQuantity  Int         @default(0)
-  minStock       Int         @default(0)
+  minStock       Int         @default(5)
   photoUrl       String?
   createdAt      DateTime    @default(now())
   deletedAt      DateTime?
