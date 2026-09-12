@@ -35,6 +35,8 @@ model Tenant {
   primaryColor    String   @default("#e6e51e")
   primaryInkColor String?
   accentColor     String   @default("#466cf3")
+  // Fuso da loja: define o que é "hoje" no Dashboard (IANA, ex. America/Sao_Paulo).
+  timezone        String   @default("America/Sao_Paulo")
   createdAt       DateTime @default(now())
 
   operators    Operator[]

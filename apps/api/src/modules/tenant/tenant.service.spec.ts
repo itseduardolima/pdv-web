@@ -12,6 +12,7 @@ const tenant: Tenant = {
   logoUrl: null,
   primaryColor: '#e6e51e',
   primaryInkColor: null,
+  timezone: 'America/Sao_Paulo',
   accentColor: '#466cf3',
   createdAt: new Date('2026-01-01'),
 }

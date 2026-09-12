@@ -53,18 +53,3 @@ export const saleSchema = z.object({
   items: z.array(saleItemSchema),
 })
 export type Sale = z.infer<typeof saleSchema>
-
-export const dashboardSummarySchema = z.object({
-  todayTotalCents: cents,
-  byPaymentMethod: z.object({ CASH: cents, CARD: cents, PIX: cents }),
-  topProductsToday: z.array(
-    z.object({
-      productId: idSchema,
-      name: z.string(),
-      photoUrl: z.string().url().nullable(),
-      quantity: z.number().int().nonnegative(),
-    }),
-  ),
-  week: z.array(z.object({ day: z.string(), totalCents: cents })),
-})
-export type DashboardSummary = z.infer<typeof dashboardSummarySchema>

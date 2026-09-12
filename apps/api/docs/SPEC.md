@@ -15,7 +15,7 @@ NestJS — toda regra de negócio e todo acesso a dado (Prisma/PostgreSQL).
 ## Estado atual
 
 Fundação + módulos `tenant`, `auth`, `product`, `cash-session`, `storage` e
-`sale`, `operator` implementados (falta o resumo do dashboard):
+`sale`, `operator`, `dashboard` implementados:
 
 - `AppModule` com `ConfigModule`, `ThrottlerModule`, `JwtModule` (global) e
   `PrismaModule`; pipe global `ZodValidationPipe`, filtro global
@@ -119,7 +119,8 @@ Por `curl`: `curl -H 'x-tenant-host: demo.app.localhost' http://localhost:3001/t
 3. `operator` — CRUD + regra do último admin.
 4. `product` — CRUD.
 5. `cash-session` — abrir/fechar caixa.
-6. `sale` — venda, sincronização offline, resumo do dashboard.
+6. `sale` — venda, sincronização offline.
+7. `dashboard` — resumo do dia e da semana (só leitura, agrega `Sale`/`SaleItem`).
 
 ## Endpoints planejados
 
@@ -191,11 +192,11 @@ entra, em `create`/`setPin`, já com argon2). Soft-delete também marca
 
 ### `sale`
 
-| Método | Rota                 | Descrição                                                                                                                                                            | Papel    |
-| ------ | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| POST   | `/sales`             | Cria venda (`CreateSaleInput`) — idempotente por `uuid`; 409 `CASH_SESSION_NOT_OPEN` / `INSUFFICIENT_STOCK`; 400 `INSUFFICIENT_CASH` (Dinheiro com recebido < total) | operador |
-| POST   | `/sales/sync`        | Lote de vendas da fila offline, upsert por `uuid`                                                                                                                    | operador |
-| GET    | `/dashboard/summary` | Totais do dia, mais vendidos, semana                                                                                                                                 | operador |
+| Método | Rota                 | Descrição                                                                                                                                                                                                                 | Papel    |
+| ------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| POST   | `/sales`             | Cria venda (`CreateSaleInput`) — idempotente por `uuid`; 409 `CASH_SESSION_NOT_OPEN` / `INSUFFICIENT_STOCK`; 400 `INSUFFICIENT_CASH` (Dinheiro com recebido < total)                                                      | operador |
+| POST   | `/sales/sync`        | Lote de vendas da fila offline, upsert por `uuid`                                                                                                                                                                         | operador |
+| GET    | `/dashboard/summary` | Hoje (total, nº de vendas, por forma de pagamento, 5 mais vendidos com foto) + últimos 7 dias zerados quando sem venda — tudo no fuso da loja (`Tenant.timezone`, IANA, default `America/Sao_Paulo`; inválido cai em UTC) | admin    |
 
 ## Convenções de DTO e erro
 
