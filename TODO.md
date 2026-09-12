@@ -72,7 +72,6 @@ frontend) — não quando o código só "existe".
 ## Sprint 5 — Deploy do primeiro cliente real
 
 - [ ] 9.1 — `docker compose up` completo, documentado
-  - [ ] Imagem `minio/minio` não existe mais no Docker Hub (pull negado em 2026-09-12) — trocar para `quay.io/minio/minio` no `docker-compose.yml`
 - [ ] 9.2 — HTTPS automático (Caddy + Let's Encrypt)
 - [ ] 1.4 — Row-Level Security no Postgres
 - [ ] Testes E2E Cypress dos fluxos críticos (login → abrir caixa → vender → fechar caixa)
