@@ -74,6 +74,21 @@ export default function ClosingPage() {
             </div>
           </div>
 
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end sm:gap-2.5">
+            <Button variant="secondary" size="sm" href="/products" className="w-full sm:w-auto">
+              Cancelar
+            </Button>
+            <Button
+              onClick={page.handleClose}
+              state={page.closeState}
+              size="sm"
+              successLabel="Caixa fechado"
+              className="w-full sm:w-auto"
+            >
+              Confirmar Fechamento
+            </Button>
+          </div>
+
           <section className="flex flex-col gap-3 rounded-card bg-surface p-4 md:p-[22px]">
             <h2 className="font-heading text-lg font-bold tracking-tight">Histórico de Vendas</h2>
             {page.isLoadingSales ? (
@@ -88,20 +103,6 @@ export default function ClosingPage() {
               </ul>
             )}
           </section>
-
-          <div className="flex flex-col gap-2 sm:flex-row sm:gap-2.5">
-            <Button
-              onClick={page.handleClose}
-              state={page.closeState}
-              successLabel="Caixa fechado"
-              className="sm:flex-[2]"
-            >
-              Confirmar Fechamento
-            </Button>
-            <Button variant="secondary" href="/products" className="sm:flex-1">
-              Cancelar
-            </Button>
-          </div>
         </>
       )}
     </>
