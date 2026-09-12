@@ -94,6 +94,7 @@ frontend) — não quando o código só "existe".
 - [ ] 8.1 — Cache de catálogo offline (Dexie)
 - [ ] 8.2 — Fila de vendas offline + sincronização idempotente
 - [ ] 8.3 — PWA instalável com identidade do tenant
+  - [ ] Favicon: usar `~/Downloads/favicon.ico` (256×256, PNG dentro de .ico) como favicon **default** da plataforma em `apps/web/src/app/`; quando o tenant tiver logo, o ícone passa a ser o logo dele (white-label, spec 06/07)
 - [ ] 9.3 — Backup diário do banco
 - [ ] 9.4 — Deploy automático via CI
 
