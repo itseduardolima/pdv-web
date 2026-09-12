@@ -14,8 +14,8 @@ NestJS — toda regra de negócio e todo acesso a dado (Prisma/PostgreSQL).
 
 ## Estado atual
 
-Só a fundação está implementada (sem módulos de domínio ainda — eles entram
-um por vez, cada um testado antes do próximo):
+Fundação + módulo `tenant` implementados (os demais módulos entram um por
+vez, cada um testado antes do próximo):
 
 - `AppModule` com `ConfigModule`, `ThrottlerModule`, `JwtModule` (global) e
   `PrismaModule`; pipe global `ZodValidationPipe`, filtro global
@@ -29,8 +29,18 @@ um por vez, cada um testado antes do próximo):
   Sale, SaleItem) e `prisma/seed.ts` (tenant `demo`, admin com PIN 1234,
   4 produtos).
 
-O `TenantMiddleware` só é registrado quando o módulo `tenant` existir e
-fornecer o `TenantResolver`; até lá, nenhuma rota resolve tenant.
+- `modules/tenant/`: `TenantService` implementa `TenantResolver` (domínio
+  próprio primeiro, depois `<slug>.APP_BASE_DOMAIN`; cache em memória
+  host → id com `TENANT_CACHE_TTL_MS`, default 60s) e `GET /tenant/current`
+  (público; `primaryInkColor` calculado por contraste WCAG quando nulo — o
+  tema é lido fresco a cada chamada, sem cache). `TenantMiddleware` está
+  aplicado em todas as rotas exceto `/docs`.
+- `prisma/migrations/` com a migration inicial (`init`).
+
+Em desenvolvimento a API só resolve tenant para hosts `<slug>.app.localhost`
+(ou o header `x-tenant-host`, que o `apps/web` envia). Acesso direto por
+`localhost:3001` responde 404 `TENANT_NOT_FOUND` por design — testar com
+`curl -H 'x-tenant-host: demo.app.localhost' http://localhost:3001/tenant/current`.
 
 ## Ordem sugerida de criação dos módulos
 

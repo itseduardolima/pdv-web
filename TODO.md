@@ -18,7 +18,8 @@ frontend) — não quando o código só "existe".
 
 ## Em andamento agora
 
-- Nada em andamento — próximo passo é iniciar a Sprint 1 (ver abaixo).
+- Sprint 1 em andamento. Módulo `tenant` concluído (1.1 e 1.2); próximo é o
+  módulo `auth` (2.1 → 2.5).
 
 ---
 
@@ -33,8 +34,8 @@ frontend) — não quando o código só "existe".
 
 ## Sprint 1 — Tenant + Autenticação
 
-- [ ] 1.1 — Resolução de tenant por host (`TenantResolver` + módulo `tenant`)
-- [ ] 1.2 — `GET /tenant/current` + tema aplicado no `apps/web`
+- [x] 1.1 — Resolução de tenant por host (`TenantResolver` + módulo `tenant`)
+- [x] 1.2 — `GET /tenant/current` + tema aplicado no `apps/web`
 - [ ] 2.1 — Lista de operadores para a tela de Login
 - [ ] 2.2 — Login por PIN (hash argon2, cookie de sessão)
 - [ ] 2.3 — Rate-limit de tentativas de PIN
@@ -71,6 +72,7 @@ frontend) — não quando o código só "existe".
 ## Sprint 5 — Deploy do primeiro cliente real
 
 - [ ] 9.1 — `docker compose up` completo, documentado
+  - [ ] Imagem `minio/minio` não existe mais no Docker Hub (pull negado em 2026-09-12) — trocar para `quay.io/minio/minio` no `docker-compose.yml`
 - [ ] 9.2 — HTTPS automático (Caddy + Let's Encrypt)
 - [ ] 1.4 — Row-Level Security no Postgres
 - [ ] Testes E2E Cypress dos fluxos críticos (login → abrir caixa → vender → fechar caixa)

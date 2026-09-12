@@ -50,9 +50,13 @@ pnpm --filter api db:seed
 pnpm dev
 ```
 
-- `apps/web` fica em http://localhost:3000
-- `apps/api` fica em http://localhost:3001 (Swagger em `/docs` quando o
-  módulo existir — ver `apps/api/docs/SPEC.md`)
+- `apps/web` fica em http://demo.app.localhost:3000 — o tenant é resolvido
+  pelo subdomínio (`<slug>.APP_BASE_DOMAIN`), então `localhost:3000` puro
+  mostra "Loja não encontrada". `*.localhost` resolve para 127.0.0.1 sem
+  configurar `/etc/hosts` no Chrome, Firefox e macOS.
+- `apps/api` fica em http://localhost:3001 (Swagger em `/docs`; toda outra
+  rota exige o header `x-tenant-host: demo.app.localhost` — ver
+  `apps/api/docs/SPEC.md`)
 - Console do MinIO em http://localhost:9001 (login: `STORAGE_ACCESS_KEY` /
   `STORAGE_SECRET_KEY` do `.env`)
 
