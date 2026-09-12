@@ -13,7 +13,7 @@ export default function LoginPage() {
   const page = useLoginPage()
 
   return (
-    <SplitAuthLayout illustrationSrc="/login-illustration.png">
+    <SplitAuthLayout>
       <div className="flex flex-col items-center gap-1">
         {tenant.logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- logo do tenant, domínio dinâmico

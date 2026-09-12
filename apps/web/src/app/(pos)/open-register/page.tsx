@@ -14,7 +14,7 @@ export default function OpenRegisterPage() {
   const page = useOpenRegisterPage()
 
   return (
-    <SplitAuthLayout illustrationSrc="/login-illustration.png">
+    <SplitAuthLayout>
       <span className="flex h-16 w-16 items-center justify-center rounded-pill bg-canvas text-ink">
         <WalletIcon aria-hidden />
       </span>
