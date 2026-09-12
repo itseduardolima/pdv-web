@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { QueryProvider } from '@/components/providers/query-provider'
 import { TenantProvider } from '@/components/providers/tenant-provider'
 import { getCurrentTenant } from '@/lib/tenant.server'
-import { tenantThemeCss } from '@/lib/tenant-theme'
+import { tenantThemeVars } from '@/lib/tenant-theme'
 import '@/styles/globals.css'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -30,10 +30,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   }
 
   return (
-    <html lang="pt-BR">
-      <head>
-        <style dangerouslySetInnerHTML={{ __html: tenantThemeCss(tenant) }} />
-      </head>
+    <html lang="pt-BR" style={tenantThemeVars(tenant)}>
       <body>
         <QueryProvider>
           <TenantProvider tenant={tenant}>{children}</TenantProvider>
