@@ -17,9 +17,10 @@ describe('Produtos: criar, editar e excluir', () => {
     cy.contains('Informe a categoria')
 
     cy.get('input[name=name]').type(name)
-    cy.get('input[role=combobox]').type('Bebi')
+    cy.contains('label', 'Categoria').click()
     cy.contains('[role=option]', 'Bebidas').click()
-    cy.get('select[name=unit]').select('PCT')
+    cy.contains('label', 'Unidade').click()
+    cy.contains('[role=option]', 'Pct (pacote)').click()
     cy.get('input[name=salePrice]').type('12,90')
     cy.get('button[aria-label=Aumentar]').click().click().click()
     cy.contains('button', 'Salvar Produto').click()

@@ -76,8 +76,11 @@ servidor (`src/server/domain`), nunca só escondendo botão na UI.
   produto de 2026-09-12: o cadastro precisa ser rápido, custo pode vir
   depois).
 - Categoria vem de uma lista padrão de mercadinho (`DEFAULT_PRODUCT_CATEGORIES`
-  em `packages/shared`) somada às categorias que a loja já usa; texto novo
-  continua aceito.
+  em `packages/shared`) somada às categorias que a loja já usa. A API aceita
+  qualquer texto nesse campo (só valida tamanho); o formulário web restringe
+  a essa lista, num seletor de opção única, sem campo de texto livre —
+  decisão de produto de 2026-09-12, poucas categorias não justificam busca
+  (ver `apps/web/docs/DESIGN_SYSTEM.md` para o componente).
 - Estoque mínimo **não é campo do cadastro**: todo produto nasce com 5
   (`PRODUCT_LIMITS.defaultMinStock`). É usado só para alerta/indicador
   visual (ex: no Dashboard ou na lista de Produtos) — não bloqueia venda por

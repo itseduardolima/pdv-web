@@ -291,18 +291,23 @@ Informe o nome completo
 - Escolha que exige conhecimento (ex.: unidade de medida) tem um botão
   "Qual escolher?" ao lado do rótulo que abre um balão (Radix Popover) com
   uma frase simples por opção — texto em `PRODUCT_UNIT_INFO`, nunca inline.
-- Lista longa de opções (categoria) usa `Combobox`: digitar filtra, Enter ou
-  clique escolhe, texto novo continua válido. O menu de opções fica colado
-  no campo (não no grupo inteiro, que inclui hint/contador abaixo).
+- Escolha entre poucas opções fixas (categoria, unidade) usa `Select`
+  — sem busca; buscar só se a lista crescer muito (dezenas de itens),
+  decisão de produto de 2026-09-12 (categoria tinha um seletor com busca e
+  texto livre; poucas categorias não justificavam isso, e escolher de uma
+  lista curta é mais rápido num tablet de balcão do que digitar). `Select`
+  é construído sobre `@radix-ui/react-select` (headless) com estilo
+  próprio — nunca o `<select>` nativo do navegador, cujo menu de opções
+  (cor, fonte, posição) o CSS não alcança e muda por sistema operacional.
+  O gatilho (`Trigger`) usa o mesmo `ChevronDownIcon`, cor e posição em
+  todo campo; o menu (`Content`, via portal) fica colado no gatilho —
+  fundo `--color-surface`, `rounded-input`, `shadow-nav`, opção em foco/
+  hover com `bg-primary`/`text-primary-ink`, igual ao resto do sistema.
 - Campo com limite de caracteres (`maxLength`) trava a digitação nesse
   limite (o navegador não deixa passar, nem colando texto) e mostra um
   contador `atual/máximo` embaixo do campo, alinhado à direita, sempre —
-  mesmo com erro. Os limites vêm de `packages/shared` (ex. `PRODUCT_LIMITS`),
-  nunca um número solto no componente.
-- `Select` e `Combobox` usam o mesmo ícone de seta (`ChevronDownIcon`), na
-  mesma cor e posição — nunca a seta nativa do `<select>` do navegador
-  (que muda de estilo e posição por browser); o `<select>` esconde a seta
-  padrão com `appearance-none`.
+  mesmo com erro. Os limites vêm de `packages/shared` (ex. `PRODUCT_LIMITS`).
+  Só se aplica a campo de texto livre — um `Select` não precisa.
 - Preço de venda usa máscara de dinheiro estilo calculadora: cada dígito
   novo entra pela direita ("1" "12" "123" → "0,01" "0,12" "1,23"), então
   colar um valor já formatado também funciona. Código de barras aceita só

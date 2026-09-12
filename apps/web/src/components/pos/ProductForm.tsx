@@ -2,7 +2,6 @@ import { Controller, type UseFormReturn } from 'react-hook-form'
 import type { ChangeEvent, FormEventHandler } from 'react'
 import { PRODUCT_LIMITS, PRODUCT_UNIT_INFO, productUnitSchema } from '@pdv/shared'
 import { Button, type ButtonState } from '@/components/ui/Button'
-import { Combobox } from '@/components/ui/Combobox'
 import { InlineAlert } from '@/components/ui/InlineAlert'
 import { Input } from '@/components/ui/Input'
 import { NumberStepper } from '@/components/ui/NumberStepper'
@@ -37,7 +36,7 @@ export function ProductForm({
   photoUploading,
   photoError,
 }: ProductFormProps) {
-  const { register, control, formState } = form
+  const { control, formState } = form
   const errors = formState.errors
   const photoUrl = form.watch('photoUrl')
 
@@ -95,28 +94,36 @@ export function ProductForm({
             control={control}
             name="category"
             render={({ field }) => (
-              <Combobox
+              <Select
                 label="Categoria"
                 required
+                placeholder="Selecione a categoria"
+                options={categories.map((category) => ({ value: category, label: category }))}
+                error={errors.category?.message}
                 name={field.name}
                 value={field.value}
                 onChange={field.onChange}
-                options={categories}
-                placeholder="Digite para buscar"
-                hint="Escolha da lista ou digite uma nova"
-                maxLength={PRODUCT_LIMITS.category.max}
-                error={errors.category?.message}
+                ref={field.ref}
               />
             )}
           />
-          <Select
-            label="Unidade"
-            required
-            options={UNIT_OPTIONS}
-            hint="Como o produto é vendido"
-            labelAction={<UnitHelpPopover />}
-            error={errors.unit?.message}
-            {...register('unit')}
+          <Controller
+            control={control}
+            name="unit"
+            render={({ field }) => (
+              <Select
+                label="Unidade"
+                required
+                options={UNIT_OPTIONS}
+                hint="Como o produto é vendido"
+                labelAction={<UnitHelpPopover />}
+                error={errors.unit?.message}
+                name={field.name}
+                value={field.value}
+                onChange={field.onChange}
+                ref={field.ref}
+              />
+            )}
           />
         </div>
 
