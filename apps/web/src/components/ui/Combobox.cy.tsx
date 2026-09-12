@@ -28,4 +28,16 @@ describe('Combobox', () => {
     cy.get('input[role=combobox]').should('have.value', 'Artesanato')
     cy.get('[role=listbox]').should('not.exist')
   })
+
+  it('limits typing to maxLength and shows a right-aligned counter', () => {
+    function LimitedHarness() {
+      const [value, setValue] = useState('')
+      return <Combobox label="Categoria" value={value} onChange={setValue} options={options} maxLength={6} />
+    }
+    cy.mount(<LimitedHarness />)
+    cy.contains('0/6')
+    cy.get('input[role=combobox]').type('Artesanato')
+    cy.get('input[role=combobox]').should('have.value', 'Artesa')
+    cy.contains('6/6')
+  })
 })

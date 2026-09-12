@@ -44,4 +44,21 @@ describe('Produtos: criar, editar e excluir', () => {
     cy.location('pathname').should('eq', '/products')
     cy.contains(name).should('not.exist')
   })
+
+  it('shows a character counter, masks the price while typing and keeps the barcode digits-only', () => {
+    cy.visit('/products/new')
+
+    // contador de caracteres embaixo do campo, alinhado à direita
+    cy.get('input[name=name]').type('Café')
+    cy.contains('4/120')
+
+    // código de barras: letras digitadas nunca entram, só os números
+    cy.get('input[name=barcode]').type('abc123def456')
+    cy.get('input[name=barcode]').should('have.value', '123456')
+    cy.contains('6/64')
+
+    // preço de venda: máscara estilo calculadora, dígito por dígito
+    cy.get('input[name=salePrice]').type('1299')
+    cy.get('input[name=salePrice]').should('have.value', '12,99')
+  })
 })

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { ChevronDownIcon } from './Icons'
 import { FieldError } from './FieldError'
 import { FieldLabel } from './FieldLabel'
 
@@ -14,15 +15,28 @@ interface ComboboxProps {
   required?: boolean
   placeholder?: string
   name?: string
+  maxLength?: number
 }
 
 // Seletor com busca: digitar filtra a lista; Enter/clique escolhe. Texto
 // que não está na lista também vale (a API decide se aceita).
-export function Combobox({ label, value, onChange, options, hint, error, required, placeholder, name }: ComboboxProps) {
+export function Combobox({
+  label,
+  value,
+  onChange,
+  options,
+  hint,
+  error,
+  required,
+  placeholder,
+  name,
+  maxLength,
+}: ComboboxProps) {
   const id = useId()
   const listId = `${id}-list`
   const errorId = `${id}-error`
   const hintId = `${id}-hint`
+  const counterId = `${id}-counter`
   const rootRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
@@ -62,69 +76,83 @@ export function Combobox({ label, value, onChange, options, hint, error, require
   }
 
   return (
-    <div ref={rootRef} className="relative flex flex-col gap-1.5">
+    <div ref={rootRef} className="flex flex-col gap-1.5">
       <FieldLabel htmlFor={id} required={required}>
         {label}
       </FieldLabel>
-      <div
-        className={`flex h-12 items-center rounded-input bg-canvas px-4 md:h-[52px] ${error ? 'border-2 border-danger' : 'border-2 border-transparent'}`}
-      >
-        <input
-          id={id}
-          name={name}
-          role="combobox"
-          aria-expanded={open}
-          aria-controls={listId}
-          aria-autocomplete="list"
-          aria-invalid={error ? true : undefined}
-          aria-describedby={[error ? errorId : null, hint ? hintId : null].filter(Boolean).join(' ') || undefined}
-          autoComplete="off"
-          placeholder={placeholder}
-          value={value}
-          onChange={(event) => {
-            onChange(event.target.value)
-            setOpen(true)
-            setActiveIndex(0)
-          }}
-          onFocus={() => setOpen(true)}
-          onKeyDown={onKeyDown}
-          className="min-w-0 flex-1 bg-transparent font-body text-[15px] text-ink outline-none placeholder:text-ink/35"
-        />
-        <button
-          type="button"
-          tabIndex={-1}
-          aria-label="Abrir opções"
-          onClick={() => setOpen((state) => !state)}
-          className="ml-2 text-ink/50"
+      {/* Contexto de posicionamento só do campo, para o menu colar logo abaixo
+          do input — não do grupo inteiro (que inclui hint/contador embaixo). */}
+      <div className="relative">
+        <div
+          className={`flex h-12 items-center rounded-input bg-canvas px-4 md:h-[52px] ${error ? 'border-2 border-danger' : 'border-2 border-transparent'}`}
         >
-          ▾
-        </button>
+          <input
+            id={id}
+            name={name}
+            role="combobox"
+            aria-expanded={open}
+            aria-controls={listId}
+            aria-autocomplete="list"
+            aria-invalid={error ? true : undefined}
+            aria-describedby={
+              [error ? errorId : null, hint ? hintId : null, maxLength !== undefined ? counterId : null]
+                .filter(Boolean)
+                .join(' ') || undefined
+            }
+            autoComplete="off"
+            placeholder={placeholder}
+            value={value}
+            maxLength={maxLength}
+            onChange={(event) => {
+              onChange(event.target.value)
+              setOpen(true)
+              setActiveIndex(0)
+            }}
+            onFocus={() => setOpen(true)}
+            onKeyDown={onKeyDown}
+            className="min-w-0 flex-1 bg-transparent font-body text-[15px] text-ink outline-none placeholder:text-ink/35"
+          />
+          <button
+            type="button"
+            tabIndex={-1}
+            aria-label="Abrir opções"
+            onClick={() => setOpen((state) => !state)}
+            className="ml-2 shrink-0 text-ink/50"
+          >
+            <ChevronDownIcon aria-hidden />
+          </button>
+        </div>
+        {open && filtered.length > 0 && (
+          <ul
+            id={listId}
+            role="listbox"
+            className="absolute left-0 right-0 top-full z-10 mt-1 max-h-56 overflow-y-auto rounded-input border border-border bg-surface p-1 shadow-nav"
+          >
+            {filtered.map((option, index) => (
+              <li
+                key={option}
+                role="option"
+                aria-selected={option === value}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => select(option)}
+                onMouseEnter={() => setActiveIndex(index)}
+                className={`cursor-pointer rounded-frame px-3 py-2 font-body text-sm ${index === activeIndex ? 'bg-primary text-primary-ink' : 'text-ink'}`}
+              >
+                {option}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-      {open && filtered.length > 0 && (
-        <ul
-          id={listId}
-          role="listbox"
-          className="absolute left-0 right-0 top-full z-10 mt-1 max-h-56 overflow-y-auto rounded-input border border-border bg-surface p-1 shadow-nav"
-        >
-          {filtered.map((option, index) => (
-            <li
-              key={option}
-              role="option"
-              aria-selected={option === value}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => select(option)}
-              onMouseEnter={() => setActiveIndex(index)}
-              className={`cursor-pointer rounded-frame px-3 py-2 font-body text-sm ${index === activeIndex ? 'bg-primary text-primary-ink' : 'text-ink'}`}
-            >
-              {option}
-            </li>
-          ))}
-        </ul>
-      )}
       <FieldError id={errorId} message={error} />
       {hint && !error && (
         <p id={hintId} className="font-body text-xs text-ink/45">
           {hint}
+        </p>
+      )}
+      {maxLength !== undefined && (
+        <p id={counterId} className="text-right font-body text-xs tabular-nums text-ink/40">
+          {value.length}/{maxLength}
         </p>
       )}
     </div>

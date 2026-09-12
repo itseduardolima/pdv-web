@@ -16,4 +16,18 @@ describe('Input', () => {
     cy.contains('De 2 a 120 caracteres')
     cy.contains('R$')
   })
+
+  it('limits typing to maxLength and shows a right-aligned counter that updates live', () => {
+    cy.mount(<Input label="Nome do produto" maxLength={5} />)
+    cy.contains('0/5')
+    cy.get('input').type('Arroz e feijão')
+    // maxLength nativo: o navegador nunca deixa passar de 5 caracteres
+    cy.get('input').should('have.value', 'Arroz')
+    cy.contains('5/5')
+  })
+
+  it('shows the counter for a controlled field seeded with an initial value', () => {
+    cy.mount(<Input label="Nome do produto" maxLength={120} value="Café" onChange={() => {}} />)
+    cy.contains('4/120')
+  })
 })

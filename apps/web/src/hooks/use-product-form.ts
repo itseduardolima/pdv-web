@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form'
 import type { CreateProductRequest, Product, ProductUnit } from '@pdv/shared'
 import { apiFieldErrors } from '@/lib/utils/api-field-errors'
-import { formatMoneyInput, parseMoneyInput } from '@/lib/utils/money'
+import { formatMoneyMasked, parseMoneyInput } from '@/lib/utils/money'
 
 // Valores como o usuário digita; a conversão para a API acontece no submit.
 export interface ProductFormValues {
@@ -30,7 +30,7 @@ export function productToFormValues(product: Product): ProductFormValues {
     category: product.category,
     unit: product.unit,
     barcode: product.barcode ?? '',
-    salePrice: formatMoneyInput(product.salePriceCents),
+    salePrice: formatMoneyMasked(product.salePriceCents),
     stockQuantity: product.stockQuantity,
     photoUrl: product.photoUrl,
   }

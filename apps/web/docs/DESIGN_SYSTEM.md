@@ -292,7 +292,21 @@ Informe o nome completo
   "Qual escolher?" ao lado do rótulo que abre um balão (Radix Popover) com
   uma frase simples por opção — texto em `PRODUCT_UNIT_INFO`, nunca inline.
 - Lista longa de opções (categoria) usa `Combobox`: digitar filtra, Enter ou
-  clique escolhe, texto novo continua válido.
+  clique escolhe, texto novo continua válido. O menu de opções fica colado
+  no campo (não no grupo inteiro, que inclui hint/contador abaixo).
+- Campo com limite de caracteres (`maxLength`) trava a digitação nesse
+  limite (o navegador não deixa passar, nem colando texto) e mostra um
+  contador `atual/máximo` embaixo do campo, alinhado à direita, sempre —
+  mesmo com erro. Os limites vêm de `packages/shared` (ex. `PRODUCT_LIMITS`),
+  nunca um número solto no componente.
+- `Select` e `Combobox` usam o mesmo ícone de seta (`ChevronDownIcon`), na
+  mesma cor e posição — nunca a seta nativa do `<select>` do navegador
+  (que muda de estilo e posição por browser); o `<select>` esconde a seta
+  padrão com `appearance-none`.
+- Preço de venda usa máscara de dinheiro estilo calculadora: cada dígito
+  novo entra pela direita ("1" "12" "123" → "0,01" "0,12" "1,23"), então
+  colar um valor já formatado também funciona. Código de barras aceita só
+  números — nunca deixa digitar letra, porque o padrão (EAN/UPC) é numérico.
 
 ### 2. `InlineAlert` — erro de regra de negócio / ação bloqueada
 
