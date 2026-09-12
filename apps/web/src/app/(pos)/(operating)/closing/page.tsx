@@ -74,10 +74,7 @@ export default function ClosingPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end sm:gap-2.5">
-            <Button variant="secondary" size="sm" href="/products" className="w-full sm:w-auto">
-              Cancelar
-            </Button>
+          <div className="flex justify-end">
             <Button
               onClick={page.handleClose}
               state={page.closeState}
