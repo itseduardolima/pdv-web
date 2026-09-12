@@ -15,6 +15,7 @@ import { ProductModule } from './modules/product/product.module'
 import { CashSessionModule } from './modules/cash-session/cash-session.module'
 import { StorageModule } from './modules/storage/storage.module'
 import { SaleModule } from './modules/sale/sale.module'
+import { OperatorModule } from './modules/operator/operator.module'
 
 // Módulos de domínio (operator) entram
 // aqui conforme forem criados, um por vez.
@@ -44,6 +45,7 @@ import { SaleModule } from './modules/sale/sale.module'
     TenantModule,
     AuthModule,
     ProductModule,
+    OperatorModule,
     CashSessionModule,
     StorageModule,
     SaleModule,

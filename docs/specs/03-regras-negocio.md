@@ -108,7 +108,10 @@ servidor (`src/server/domain`), nunca só escondendo botão na UI.
   permanece intacto.
 - Excluir operador também é soft-delete pelo mesmo motivo de produtos.
 - Sempre deve existir pelo menos 1 Administrador ativo no tenant — bloquear a
-  ação (inativar/excluir/rebaixar) que deixaria o tenant sem nenhum admin.
+  ação (inativar/excluir/rebaixar) que deixaria o tenant sem nenhum admin
+  (409 `LAST_ADMIN`). Ninguém inativa, rebaixa ou exclui a própria conta,
+  nem admin (409 `SELF_CHANGE`) — evita se trancar para fora num tablet
+  compartilhado.
 
 ## Dashboard
 

@@ -15,7 +15,7 @@ NestJS — toda regra de negócio e todo acesso a dado (Prisma/PostgreSQL).
 ## Estado atual
 
 Fundação + módulos `tenant`, `auth`, `product`, `cash-session`, `storage` e
-`sale` implementados (falta `operator` e o resumo do dashboard):
+`sale`, `operator` implementados (falta o resumo do dashboard):
 
 - `AppModule` com `ConfigModule`, `ThrottlerModule`, `JwtModule` (global) e
   `PrismaModule`; pipe global `ZodValidationPipe`, filtro global
@@ -146,6 +146,7 @@ nunca vai na URL — é resolvido pelo host (`TenantMiddleware`).
 | Método | Rota                    | Descrição                    | Papel |
 | ------ | ----------------------- | ---------------------------- | ----- |
 | GET    | `/operators`            | Lista (inclui inativos)      | admin |
+| GET    | `/operators/:id`        | Detalhe                      | admin |
 | POST   | `/operators`            | Cria (`CreateOperatorInput`) | admin |
 | PATCH  | `/operators/:id`        | Edita dados/foto             | admin |
 | PATCH  | `/operators/:id/pin`    | Define novo PIN              | admin |
@@ -153,7 +154,12 @@ nunca vai na URL — é resolvido pelo host (`TenantMiddleware`).
 | DELETE | `/operators/:id`        | Soft-delete                  | admin |
 
 Todas as mutações validam no `OperatorService` a regra "sempre deve existir
-ao menos 1 admin ativo" (`LAST_ADMIN`), ver `03-regras-negocio.md`.
+ao menos 1 admin ativo" (409 `LAST_ADMIN`, só quando a ação tira um admin
+ativo de circulação: inativar, rebaixar ou excluir) e a regra "ninguém
+inativa, rebaixa ou exclui a própria conta" (409 `SELF_CHANGE`), ver
+`03-regras-negocio.md`. `pinHash` nunca sai do `OperatorRepository` (só
+entra, em `create`/`setPin`, já com argon2). Soft-delete também marca
+`active=false`; `Sale`/`CashSession` mantêm o `operatorId`.
 
 ### `product`
 
