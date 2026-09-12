@@ -370,11 +370,17 @@ zera junto com o carrinho (cancelar / nova venda). "Venda Confirmada" mostra
   papel em **texto simples** (HU 6.1 — não é badge), toggle de ativo e
   lápis para editar. Inativo fica com 60% de opacidade e "· inativo" no
   papel. Uma linha no celular, card em duas colunas a partir de `md`.
-- `components/pos/OperatorForm`: mesmo layout do `ProductForm` (foto à
-  esquerda via `PhotoUploadBox` kind `operator`, campos à direita). O PIN só
-  existe na criação (`withPin`); na edição ele é trocado no bloco "Resetar
-  PIN" (formulário próprio, botão preto "Salvar PIN" → "PIN salvo"). O
-  campo de PIN é `type="password"`, só dígitos, `maxLength` 4.
+- `components/pos/OperatorForm`: grade de **altura natural** (nada estica
+  até o rodapé): foto (`PhotoUploadBox` kind `operator`) à esquerda, dados
+  à direita, botão "Salvar Operador" logo abaixo do último campo. O PIN só
+  existe na criação (`withPin`, dividindo a linha com o Papel); na edição o
+  Papel ocupa a largura toda e o PIN é trocado no slot `after` (bloco
+  "Resetar PIN", formulário próprio, botão preto "Salvar PIN" → "PIN
+  salvo"), que fica abaixo dos dados na coluna da direita. Excluir não fica
+  no cabeçalho: vai para o slot `asideExtra` ("Zona de risco", card abaixo
+  da foto, botão ghost em `--color-danger`). No celular a ordem é foto,
+  dados, PIN, excluir. O campo de PIN é `type="password"`, só dígitos,
+  `maxLength` 4.
 - Erros de regra (`LAST_ADMIN`, `SELF_CHANGE`) chegam da API e aparecem
   como `InlineAlert` acima da lista (toggle) ou do formulário (editar /
   excluir). A tela nunca esconde o toggle do próprio usuário nem do último

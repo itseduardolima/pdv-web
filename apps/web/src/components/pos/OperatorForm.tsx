@@ -1,5 +1,5 @@
 import { Controller, type UseFormReturn } from 'react-hook-form'
-import type { ChangeEvent, FormEventHandler } from 'react'
+import type { ChangeEvent, FormEventHandler, ReactNode } from 'react'
 import { OPERATOR_LIMITS, OPERATOR_ROLE_LABEL, operatorRoleSchema } from '@pdv/shared'
 import { Button, type ButtonState } from '@/components/ui/Button'
 import { InlineAlert } from '@/components/ui/InlineAlert'
@@ -21,6 +21,11 @@ interface OperatorFormProps {
   onPhotoChange: (file: File) => void
   photoUploading: boolean
   photoError: string | null
+  // Slots da edição: bloco abaixo dos dados (Resetar PIN, que é outro
+  // <form>) e bloco abaixo da foto (zona de risco). Ficam fora do <form>
+  // dos dados — formulário dentro de formulário não existe em HTML.
+  after?: ReactNode
+  asideExtra?: ReactNode
 }
 
 export function OperatorForm({
@@ -33,14 +38,19 @@ export function OperatorForm({
   onPhotoChange,
   photoUploading,
   photoError,
+  after,
+  asideExtra,
 }: OperatorFormProps) {
   const { control, formState } = form
   const errors = formState.errors
   const photoUrl = form.watch('photoUrl')
 
   return (
-    <form onSubmit={onSubmit} noValidate className="flex flex-1 flex-col gap-4 md:flex-row md:gap-5">
-      <aside className="flex flex-col gap-3.5 rounded-card bg-surface p-4 md:w-[260px] md:shrink-0 md:p-[22px]">
+    // Grade de altura natural (nada estica): foto | dados na primeira linha,
+    // zona de risco | Resetar PIN na segunda. No celular vira uma coluna só,
+    // na ordem foto, dados, PIN, excluir.
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-[260px_1fr] md:items-start md:gap-5">
+      <aside className="rounded-card bg-surface p-4 md:col-start-1 md:row-start-1 md:p-[22px]">
         <PhotoUploadBox
           value={photoUrl}
           onChange={onPhotoChange}
@@ -49,7 +59,11 @@ export function OperatorForm({
         />
       </aside>
 
-      <section className="flex flex-1 flex-col gap-4 rounded-card bg-surface p-4 md:p-[26px]">
+      <form
+        onSubmit={onSubmit}
+        noValidate
+        className="flex flex-col gap-4 rounded-card bg-surface p-4 md:col-start-2 md:row-start-1 md:p-[26px]"
+      >
         <Controller
           control={control}
           name="name"
@@ -67,7 +81,7 @@ export function OperatorForm({
           )}
         />
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className={`grid grid-cols-1 gap-4 ${withPin ? 'sm:grid-cols-2' : ''}`}>
           <Controller
             control={control}
             name="role"
@@ -115,12 +129,15 @@ export function OperatorForm({
 
         {errorMessage && <InlineAlert onDismiss={onDismissError}>{errorMessage}</InlineAlert>}
 
-        <div className="mt-auto flex justify-end pt-2">
+        <div className="flex justify-end pt-2">
           <Button type="submit" state={submitState} successLabel="Salvo" className="w-full sm:w-auto">
             Salvar Operador
           </Button>
         </div>
-      </section>
-    </form>
+      </form>
+
+      {after && <div className="md:col-start-2 md:row-start-2">{after}</div>}
+      {asideExtra && <div className="md:col-start-1 md:row-start-2">{asideExtra}</div>}
+    </div>
   )
 }

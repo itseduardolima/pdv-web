@@ -19,63 +19,79 @@ export default function EditOperatorPage() {
         title="Editar Operador"
         subtitle={page.isLoading ? 'Carregando...' : page.operatorName}
         backHref="/operators"
-        actions={
-          !page.isLoading &&
-          !page.loadErrorMessage && (
-            <Button variant="ghost" size="sm" onClick={() => page.setConfirmingDelete(true)}>
-              <TrashIcon aria-hidden />
-              Excluir Operador
-            </Button>
-          )
-        }
       />
       {page.loadErrorMessage ? (
         <InlineAlert>{page.loadErrorMessage}</InlineAlert>
       ) : (
-        <>
-          <OperatorForm
-            form={page.form}
-            withPin={false}
-            onSubmit={page.handleSubmit}
-            submitState={page.submitState}
-            errorMessage={page.errorMessage}
-            onDismissError={page.dismissError}
-            onPhotoChange={page.handlePhotoChange}
-            photoUploading={page.photoUploading}
-            photoError={page.photoError}
-          />
-
-          <form
-            onSubmit={page.handlePinSubmit}
-            noValidate
-            className="flex flex-col gap-3 rounded-card bg-surface p-4 md:p-[26px]"
-          >
-            <div>
-              <h2 className="font-heading text-lg font-bold tracking-tight">Resetar PIN</h2>
-              <p className="font-body text-xs text-ink/45 md:text-[13px]">
-                Para quando o operador esquecer. O PIN antigo deixa de valer na hora.
-              </p>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-              <Input
-                label="Novo PIN"
-                type="password"
-                inputMode="numeric"
-                autoComplete="new-password"
-                placeholder="••••"
-                maxLength={OPERATOR_LIMITS.pinLength}
-                name="newPin"
-                value={page.newPin}
-                onChange={page.handlePinChange}
-                error={page.pinError ?? undefined}
-                className="sm:w-[220px]"
-              />
-              <Button type="submit" variant="secondary" state={page.pinState} successLabel="PIN salvo">
-                Salvar PIN
+        <OperatorForm
+          form={page.form}
+          withPin={false}
+          onSubmit={page.handleSubmit}
+          submitState={page.submitState}
+          errorMessage={page.errorMessage}
+          onDismissError={page.dismissError}
+          onPhotoChange={page.handlePhotoChange}
+          photoUploading={page.photoUploading}
+          photoError={page.photoError}
+          after={
+            <form
+              onSubmit={page.handlePinSubmit}
+              noValidate
+              className="flex flex-col gap-3 rounded-card bg-surface p-4 md:p-[26px]"
+            >
+              <div>
+                <h2 className="font-heading text-lg font-bold tracking-tight">Resetar PIN</h2>
+                <p className="font-body text-xs text-ink/45 md:text-[13px]">
+                  Para quando o operador esquecer. O PIN antigo deixa de valer na hora.
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                <Input
+                  label="Novo PIN"
+                  type="password"
+                  inputMode="numeric"
+                  autoComplete="new-password"
+                  placeholder="••••"
+                  maxLength={OPERATOR_LIMITS.pinLength}
+                  name="newPin"
+                  value={page.newPin}
+                  onChange={page.handlePinChange}
+                  error={page.pinError ?? undefined}
+                  className="sm:w-[220px]"
+                />
+                {/* mt alinha o botão com o campo, não com o rótulo acima dele */}
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  state={page.pinState}
+                  successLabel="PIN salvo"
+                  className="sm:mt-[26px]"
+                >
+                  Salvar PIN
+                </Button>
+              </div>
+            </form>
+          }
+          asideExtra={
+            <section className="flex flex-col gap-3 rounded-card bg-surface p-4 md:p-[22px]">
+              <div>
+                <h2 className="font-heading text-base font-bold tracking-tight">Zona de risco</h2>
+                <p className="font-body text-xs text-ink/45">
+                  Some da equipe e do Login. As vendas já feitas ficam no histórico.
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => page.setConfirmingDelete(true)}
+                className="w-full !border-danger !text-danger"
+              >
+                <TrashIcon aria-hidden />
+                Excluir Operador
               </Button>
-            </div>
-          </form>
-        </>
+            </section>
+          }
+        />
       )}
       <ConfirmDialog
         open={page.confirmingDelete}
