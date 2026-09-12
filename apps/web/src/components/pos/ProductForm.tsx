@@ -20,7 +20,6 @@ interface ProductFormProps {
   submitState: ButtonState
   errorMessage: string | null
   onDismissError: () => void
-  cancelHref: string
   onPhotoChange: (file: File) => void
   photoUploading: boolean
   photoError: string | null
@@ -33,7 +32,6 @@ export function ProductForm({
   submitState,
   errorMessage,
   onDismissError,
-  cancelHref,
   onPhotoChange,
   photoUploading,
   photoError,
@@ -53,6 +51,7 @@ export function ProductForm({
         />
         <Input
           label="Código de barras"
+          placeholder="Ex.: 7891000100103"
           hint={`Opcional · até ${PRODUCT_LIMITS.barcode.max} caracteres · use o leitor ou digite`}
           inputMode="numeric"
           error={errors.barcode?.message}
@@ -64,7 +63,8 @@ export function ProductForm({
         <Input
           label="Nome do produto"
           required
-          hint={`De ${PRODUCT_LIMITS.name.min} a ${PRODUCT_LIMITS.name.max} caracteres · ex.: Arroz 5kg`}
+          placeholder="Ex.: Arroz 5kg"
+          hint={`De ${PRODUCT_LIMITS.name.min} a ${PRODUCT_LIMITS.name.max} caracteres`}
           autoComplete="off"
           error={errors.name?.message}
           {...register('name')}
@@ -119,7 +119,6 @@ export function ProductForm({
                 required
                 value={field.value}
                 onChange={field.onChange}
-                hint={`Quantidade hoje · avisamos quando chegar a ${PRODUCT_LIMITS.defaultMinStock}`}
                 error={errors.stockQuantity?.message}
               />
             )}
@@ -128,12 +127,9 @@ export function ProductForm({
 
         {errorMessage && <InlineAlert onDismiss={onDismissError}>{errorMessage}</InlineAlert>}
 
-        <div className="mt-auto flex flex-col gap-2 pt-2 sm:flex-row sm:gap-3">
-          <Button type="submit" state={submitState} successLabel="Salvo">
+        <div className="mt-auto flex justify-end pt-2">
+          <Button type="submit" state={submitState} successLabel="Salvo" className="w-full sm:w-auto">
             Salvar Produto
-          </Button>
-          <Button variant="secondary" href={cancelHref}>
-            Cancelar
           </Button>
         </div>
       </section>

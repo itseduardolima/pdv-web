@@ -37,7 +37,6 @@ export default function EditProductPage() {
           submitState={page.submitState}
           errorMessage={page.errorMessage}
           onDismissError={page.dismissError}
-          cancelHref="/products"
           onPhotoChange={page.handlePhotoChange}
           photoUploading={page.photoUploading}
           photoError={page.photoError}
