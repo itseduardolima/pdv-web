@@ -94,7 +94,7 @@ export default function ClosingPage() {
             {page.isLoadingSales ? (
               <p className="font-body text-sm text-ink/50">Carregando...</p>
             ) : page.sales.length === 0 ? (
-              <EmptyState size="sm" title="Nenhuma venda ainda" description="As vendas deste caixa aparecem aqui." />
+              <EmptyState title="Nenhuma venda ainda" description="As vendas deste caixa aparecem aqui." />
             ) : (
               <ul className="min-h-0 flex-1 overflow-y-auto">
                 {page.sales.map((sale) => (
