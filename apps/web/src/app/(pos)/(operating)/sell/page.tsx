@@ -41,7 +41,7 @@ export default function SellPage() {
           // Tablet (retrato em md, deitado em lg — antes do xl virar
           // desktop de verdade) encolhe o catálogo e dá mais espaço ao
           // carrinho; deitado encolhe mais ainda — decisão de 2026-09-13.
-          className="flex min-w-0 flex-col gap-3.5 rounded-card bg-surface p-3 md:flex-[1.6] md:p-[18px] lg:flex-[1.4] xl:flex-[2.3]"
+          className="flex min-w-0 flex-col gap-3.5 rounded-card bg-surface p-3 md:flex-[1] md:p-[18px] lg:flex-[1.4] xl:flex-[2.3]"
         >
           <form
             onSubmit={(event) => {
@@ -100,7 +100,7 @@ export default function SellPage() {
           </div>
         </section>
 
-        <aside className="flex flex-col gap-3.5 rounded-card bg-surface p-4 md:min-w-[280px] md:max-w-[380px] md:flex-1 md:p-[22px] lg:max-w-[420px] xl:max-w-[340px]">
+        <aside className="flex flex-col gap-3.5 rounded-card bg-surface p-4 md:min-w-[280px] md:max-w-[480px] md:flex-1 md:p-[22px] lg:max-w-[420px] xl:max-w-[340px]">
           <div className="flex items-center justify-between">
             <h2 className="font-heading text-lg font-bold tracking-tight md:text-xl">Carrinho</h2>
             <span className="rounded-pill bg-ink px-3 py-1 font-body text-[11px] font-medium text-surface md:text-xs">
