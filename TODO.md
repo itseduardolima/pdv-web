@@ -105,6 +105,10 @@ frontend) — não quando o código só "existe".
 - [x] API: `Operator.email` (único por tenant, obrigatório p/ admin), `pinHash` nulo = primeiro acesso, `PinToken` com RLS, módulo `mail` (`log`/`smtp`), `POST /auth/forgot-pin`, `GET /auth/pin-token/:token`, `POST /auth/set-pin`, `POST /operators/:id/send-pin-link`; specs 01/03/08/09 atualizadas; Jest
 - [x] Web: e-mail no cadastro de operador (PIN opcional quando há e-mail), "Esqueci meu PIN" no Login → `/forgot-pin`, tela `/set-pin?token=`, "Enviar/Reenviar link" na edição (reset manual só sem e-mail), pílula "Primeiro acesso pendente" na lista; E2E `pin-recovery.cy.ts` + `operators.cy.ts`
 
+## Extra — Filtro por categoria em Produtos e Vender (decisão de 2026-09-12)
+
+- [x] `CategoryFilter` (chips, reusado): em Produtos filtra no servidor (`category` já existia na API); em Vender filtra em memória junto com a busca. Component tests + smoke manual.
+
 ## Sprint 7 — Offline-first (PWA)
 
 - [ ] 8.1 — Cache de catálogo offline (Dexie)

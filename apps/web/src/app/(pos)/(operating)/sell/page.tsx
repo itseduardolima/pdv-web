@@ -3,6 +3,7 @@
 import { PageHeader } from '@/components/layout/PageHeader'
 import { CartLine } from '@/components/pos/CartLine'
 import { CashReceived } from '@/components/pos/CashReceived'
+import { CategoryFilter } from '@/components/pos/CategoryFilter'
 import { PaymentMethodPicker } from '@/components/pos/PaymentMethodPicker'
 import { QuickStockAdjust } from '@/components/pos/QuickStockAdjust'
 import { ProductTile } from '@/components/pos/ProductTile'
@@ -63,6 +64,10 @@ export default function SellPage() {
             </button>
           </form>
 
+          {page.categories.length > 0 && (
+            <CategoryFilter categories={page.categories} value={page.category} onChange={page.setCategory} />
+          )}
+
           {page.productsError && <InlineAlert>{page.productsError}</InlineAlert>}
 
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-input bg-canvas bg-[radial-gradient(circle,var(--color-border)_1px,transparent_1.4px)] p-2.5 [background-size:18px_18px] md:p-3.5">
@@ -73,9 +78,11 @@ export default function SellPage() {
             </div>
             {!page.isLoadingProducts && page.products.length === 0 && (
               <EmptyState
-                title={page.search ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado'}
+                title={page.search || page.category ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado'}
                 description={
-                  page.search ? 'Tente outro nome ou código de barras.' : 'Cadastre produtos na tela Produtos.'
+                  page.search || page.category
+                    ? 'Tente outro nome, categoria ou código de barras.'
+                    : 'Cadastre produtos na tela Produtos.'
                 }
               />
             )}

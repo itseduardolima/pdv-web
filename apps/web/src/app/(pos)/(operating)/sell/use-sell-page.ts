@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import type { Product } from '@pdv/shared'
 import { useAdjustStock } from '@/hooks/queries/use-adjust-stock'
 import { useCreateSale } from '@/hooks/queries/use-create-sale'
+import { useProductCategories } from '@/hooks/queries/use-product-categories'
 import { useCurrentCashSession } from '@/hooks/queries/use-current-cash-session'
 import { useProducts } from '@/hooks/queries/use-products'
 import { useCart } from '@/hooks/use-cart'
@@ -17,14 +18,21 @@ export function useSellPage() {
   const { operator } = useSession()
   const cashSession = useCurrentCashSession()
   const products = useProducts()
+  const categories = useProductCategories()
   const cart = useCart()
   const createSale = useCreateSale()
   const [search, setSearch] = useState('')
+  const [category, setCategory] = useState<string | null>(null)
   const [adjustingStock, setAdjustingStock] = useState(false)
 
+  // Categoria e busca já filtram o mesmo grid em memória (a lista inteira
+  // já está carregada para o leitor de código de barras funcionar).
   const visibleProducts = useMemo(
-    () => (products.data ?? []).filter((product) => matchesProductSearch(product, search)),
-    [products.data, search],
+    () =>
+      (products.data ?? []).filter(
+        (product) => matchesProductSearch(product, search) && (category === null || product.category === category),
+      ),
+    [products.data, search, category],
   )
 
   function handleAdd(product: Product) {
@@ -103,6 +111,9 @@ export function useSellPage() {
     cashSession: cashSession.data ?? null,
     search,
     setSearch,
+    category,
+    setCategory,
+    categories: categories.data ?? [],
     handleSearchSubmit,
     products: visibleProducts,
     isLoadingProducts: products.isPending,

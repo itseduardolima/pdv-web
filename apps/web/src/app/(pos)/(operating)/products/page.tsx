@@ -1,6 +1,7 @@
 'use client'
 
 import { PageHeader } from '@/components/layout/PageHeader'
+import { CategoryFilter } from '@/components/pos/CategoryFilter'
 import { ProductCard } from '@/components/pos/ProductCard'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -36,6 +37,10 @@ export default function ProductsPage() {
         }
       />
 
+      {page.categories.length > 0 && (
+        <CategoryFilter categories={page.categories} value={page.category} onChange={page.setCategory} />
+      )}
+
       {page.errorMessage && <InlineAlert>{page.errorMessage}</InlineAlert>}
 
       <div className="flex flex-col gap-2.5 md:grid md:grid-cols-2 md:gap-4 xl:grid-cols-3">
@@ -50,14 +55,14 @@ export default function ProductsPage() {
 
       {!page.isLoading && !page.errorMessage && page.products.length === 0 && (
         <EmptyState
-          title={page.search ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado'}
+          title={page.hasFilter ? 'Nenhum produto encontrado' : 'Nenhum produto cadastrado'}
           description={
-            page.search
+            page.hasFilter
               ? 'Tente outro nome, categoria ou código de barras.'
               : 'Cadastre o primeiro produto para começar a vender.'
           }
           action={
-            !page.search && page.canManage ? (
+            !page.hasFilter && page.canManage ? (
               <Button href="/products/new" size="sm">
                 <PlusIcon aria-hidden />
                 Novo Produto

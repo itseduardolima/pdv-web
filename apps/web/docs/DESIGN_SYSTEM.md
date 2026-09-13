@@ -423,6 +423,17 @@ zera junto com o carrinho (cancelar / nova venda). "Venda Confirmada" mostra
   "Esqueceu o PIN?" / "Primeiro acesso" com botão preto de enviar link
   quando há e-mail, e o "Resetar PIN" manual só quando não há.
 
+### Filtro por categoria — `CategoryFilter`
+
+Chips roláveis na horizontal ("Todas" + `DEFAULT_PRODUCT_CATEGORIES` mais o
+que a loja já usa, via `useProductCategories`), **um componente reusado**
+em `Produtos` (filtra a busca no servidor, `GET /products?category=`) e em
+`Vender` (filtra em memória a lista já carregada, junto com a busca por
+texto — o grid do caixa precisa da lista inteira de qualquer forma, para o
+leitor de código de barras funcionar). Selecionado fica `bg-primary`, o
+resto `bg-surface` com borda `--color-border`. A fileira leva `shrink-0`
+— item flex com `overflow-x-auto` perde o tamanho mínimo automático (vira 0) e sem isso fica espremido a quase nada dentro da coluna da página.
+
 ### Dashboard — `WeekChart`, `TopProductRow`
 
 - Cabeçalho da tela repete o padrão do Fechamento: cartão escuro
