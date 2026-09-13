@@ -481,6 +481,18 @@ ou nome comprido empurravam o teclado de PIN pra fora da tela; agora ele
 fica sempre logo abaixo da grade, do mesmo tamanho, não importa quantos
 operadores a loja tenha.
 
+### Calculadora — `Calculator`, `CalculatorDialog`
+
+Botão de calculadora no cabeçalho de Vender (decisão de 2026-09-13, à
+esquerda do badge "Caixa #N"): cliente às vezes quer dividir a conta, o
+operador precisa de uma conta rápida sem sair da venda. `Calculator`
+(em `components/ui`, não `pos` — não tem nada a ver com carrinho, venda ou
+produto, é só uma ferramenta solta) usa lógica pura em
+`lib/utils/calculator.ts` (soma, subtração, multiplicação, divisão,
+encadeamento de operações, `C`/apagar, erro em divisão por zero — nunca
+quebra a tela). `CalculatorDialog` só embrulha isso num `Dialog` do Radix,
+mesmo padrão do `ConfirmDialog`. Sem ligação nenhuma com o total da venda.
+
 ### Filtro por categoria — `CategoryFilter`
 
 Chips roláveis na horizontal ("Todas" + `DEFAULT_PRODUCT_CATEGORIES` mais o

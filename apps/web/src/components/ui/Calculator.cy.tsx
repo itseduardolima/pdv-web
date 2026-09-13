@@ -1,0 +1,57 @@
+import { Calculator } from './Calculator'
+
+describe('Calculator', () => {
+  it('does simple arithmetic (12 + 8 = 20)', () => {
+    cy.mount(<Calculator />)
+    cy.contains('button', '1').click()
+    cy.contains('button', '2').click()
+    cy.get('output').should('have.text', '12')
+    cy.get('button[aria-label="Operador +"]').click()
+    cy.contains('button', '8').click()
+    cy.get('button[aria-label=Igual]').click()
+    cy.get('output').should('have.text', '20')
+  })
+
+  it('chains operations left to right (2 + 3 × 4 = 20)', () => {
+    cy.mount(<Calculator />)
+    cy.contains('button', '2').click()
+    cy.get('button[aria-label="Operador +"]').click()
+    cy.contains('button', '3').click()
+    cy.get('button[aria-label="Operador ×"]').click()
+    cy.contains('button', '4').click()
+    cy.get('button[aria-label=Igual]').click()
+    cy.get('output').should('have.text', '20')
+  })
+
+  it('handles decimals with a comma', () => {
+    cy.mount(<Calculator />)
+    cy.contains('button', '1').click()
+    cy.contains('button', '0').click()
+    cy.get('button[aria-label=Vírgula]').click()
+    cy.contains('button', '5').click()
+    cy.get('button[aria-label="Operador ÷"]').click()
+    cy.contains('button', '2').click()
+    cy.get('button[aria-label=Igual]').click()
+    cy.get('output').should('have.text', '5,25')
+  })
+
+  it('C clears everything, backspace removes the last digit', () => {
+    cy.mount(<Calculator />)
+    cy.contains('button', '1').click()
+    cy.contains('button', '2').click()
+    cy.contains('button', '3').click()
+    cy.get('button[aria-label=Apagar]').click()
+    cy.get('output').should('have.text', '12')
+    cy.contains('button', 'C').click()
+    cy.get('output').should('have.text', '0')
+  })
+
+  it('division by zero shows an error instead of crashing', () => {
+    cy.mount(<Calculator />)
+    cy.contains('button', '5').click()
+    cy.get('button[aria-label="Operador ÷"]').click()
+    cy.contains('button', '0').click()
+    cy.get('button[aria-label=Igual]').click()
+    cy.get('output').should('have.text', 'Erro')
+  })
+})

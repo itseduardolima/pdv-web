@@ -8,9 +8,10 @@ import { PaymentMethodPicker } from '@/components/pos/PaymentMethodPicker'
 import { QuickStockAdjust } from '@/components/pos/QuickStockAdjust'
 import { ProductTile } from '@/components/pos/ProductTile'
 import { Button } from '@/components/ui/Button'
+import { CalculatorDialog } from '@/components/ui/CalculatorDialog'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { FieldError } from '@/components/ui/FieldError'
-import { BarcodeIcon, SearchIcon } from '@/components/ui/Icons'
+import { BarcodeIcon, CalculatorIcon, SearchIcon } from '@/components/ui/Icons'
 import { InlineAlert } from '@/components/ui/InlineAlert'
 import { formatCurrency } from '@/lib/utils/format-currency'
 import { formatDayLong, formatTime } from '@/lib/utils/format-date'
@@ -29,9 +30,20 @@ export default function SellPage() {
         }
         actions={
           page.cashSession && (
-            <span className="rounded-pill bg-ink px-4 py-1.5 font-body text-[13px] font-medium text-surface">
-              Caixa #{page.cashSession.sequence}
-            </span>
+            <>
+              <button
+                type="button"
+                onClick={page.openCalculator}
+                aria-label="Abrir calculadora"
+                title="Calculadora"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-pill bg-canvas text-ink"
+              >
+                <CalculatorIcon aria-hidden />
+              </button>
+              <span className="rounded-pill bg-ink px-4 py-1.5 font-body text-[13px] font-medium text-surface">
+                Caixa #{page.cashSession.sequence}
+              </span>
+            </>
           )
         }
       />
@@ -194,6 +206,8 @@ export default function SellPage() {
           </div>
         </aside>
       </div>
+
+      <CalculatorDialog open={page.calculatorOpen} onOpenChange={page.setCalculatorOpen} />
     </>
   )
 }

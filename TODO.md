@@ -120,6 +120,10 @@ frontend) — não quando o código só "existe".
 
 - [x] `TotalCard`/`TotalAmount` (reuso em Fechamento e Dashboard): textura de pontinhos no fundo escuro + só a parte inteira do valor em destaque na cor primária, igual ao protótipo.
 
+## Extra — Calculadora em Vender (decisão de 2026-09-13)
+
+- [x] Botão de calculadora no cabeçalho de Vender (à esquerda do badge "Caixa #N") — ajuda o operador a dividir conta com o cliente sem sair da venda. `Calculator`/`CalculatorDialog`, lógica pura testável, sem ligação com carrinho/venda. Component tests.
+
 ## Sprint 7 — Offline-first (PWA)
 
 - [ ] 8.1 — Cache de catálogo offline (Dexie)

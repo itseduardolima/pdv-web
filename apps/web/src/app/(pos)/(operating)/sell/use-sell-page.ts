@@ -24,6 +24,7 @@ export function useSellPage() {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState<string | null>(null)
   const [adjustingStock, setAdjustingStock] = useState(false)
+  const [calculatorOpen, setCalculatorOpen] = useState(false)
 
   // Categoria e busca já filtram o mesmo grid em memória (a lista inteira
   // já está carregada para o leitor de código de barras funcionar).
@@ -140,5 +141,8 @@ export function useSellPage() {
     handleAdjustStock,
     adjustStockState: adjustStock.isPending ? ('loading' as const) : ('idle' as const),
     adjustStockError: apiErrorMessage(adjustStock.error),
+    calculatorOpen,
+    openCalculator: () => setCalculatorOpen(true),
+    setCalculatorOpen,
   }
 }
