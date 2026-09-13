@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common'
+import { Body, Controller, HttpCode, Post } from '@nestjs/common'
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -6,14 +6,23 @@ import {
   ApiCookieAuth,
   ApiCreatedResponse,
   ApiNotFoundResponse,
+  ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger'
-import { createSaleSchema, saleSchema, type Sale } from '@pdv/shared'
+import {
+  createSaleSchema,
+  saleSchema,
+  syncSalesResultSchema,
+  syncSalesSchema,
+  type Sale,
+  type SyncSalesResult,
+} from '@pdv/shared'
 import { CurrentOperator } from '../../common/decorators/current-operator.decorator'
 import { CurrentTenant } from '../../common/decorators/current-tenant.decorator'
 import { apiErrorOpenApi, openApi } from '../../common/openapi'
 import { SESSION_COOKIE, type OperatorSession } from '../../common/types/request'
 import { CreateSaleDto } from './dto/create-sale.dto'
+import { SyncSalesDto } from './dto/sync-sales.dto'
 import { SaleService } from './sale.service'
 
 @ApiTags('sales')
@@ -40,5 +49,24 @@ export class SaleController {
     @Body() body: CreateSaleDto,
   ): Promise<Sale> {
     return this.sales.create(tenantId, operator, body)
+  }
+
+  // HU 8.2: a fila offline reenvia aqui quando volta a ter rede. Cada venda
+  // do lote é idempotente por uuid (mesma regra do create); uma venda com
+  // erro não derruba as outras — o resultado vem por item, sempre 200.
+  @Post('sync')
+  @HttpCode(200)
+  @ApiBody({ schema: openApi(syncSalesSchema) })
+  @ApiOkResponse({
+    schema: openApi(syncSalesResultSchema),
+    description: 'Um resultado por venda enviada (ok + venda, ou erro) — nunca falha o lote inteiro',
+  })
+  @ApiBadRequestResponse({ schema: apiErrorOpenApi, description: 'VALIDATION' })
+  sync(
+    @CurrentTenant() tenantId: string,
+    @CurrentOperator() operator: OperatorSession,
+    @Body() body: SyncSalesDto,
+  ): Promise<SyncSalesResult> {
+    return this.sales.syncBatch(tenantId, operator, body)
   }
 }

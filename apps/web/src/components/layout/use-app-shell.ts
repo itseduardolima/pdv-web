@@ -1,5 +1,6 @@
 import { usePathname, useRouter } from 'next/navigation'
 import { useLogout } from '@/hooks/queries/use-logout'
+import { useOfflineSalesSync } from '@/hooks/use-offline-sales-sync'
 import { useSession } from '@/hooks/use-session'
 import { useTenant } from '@/hooks/use-tenant'
 import { isNavItemActive, navItemsForRole, ROLE_LABEL } from '@/lib/navigation'
@@ -10,6 +11,7 @@ export function useAppShell() {
   const pathname = usePathname()
   const router = useRouter()
   const logout = useLogout()
+  useOfflineSalesSync(tenant.id)
 
   const items = navItemsForRole(operator.role).map((item) => ({ ...item, active: isNavItemActive(item, pathname) }))
 

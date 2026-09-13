@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { idSchema, paymentMethodSchema } from './common'
+import { apiErrorSchema, idSchema, paymentMethodSchema } from './common'
 
 const cents = z.number().int().nonnegative()
 
@@ -53,3 +53,17 @@ export const saleSchema = z.object({
   items: z.array(saleItemSchema),
 })
 export type Sale = z.infer<typeof saleSchema>
+
+// Resultado por venda da fila (HU 8.2): a sincronização é sequencial e
+// parcial — uma venda com erro (ex.: estoque insuficiente nesse meio-tempo)
+// não derruba as outras do lote, então o cliente processa item a item.
+export const syncSaleResultSchema = z.object({
+  uuid: z.string().uuid(),
+  ok: z.boolean(),
+  sale: saleSchema.optional(),
+  error: apiErrorSchema.optional(),
+})
+export type SyncSaleResult = z.infer<typeof syncSaleResultSchema>
+
+export const syncSalesResultSchema = z.object({ results: z.array(syncSaleResultSchema) })
+export type SyncSalesResult = z.infer<typeof syncSalesResultSchema>

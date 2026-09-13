@@ -223,3 +223,124 @@ describe('SaleService.create', () => {
     )
   })
 })
+
+// Repositório com estoque que de fato debita entre chamadas — syncBatch
+// processa em ordem, então uma venda do lote pode esgotar o estoque da
+// próxima (mesmo jeito que aconteceria se cada uma tivesse vindo online).
+function makeStatefulService(startingStock: Record<string, number> = { p1: 3, p2: 20 }) {
+  const stock: Record<string, number> = { ...startingStock }
+  const existingUuids = new Set<string>()
+  const repository = {
+    findByUuid: jest.fn().mockImplementation(async (_t: string, uuid: string) =>
+      existingUuids.has(uuid)
+        ? {
+            id: `existing-${uuid}`,
+            uuid,
+            cashSessionId: 'cs1',
+            operatorId: 'op1',
+            paymentMethod: 'PIX',
+            totalCents: 100,
+            amountReceivedCents: null,
+            changeCents: null,
+            soldAt: new Date(),
+            operator: { name: 'Karol' },
+            items: [],
+          }
+        : null,
+    ),
+    findProducts: jest
+      .fn()
+      .mockImplementation(async (_t: string, ids: string[]) =>
+        [beer, rice].filter((p) => ids.includes(p.id)).map((p) => ({ ...p, stockQuantity: stock[p.id] ?? 0 })),
+      ),
+    createWithStockDebit: jest.fn().mockImplementation(async (_t: string, sale: NewSale) => {
+      for (const item of sale.items) stock[item.productId] = (stock[item.productId] ?? 0) - item.quantity
+      return {
+        id: `s-${sale.uuid}`,
+        tenantId: 't1',
+        ...sale,
+        operator: { name: 'Karol' },
+        items: sale.items.map((item, index) => ({ id: `i${index}`, saleId: `s-${sale.uuid}`, ...item })),
+      }
+    }),
+  }
+  const cashSessions = { requireOpen: jest.fn().mockResolvedValue({ id: 'cs1' }) }
+  const service = new SaleService(
+    repository as unknown as SaleRepository,
+    cashSessions as unknown as CashSessionService,
+  )
+  return { service, repository, stock, existingUuids }
+}
+
+describe('SaleService.syncBatch', () => {
+  const uuid1 = '11111111-1111-1111-1111-111111111111'
+  const uuid2 = '22222222-2222-2222-2222-222222222222'
+
+  it('syncs every sale in the batch, in order', async () => {
+    const { service, repository } = makeStatefulService()
+    const result = await service.syncBatch('t1', operator, {
+      sales: [
+        { uuid: uuid1, paymentMethod: 'PIX', items: [{ productId: 'p2', quantity: 1 }] },
+        { uuid: uuid2, paymentMethod: 'CASH', items: [{ productId: 'p1', quantity: 1 }] },
+      ],
+    })
+    expect(result.results).toEqual([
+      { uuid: uuid1, ok: true, sale: expect.objectContaining({ uuid: uuid1 }) },
+      { uuid: uuid2, ok: true, sale: expect.objectContaining({ uuid: uuid2 }) },
+    ])
+    expect(repository.createWithStockDebit).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not duplicate a sale whose uuid already exists (idempotent re-sync)', async () => {
+    const { service, repository, existingUuids } = makeStatefulService()
+    existingUuids.add(uuid1)
+    const result = await service.syncBatch('t1', operator, {
+      sales: [{ uuid: uuid1, paymentMethod: 'PIX', items: [{ productId: 'p2', quantity: 1 }] }],
+    })
+    expect(result.results).toEqual([{ uuid: uuid1, ok: true, sale: expect.objectContaining({ uuid: uuid1 }) }])
+    expect(repository.createWithStockDebit).not.toHaveBeenCalled()
+  })
+
+  it('keeps a failed sale from blocking the rest of the batch', async () => {
+    // p1 (Cerveja) só tem 3 em estoque: a primeira venda do lote esgota,
+    // a segunda falha, a terceira (outro produto) segue normal.
+    const { service, repository } = makeStatefulService({ p1: 3, p2: 20 })
+    const result = await service.syncBatch('t1', operator, {
+      sales: [
+        { uuid: uuid1, paymentMethod: 'PIX', items: [{ productId: 'p1', quantity: 3 }] },
+        { uuid: uuid2, paymentMethod: 'PIX', items: [{ productId: 'p1', quantity: 1 }] },
+        {
+          uuid: '33333333-3333-3333-3333-333333333333',
+          paymentMethod: 'PIX',
+          items: [{ productId: 'p2', quantity: 1 }],
+        },
+      ],
+    })
+    expect(result.results[0]).toMatchObject({ uuid: uuid1, ok: true })
+    expect(result.results[1]).toMatchObject({
+      uuid: uuid2,
+      ok: false,
+      error: { code: 'INSUFFICIENT_STOCK', statusCode: 409, details: { productId: 'p1', available: 0 } },
+    })
+    expect(result.results[2]).toMatchObject({ ok: true })
+    expect(repository.createWithStockDebit).toHaveBeenCalledTimes(2)
+  })
+
+  it('lets an unexpected (non-domain) error escape instead of swallowing it as a per-item result', async () => {
+    const repository = {
+      findByUuid: jest.fn().mockResolvedValue(null),
+      findProducts: jest.fn().mockRejectedValue(new Error('db down')),
+      createWithStockDebit: jest.fn(),
+    }
+    const cashSessions = { requireOpen: jest.fn().mockResolvedValue({ id: 'cs1' }) }
+    const brokenService = new SaleService(
+      repository as unknown as SaleRepository,
+      cashSessions as unknown as CashSessionService,
+    )
+    await expect(
+      brokenService.syncBatch('t1', operator, {
+        sales: [{ uuid: uuid1, paymentMethod: 'PIX', items: [{ productId: 'p1', quantity: 1 }] }],
+      }),
+    ).rejects.toThrow('db down')
+  })
+})

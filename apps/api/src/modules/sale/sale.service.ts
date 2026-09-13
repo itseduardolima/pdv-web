@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import type { Product } from '@prisma/client'
-import type { CreateSaleInput, Sale } from '@pdv/shared'
+import type { CreateSaleInput, Sale, SyncSaleResult, SyncSalesInput, SyncSalesResult } from '@pdv/shared'
 import { ConflictError, DomainError, NotFoundError } from '../../common/errors/domain.error'
 import type { OperatorSession } from '../../common/types/request'
 import { CashSessionService } from '../cash-session/cash-session.service'
@@ -70,6 +70,33 @@ export class SaleService {
       }
       throw error
     }
+  }
+
+  // HU 8.2 (fila offline): processa em ordem — cada venda já é idempotente
+  // por uuid (create()), então reenviar o mesmo lote nunca duplica nada.
+  // Uma venda com erro de regra (ex.: sem estoque quando enfim sincronizou)
+  // não derruba as outras: cada item do lote tem seu próprio resultado.
+  async syncBatch(tenantId: string, operator: OperatorSession, input: SyncSalesInput): Promise<SyncSalesResult> {
+    const results: SyncSaleResult[] = []
+    for (const saleInput of input.sales) {
+      try {
+        const sale = await this.create(tenantId, operator, saleInput)
+        results.push({ uuid: saleInput.uuid, ok: true, sale })
+      } catch (error) {
+        if (!(error instanceof DomainError)) throw error
+        results.push({
+          uuid: saleInput.uuid,
+          ok: false,
+          error: {
+            statusCode: error.statusCode,
+            code: error.code,
+            message: error.message,
+            ...(error.details ? { details: error.details } : {}),
+          },
+        })
+      }
+    }
+    return { results }
   }
 }
 

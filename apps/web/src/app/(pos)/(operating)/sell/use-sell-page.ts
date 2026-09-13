@@ -1,6 +1,7 @@
 import { useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
-import type { Product } from '@pdv/shared'
+import { useQueryClient } from '@tanstack/react-query'
+import type { CreateSaleInput, Product } from '@pdv/shared'
 import { useAdjustStock } from '@/hooks/queries/use-adjust-stock'
 import { useCreateSale } from '@/hooks/queries/use-create-sale'
 import { useProductCategories } from '@/hooks/queries/use-product-categories'
@@ -8,13 +9,21 @@ import { useCurrentCashSession } from '@/hooks/queries/use-current-cash-session'
 import { useProducts } from '@/hooks/queries/use-products'
 import { useCart } from '@/hooks/use-cart'
 import { useSession } from '@/hooks/use-session'
+import { useTenant } from '@/hooks/use-tenant'
 import { apiErrorMessage, apiGeneralErrorMessage } from '@/lib/utils/api-error-message'
 import { apiFieldErrors } from '@/lib/utils/api-field-errors'
 import { matchesProductSearch } from '@/lib/utils/cart'
 import { ApiClientError } from '@/lib/api-client'
+import { getOfflineDb } from '@/lib/offline/db'
+import { buildLocalSale } from '@/lib/offline/local-sale'
+import { queuePendingSale } from '@/lib/offline/pending-sales'
+import { isBackendUnreachable } from '@/lib/offline/products-cache'
+import { syncPendingSales } from '@/lib/offline/sync'
 
 export function useSellPage() {
   const router = useRouter()
+  const tenant = useTenant()
+  const queryClient = useQueryClient()
   const { operator } = useSession()
   const cashSession = useCurrentCashSession()
   const products = useProducts()
@@ -62,20 +71,45 @@ export function useSellPage() {
   // troco). O valor recebido só vai em Dinheiro e só se foi digitado.
   function handleCheckout() {
     const sendsReceived = cart.paymentMethod === 'CASH' && cart.amountReceivedText.trim() !== ''
-    createSale.mutate(
-      {
-        uuid: cart.saleUuid,
-        paymentMethod: cart.paymentMethod ?? ('' as never),
-        ...(sendsReceived ? { amountReceivedCents: cart.amountReceivedCents } : {}),
-        items: cart.items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+    const input: CreateSaleInput = {
+      uuid: cart.saleUuid,
+      paymentMethod: cart.paymentMethod ?? ('' as never),
+      ...(sendsReceived ? { amountReceivedCents: cart.amountReceivedCents } : {}),
+      items: cart.items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+    }
+    createSale.mutate(input, {
+      onSuccess: (sale) => {
+        cart.finish(sale)
+        router.push('/sell/confirmed')
       },
-      {
-        onSuccess: (sale) => {
-          cart.finish(sale)
+      // HU 8.2: sem rede ou API fora do ar, a venda não se perde — vai pra
+      // fila local e a UI segue como se tivesse dado certo (a API é a fonte
+      // da verdade final quando sincronizar). Erro de regra (sem estoque,
+      // caixa fechado etc.) não cai aqui, continua aparecendo na tela.
+      onError: (error) => {
+        if (!isBackendUnreachable(error)) return
+        const db = getOfflineDb(tenant.id)
+        void queuePendingSale(db, input).then(() => {
+          cart.finish(
+            buildLocalSale({
+              uuid: input.uuid,
+              items: cart.items,
+              paymentMethod: cart.paymentMethod as NonNullable<typeof cart.paymentMethod>,
+              amountReceivedCents: sendsReceived ? cart.amountReceivedCents : null,
+              changeCents: sendsReceived ? cart.changeCents : null,
+              totalCents: cart.totalCents,
+              cashSessionId: cashSession.data?.id ?? 'offline',
+              operatorId: operator.id,
+              operatorName: operator.name,
+            }),
+          )
           router.push('/sell/confirmed')
-        },
+          void syncPendingSales(db, tenant.id).then(() => {
+            void queryClient.invalidateQueries({ queryKey: ['products'] })
+          })
+        })
       },
-    )
+    })
   }
 
   function handleCancel() {
