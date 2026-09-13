@@ -26,11 +26,18 @@ export const operatorSchema = z.object({
 })
 export type Operator = z.infer<typeof operatorSchema>
 
+// Só letras (com acento) e espaço — sem número nem símbolo. Diferente de
+// Produto (código/quantidade no nome são normais); nome de pessoa não tem
+// por quê.
+const NAME_PATTERN = /^[A-Za-zÀ-ÖØ-öø-ÿ]+(?:\s[A-Za-zÀ-ÖØ-öø-ÿ]+)*$/
+const NAME_PATTERN_MESSAGE = 'O nome só pode ter letras (acentos valem) e espaço, sem número ou símbolo'
+
 const nameSchema = z
   .string({ required_error: 'Informe o nome completo' })
   .trim()
   .min(OPERATOR_LIMITS.name.min, `O nome precisa ter pelo menos ${OPERATOR_LIMITS.name.min} caracteres`)
   .max(OPERATOR_LIMITS.name.max, `O nome pode ter no máximo ${OPERATOR_LIMITS.name.max} caracteres`)
+  .regex(NAME_PATTERN, NAME_PATTERN_MESSAGE)
 
 // "" vira null: campo opcional deixado em branco no formulário.
 const optionalEmailSchema = z.preprocess(

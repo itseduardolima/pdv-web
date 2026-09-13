@@ -114,7 +114,9 @@ servidor (`src/server/domain`), nunca só escondendo botão na UI.
 ## Operadores
 
 - Nome completo e PIN são obrigatórios; papel (Administrador/Operador) e foto
-  são definidos na criação, foto é opcional.
+  são definidos na criação, foto é opcional. Nome só aceita letras (com
+  acento) e espaço — sem número nem símbolo (decisão de 2026-09-12; é nome
+  de pessoa, diferente do nome de produto, que pode ter código/medida).
 - Toggle "Operador ativo": operador inativo não consegue logar (bloqueia na
   tela de seleção de operador do Login), mas seu histórico de vendas passadas
   permanece intacto.

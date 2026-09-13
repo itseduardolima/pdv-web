@@ -1,7 +1,14 @@
 // Gestão de operadores pela tela (HU 6.1–6.7): criar, inativar, resetar
 // PIN, regra do último admin e excluir. Mensagens vêm da API.
 describe('Operadores: criar, ativar/inativar, PIN e excluir', () => {
-  const name = `E2E Maria ${Date.now()}`
+  // Nome de operador só aceita letra e espaço (sem número) — usa um sufixo
+  // aleatório em letras pra não colidir com uma execução anterior.
+  const suffix = Math.random()
+    .toString(36)
+    .replace(/[^a-z]/g, '')
+    .padEnd(6, 'x')
+    .slice(0, 6)
+  const name = `Teste Maria ${suffix}`
 
   beforeEach(() => {
     cy.loginAs('Administrador', '1234')
@@ -60,19 +67,19 @@ describe('Operadores: criar, ativar/inativar, PIN e excluir', () => {
   it('creates an operator by e-mail (first access pending) and resends the link', () => {
     const email = `e2e-${Date.now()}@exemplo.com`
     cy.visit('/operators/new')
-    cy.get('input[name=name]').type('E2E Por E-mail')
+    cy.get('input[name=name]').type('Teste Por Email')
     cy.get('input[name=email]').type(email)
     // com e-mail, o PIN deixa de ser obrigatório
     cy.contains('button', 'Salvar Operador').click()
     cy.location('pathname').should('eq', '/operators')
-    cy.contains('[data-cy=operator-card]', 'E2E Por E-mail').as('card')
+    cy.contains('[data-cy=operator-card]', 'Teste Por Email').as('card')
     cy.get('@card').find('[data-cy=pending-first-access]').should('contain', 'Primeiro acesso pendente')
 
     // enquanto não define o PIN, não aparece no Login
     cy.request({ url: '/api/auth/operators', headers: { 'x-tenant-host': 'demo.app.localhost' } })
       .its('body')
       .should((body) => {
-        expect((body as { name: string }[]).map((o) => o.name)).not.to.include('E2E Por E-mail')
+        expect((body as { name: string }[]).map((o) => o.name)).not.to.include('Teste Por Email')
       })
 
     cy.get('@card').find('a[aria-label^="Editar"]').click()
@@ -89,7 +96,7 @@ describe('Operadores: criar, ativar/inativar, PIN e excluir', () => {
 
   it('an Administrador must have an e-mail', () => {
     cy.visit('/operators/new')
-    cy.get('input[name=name]').type('E2E Chefe')
+    cy.get('input[name=name]').type('Teste Chefe')
     cy.contains('label', 'Papel').click()
     cy.contains('[role=option]', 'Administrador').click()
     cy.get('input[name=pin]').type('1111')
