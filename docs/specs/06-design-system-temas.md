@@ -63,20 +63,26 @@ sem precisar de rebuild por cliente.
 
 ## Como o tema do tenant é aplicado
 
-1. Tabela `tenant` no banco guarda: `nome`, `slug`, `logo_url`,
-   `cor_primaria`, `cor_primaria_ink` (opcional — se não informado, calcula
-   contraste automaticamente), `cor_accent` (opcional).
+1. Tabela `Tenant` no banco guarda: `name`, `slug`, `logoUrl`, `primaryColor`,
+   `primaryInkColor` (opcional — se não informado, calcula contraste
+   automaticamente no `TenantService`), `accentColor`.
 2. No layout raiz (`app/layout.tsx`), o servidor resolve o tenant (pelo host,
    ver [01-arquitetura](./01-arquitetura.md)) e injeta um `<style>` inline
    com as CSS variables desse tenant, sobrescrevendo o default:
 
 ```tsx
-<style>{`:root { --color-primary: ${tenant.corPrimaria}; ... }`}</style>
+<style>{`:root { --color-primary: ${tenant.primaryColor}; ... }`}</style>
 ```
 
 3. Nome e logo do tenant (usados em `Sidebar`/`BottomNav`, título da aba,
    splash da PWA) vêm do mesmo registro — nunca hardcoded como "Mercadinho
    PDV" em nenhum componente.
+4. **Administrador pode editar nome, logo e cores pela tela `/settings`
+   (Sprint 7, HU 11.1–11.3)** — ao salvar (`PATCH /tenant/current`), a próxima
+   request já reflete a mudança, sem cache (o `TenantService` lê o tema fresco
+   a cada chamada de `GET /tenant/current`). `slug` e `domain` **não** são
+   editáveis pela UI (quebrariam URLs/DNS); só o revendedor muda isso, editando
+   o banco ou refazendo seed.
 
 ## Regra de acessibilidade ao trocar cor primária
 

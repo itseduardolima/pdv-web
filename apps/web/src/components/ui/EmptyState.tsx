@@ -1,18 +1,24 @@
 import type { ReactNode } from 'react'
 import { EmptyBoxIllustration } from './EmptyBoxIllustration'
 import { EmptyCartIllustration } from './EmptyCartIllustration'
+import { EmptyTopProductsIllustration } from './EmptyTopProductsIllustration'
 
 interface EmptyStateProps {
   title: string
   description?: string
   action?: ReactNode
   size?: 'md' | 'sm'
-  // 'box' (padrão, listas em geral) ou 'cart' (carrinho vazio em Vender).
-  illustration?: 'box' | 'cart'
+  // 'box' (padrão, listas em geral), 'cart' (carrinho vazio em Vender) ou
+  // 'topProducts' (mais vendidos hoje, no Dashboard).
+  illustration?: 'box' | 'cart' | 'topProducts'
   className?: string
 }
 
-const ILLUSTRATIONS = { box: EmptyBoxIllustration, cart: EmptyCartIllustration }
+const ILLUSTRATIONS = {
+  box: EmptyBoxIllustration,
+  cart: EmptyCartIllustration,
+  topProducts: EmptyTopProductsIllustration,
+}
 
 // Estado vazio reutilizável: ilustração na cor do tenant + título + texto
 // de apoio + ação opcional. Usar em toda lista/grid sem conteúdo.

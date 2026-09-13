@@ -54,7 +54,9 @@ export default function DashboardPage() {
                 <h2 className="font-heading text-lg font-bold tracking-tight">Últimos 7 dias</h2>
                 <p className="font-body text-xs text-ink/45">Total vendido por dia</p>
               </div>
-              <WeekChart days={summary.week} />
+              <div className="flex flex-1 flex-col justify-center">
+                <WeekChart days={summary.week} />
+              </div>
             </section>
 
             <section className="flex flex-col gap-2 rounded-card bg-surface p-4 md:col-span-2 md:p-6">
@@ -69,7 +71,12 @@ export default function DashboardPage() {
                   ))}
                 </ol>
               ) : (
-                <EmptyState size="sm" title="Nenhuma venda hoje" description="Os mais vendidos aparecem aqui." />
+                <EmptyState
+                  size="sm"
+                  title="Nenhuma venda hoje"
+                  description="Os mais vendidos aparecem aqui."
+                  illustration="topProducts"
+                />
               )}
             </section>
           </div>
