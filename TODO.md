@@ -109,6 +109,13 @@ frontend) — não quando o código só "existe".
 
 - [x] `CategoryFilter` (chips, reusado): em Produtos filtra no servidor (`category` já existia na API); em Vender filtra em memória junto com a busca. Component tests + smoke manual.
 
+## Extra — Login com muitos operadores (decisão de 2026-09-12)
+
+- [x] `OperatorAvatarPicker`: grade com altura máxima + rolagem própria e nome truncado numa linha, para equipe grande ou nome comprido nunca empurrar o teclado de PIN pra fora da tela. Component tests.
+- [x] Nome de operador só aceita letra (com acento) e espaço — sem número nem símbolo.
+- [x] Corte tablet × desktop movido de `lg` (1024px) pra `xl` (1280px) na `Sidebar` e na `SplitAuthLayout`: tablet deitado (iPad ~1024–1194px) passava de `lg` e virava "desktop" (sidebar expandida, ilustração) mesmo sem ser.
+- [x] Vender: grid de produtos ganha altura máxima + rolagem própria abaixo de `md` (crescia com a quantidade de produtos, empurrando o carrinho pra fora da tela); proporção catálogo/carrinho e nº de colunas ajustados por faixa (retrato, paisagem, desktop).
+
 ## Sprint 7 — Offline-first (PWA)
 
 - [ ] 8.1 — Cache de catálogo offline (Dexie)

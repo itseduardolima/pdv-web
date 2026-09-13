@@ -156,16 +156,16 @@ nunca vai na URL — é resolvido pelo host (`TenantMiddleware`).
 
 ### `operator`
 
-| Método | Rota                           | Descrição                                                                                                                           | Papel |
-| ------ | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | ----- |
-| GET    | `/operators`                   | Lista (inclui inativos)                                                                                                             | admin |
-| GET    | `/operators/:id`               | Detalhe                                                                                                                             | admin |
-| POST   | `/operators`                   | Cria (`CreateOperatorInput`): PIN inicial **ou** e-mail (sem PIN → link de primeiro acesso); admin exige e-mail; 409 `EMAIL_IN_USE` | admin |
-| POST   | `/operators/:id/send-pin-link` | Reenvia link (primeiro acesso ou redefinição); 409 `NO_EMAIL` / `OPERATOR_INACTIVE`                                                 | admin |
-| PATCH  | `/operators/:id`               | Edita dados/foto                                                                                                                    | admin |
-| PATCH  | `/operators/:id/pin`           | Define novo PIN (para quem não tem e-mail)                                                                                          | admin |
-| PATCH  | `/operators/:id/active`        | Ativa/inativa                                                                                                                       | admin |
-| DELETE | `/operators/:id`               | Soft-delete                                                                                                                         | admin |
+| Método | Rota                           | Descrição                                                                                                                                                         | Papel |
+| ------ | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| GET    | `/operators`                   | Lista (inclui inativos)                                                                                                                                           | admin |
+| GET    | `/operators/:id`               | Detalhe                                                                                                                                                           | admin |
+| POST   | `/operators`                   | Cria (`CreateOperatorInput`): PIN inicial **ou** e-mail (sem PIN → link de primeiro acesso); admin exige e-mail; nome só letras/acento/espaço; 409 `EMAIL_IN_USE` | admin |
+| POST   | `/operators/:id/send-pin-link` | Reenvia link (primeiro acesso ou redefinição); 409 `NO_EMAIL` / `OPERATOR_INACTIVE`                                                                               | admin |
+| PATCH  | `/operators/:id`               | Edita dados/foto                                                                                                                                                  | admin |
+| PATCH  | `/operators/:id/pin`           | Define novo PIN (para quem não tem e-mail)                                                                                                                        | admin |
+| PATCH  | `/operators/:id/active`        | Ativa/inativa                                                                                                                                                     | admin |
+| DELETE | `/operators/:id`               | Soft-delete                                                                                                                                                       | admin |
 
 Todas as mutações validam no `OperatorService` a regra "sempre deve existir
 ao menos 1 admin ativo" (409 `LAST_ADMIN`, só quando a ação tira um admin

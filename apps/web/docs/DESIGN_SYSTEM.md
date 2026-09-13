@@ -313,6 +313,21 @@ Informe o nome completo
   colar um valor já formatado também funciona. Código de barras aceita só
   números — nunca deixa digitar letra, porque o padrão (EAN/UPC) é numérico.
 
+### Vender: catálogo × carrinho por breakpoint
+
+Decisão de 2026-09-13: o grid de produtos não pode crescer com a
+quantidade de produtos — abaixo de `md` a página cresce livremente (sem
+altura travada), então o container do catálogo leva `max-h-[46vh]` com
+rolagem própria (`md:max-h-none` retoma o `flex-1` normal, que já é
+travado pela altura fixa da tela a partir de `md` via `AppShell`).
+
+A proporção catálogo/carrinho também muda por faixa: `md` (tablet
+retrato/desktop pequeno) usa a proporção padrão (`flex-[2.3]`, grid de 3
+colunas); `lg` (tablet **deitado**, antes do corte de desktop em `xl`)
+inverte pra dar mais espaço ao carrinho (`flex-[1.4]` no catálogo,
+`max-w-[420px]` no carrinho, grid continua em 3 colunas); `xl+` (desktop)
+volta à proporção padrão e grid de 4 colunas.
+
 ### Ajustar estoque sem sair da venda — `QuickStockAdjust`
 
 Quando a API recusa a venda por `INSUFFICIENT_STOCK`, o `InlineAlert` ganha
@@ -422,6 +437,36 @@ zera junto com o carrinho (cancelar / nova venda). "Venda Confirmada" mostra
   a 15%) enquanto `hasPin` é falso. Na edição, o bloco abaixo dos dados é
   "Esqueceu o PIN?" / "Primeiro acesso" com botão preto de enviar link
   quando há e-mail, e o "Resetar PIN" manual só quando não há.
+
+### Ponto de corte tablet × desktop — `lg` não basta
+
+Decisão de 2026-09-13: iPad e tablets Android deitados passam de 1024px
+(o `lg` padrão do Tailwind), então usar `lg:` pra "é desktop" fazia telas
+de tablet deitado mostrarem sidebar expandida com rótulo e a ilustração da
+`SplitAuthLayout` — exatamente o que devem evitar. As duas usam `xl:`
+(1280px) como o corte real de desktop:
+
+- `Sidebar`: ícone só até `xl` (tablet, retrato ou paisagem); ícone +
+  rótulo só a partir de `xl`.
+- `SplitAuthLayout`: ilustração escondida até `xl`; o painel fica largura
+  cheia até lá (sem a faixa lateral fixa de 540px) — sem ilustração do
+  lado, a largura cheia aproveita melhor o tablet do que ficar com metade
+  da tela em branco.
+
+### Login com muitos operadores — `OperatorAvatarPicker`
+
+Além da rolagem própria, a grade encolhe automaticamente a partir de 8
+operadores (`COMPACT_THRESHOLD`): avatar de 36px (era 56px), fonte de
+10px (era 12px) e menos espaço entre os itens — cabem mais operadores
+visíveis por vez antes de precisar rolar.
+
+Decisão de 2026-09-12: a grade de avatares (mantém o visual do protótipo)
+ganhou altura máxima (`max-h-[248px]`) com rolagem própria e cada item
+ganhou largura fixa — o nome vira uma linha só, truncado com reticências
+(`truncate`, título completo no `title` do botão). Sem isso, equipe grande
+ou nome comprido empurravam o teclado de PIN pra fora da tela; agora ele
+fica sempre logo abaixo da grade, do mesmo tamanho, não importa quantos
+operadores a loja tenha.
 
 ### Filtro por categoria — `CategoryFilter`
 
