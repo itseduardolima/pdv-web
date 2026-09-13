@@ -116,6 +116,10 @@ frontend) — não quando o código só "existe".
 - [x] Corte tablet × desktop movido de `lg` (1024px) pra `xl` (1280px) na `Sidebar` e na `SplitAuthLayout`: tablet deitado (iPad ~1024–1194px) passava de `lg` e virava "desktop" (sidebar expandida, ilustração) mesmo sem ser.
 - [x] Vender: grid de produtos ganha altura máxima + rolagem própria abaixo de `md` (crescia com a quantidade de produtos, empurrando o carrinho pra fora da tela); proporção catálogo/carrinho e nº de colunas ajustados por faixa (retrato, paisagem, desktop).
 
+## Extra — Cartão de total idêntico ao protótipo (decisão de 2026-09-13)
+
+- [x] `TotalCard`/`TotalAmount` (reuso em Fechamento e Dashboard): textura de pontinhos no fundo escuro + só a parte inteira do valor em destaque na cor primária, igual ao protótipo.
+
 ## Sprint 7 — Offline-first (PWA)
 
 - [ ] 8.1 — Cache de catálogo offline (Dexie)

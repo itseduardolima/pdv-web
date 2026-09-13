@@ -313,6 +313,19 @@ Informe o nome completo
   colar um valor já formatado também funciona. Código de barras aceita só
   números — nunca deixa digitar letra, porque o padrão (EAN/UPC) é numérico.
 
+### Cartão de total do dia/caixa — `TotalCard`, `TotalAmount`
+
+Decisão de 2026-09-13, 100% fiel ao protótipo: `components/pos/TotalCard`
+substitui o card duplicado que existia em Fechamento ("Total do caixa") e
+Dashboard ("Vendido hoje") — mesmo fundo em degredê na cor do tenant, com
+uma textura de pontinhos por cima (`radial-gradient` branco a 8% de
+opacidade) e o brilho desfocado no canto inferior direito. `TotalAmount`
+divide o valor formatado em partes: só o número inteiro ("612" em "R$
+612,40") fica na cor primária da loja, o "R$" e os centavos continuam
+brancos (herdam a cor do texto) — mesmo destaque do protótipo. O rodapé do
+card é `children` (pill + texto no Fechamento, só texto no Dashboard), já
+que cada tela mostra uma informação diferente ali.
+
 ### Vender: catálogo × carrinho por breakpoint
 
 Decisão de 2026-09-13: o grid de produtos não pode crescer com a
