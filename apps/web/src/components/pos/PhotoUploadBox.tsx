@@ -8,6 +8,10 @@ interface PhotoUploadBoxProps {
   label?: string
   uploading?: boolean
   error?: string
+  // 'square' (padrão) pra foto de Produto; 'round' pra foto de Operador —
+  // é rosto de gente, mostra como avatar (círculo), não retângulo
+  // (2026-09-13). A caixa tracejada continua a mesma nos dois casos.
+  variant?: 'square' | 'round'
 }
 
 // Mesma caixa tracejada para Produto e Operador (05-componentizacao).
@@ -17,27 +21,40 @@ export function PhotoUploadBox({
   label = 'Adicionar foto',
   uploading = false,
   error,
+  variant = 'square',
 }: PhotoUploadBoxProps) {
   const inputId = useId()
   const errorId = `${inputId}-error`
   const inputRef = useRef<HTMLInputElement>(null)
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col items-center gap-1.5">
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
         aria-describedby={error ? errorId : undefined}
-        className={`flex w-full flex-col items-center justify-center gap-2.5 overflow-hidden rounded-card-sm border-2 border-dashed bg-canvas text-ink/40 disabled:opacity-60 h-[140px] md:h-[200px] ${error ? 'border-danger' : 'border-border'}`}
+        className={`flex flex-col items-center justify-center gap-2 overflow-hidden border-2 border-dashed text-ink/40 disabled:opacity-60 ${value ? '' : 'bg-canvas'} ${error ? 'border-danger' : 'border-border'} ${
+          variant === 'round'
+            ? 'h-[104px] w-[104px] rounded-pill md:h-[144px] md:w-[144px]'
+            : 'h-[140px] w-full rounded-card-sm md:h-[200px]'
+        }`}
       >
         {value ? (
           // eslint-disable-next-line @next/next/no-img-element -- foto no storage do tenant
-          <img src={value} alt="" className="h-full w-full object-contain" />
+          <img
+            src={value}
+            alt=""
+            className={variant === 'round' ? 'h-full w-full rounded-pill object-cover' : 'h-full w-full object-contain'}
+          />
         ) : (
           <>
             <CameraIcon aria-hidden />
-            <span className="font-body text-[13px] font-medium">{uploading ? 'Enviando...' : label}</span>
+            <span
+              className={`font-body font-medium ${variant === 'round' ? 'text-center text-[11px] leading-tight' : 'text-[13px]'}`}
+            >
+              {uploading ? 'Enviando...' : label}
+            </span>
           </>
         )}
       </button>

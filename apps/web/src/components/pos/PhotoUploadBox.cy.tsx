@@ -22,4 +22,17 @@ describe('PhotoUploadBox', () => {
     cy.mount(<PhotoUploadBox value={null} onChange={() => {}} error="A imagem deve ter no máximo 5 MB" />)
     cy.get('[role=alert]').should('have.text', 'A imagem deve ter no máximo 5 MB')
   })
+
+  it('renders the box itself as a circle for the operator variant, not just the photo', () => {
+    cy.mount(<PhotoUploadBox value="data:image/gif;base64,R0lGODlhAQABAAAAACw=" onChange={() => {}} variant="round" />)
+    cy.get('button').should('have.class', 'rounded-pill').and('not.have.class', 'bg-canvas')
+    cy.get('img').should('have.class', 'rounded-pill')
+  })
+
+  it('drops the gray background once there is a photo', () => {
+    cy.mount(<PhotoUploadBox value={null} onChange={() => {}} />)
+    cy.get('button').should('have.class', 'bg-canvas')
+    cy.mount(<PhotoUploadBox value="data:image/gif;base64,R0lGODlhAQABAAAAACw=" onChange={() => {}} />)
+    cy.get('button').should('not.have.class', 'bg-canvas')
+  })
 })

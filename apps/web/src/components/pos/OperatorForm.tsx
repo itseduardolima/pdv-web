@@ -59,6 +59,7 @@ export function OperatorForm({
           onChange={onPhotoChange}
           uploading={photoUploading}
           error={photoError ?? errors.photoUrl?.message}
+          variant="round"
         />
       </aside>
 
