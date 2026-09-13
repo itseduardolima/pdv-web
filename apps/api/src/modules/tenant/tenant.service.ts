@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import type { Tenant } from '@prisma/client'
-import type { PublicTenant } from '@pdv/shared'
+import type { PublicTenant, UpdateTenantInput } from '@pdv/shared'
 import { NotFoundError } from '../../common/errors/domain.error'
 import { TenantResolver } from '../../common/tenant-context'
 import { contrastInkColor } from '../../common/utils/contrast-ink-color'
@@ -50,6 +50,16 @@ export class TenantService extends TenantResolver {
     return this.toPublic(tenant)
   }
 
+  // HU 11.1–11.4: slug/domain são imutáveis (quebrariam URL/DNS), por isso
+  // não vêm no schema de update; primaryInkColor nunca é aceito do form —
+  // volta a nulo pra ser recalculado pela cor nova na próxima leitura.
+  async updateCurrent(tenantId: string, input: UpdateTenantInput): Promise<PublicTenant> {
+    const tenant = await this.tenants.findById(tenantId)
+    if (!tenant) throw new NotFoundError('TENANT_NOT_FOUND', 'Loja não encontrada.')
+    const updated = await this.tenants.update(tenantId, { ...input, primaryInkColor: null })
+    return this.toPublic(updated)
+  }
+
   private toPublic(tenant: Tenant): PublicTenant {
     return {
       id: tenant.id,
@@ -59,6 +69,7 @@ export class TenantService extends TenantResolver {
       primaryColor: tenant.primaryColor,
       primaryInkColor: tenant.primaryInkColor ?? contrastInkColor(tenant.primaryColor),
       accentColor: tenant.accentColor,
+      timezone: tenant.timezone,
     }
   }
 }

@@ -1,6 +1,6 @@
 import type { ComponentType, SVGProps } from 'react'
 import { OPERATOR_ROLE_LABEL, type OperatorRole } from '@pdv/shared'
-import { ClosingIcon, DashboardIcon, OperatorsIcon, ProductsIcon, SellIcon } from '@/components/ui/Icons'
+import { ClosingIcon, DashboardIcon, OperatorsIcon, ProductsIcon, SellIcon, SettingsIcon } from '@/components/ui/Icons'
 
 export interface NavItem {
   key: string
@@ -17,6 +17,7 @@ export const NAV_ITEMS: NavItem[] = [
   { key: 'closing', label: 'Fechamento', href: '/closing', icon: ClosingIcon },
   { key: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: DashboardIcon, roles: ['ADMIN'] },
   { key: 'operators', label: 'Operadores', href: '/operators', icon: OperatorsIcon, roles: ['ADMIN'] },
+  { key: 'settings', label: 'Configurações', href: '/settings', icon: SettingsIcon, roles: ['ADMIN'] },
 ]
 
 export function navItemsForRole(role: OperatorRole): NavItem[] {

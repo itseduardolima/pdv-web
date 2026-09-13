@@ -123,10 +123,10 @@ frontend) — não quando o código só "existe".
 
 ## Sprint 7 — Configurações da Loja
 
-- [ ] 11.1 — Editar nome da loja (`PATCH /tenant/current`, só `ADMIN`; `slug`/`domain` imutáveis)
-- [ ] 11.2 — Upload de logo (`logoUrl` opcional, MinIO via `/uploads`, `PhotoUploadBox` kind `tenant`)
-- [ ] 11.3 — Escolher cor primária e acento (`primaryColor`/`accentColor` hex obrigatórios; `primaryInkColor` calculado, não editável)
-- [ ] 11.4 — Ajustar fuso horário (select IANA, valida no backend, afeta Dashboard)
+- [x] 11.1 — Editar nome da loja (`PATCH /tenant/current`, só `ADMIN`; `slug`/`domain` imutáveis) — página `/settings` (nav só ADMIN), `updateTenantSchema` já cobre 11.1-11.4 (logo/cores/timezone viajam inalterados até as HUs deles serem feitas); `publicTenantSchema` ganhou `timezone` (faltava para o form montar o payload completo)
+- [x] 11.2 — Upload de logo (`logoUrl` opcional, MinIO via `/uploads`, `PhotoUploadBox` kind `tenant-logo`) — mesmo fluxo de Produto/Operador (ticket assinado + confirm), sem endpoint novo (backend já cobria `tenant-logo` no `uploadKindSchema` e o controller de `/uploads` já era `ADMIN`-only). Cypress E2E cobre editar nome e bloqueio pra Operador
+- [x] 11.3 — Escolher cor primária e acento (`primaryColor`/`accentColor` hex obrigatórios; `primaryInkColor` calculado, não editável) — novo componente `ColorInput` (swatch nativo `type="color"` + hex digitável, validação só do backend)
+- [x] 11.4 — Ajustar fuso horário (select IANA, valida no backend, afeta Dashboard) — `Select` com `BR_TIMEZONES` (lista de apoio em `lib/timezones.ts`, backend aceita qualquer IANA válido via `Intl`); Cypress E2E cobre editar cores/timezone e confere `primaryInkColor` recalculado
 - [ ] 11.5 — Preview ao vivo das cores (mini card no form, só CSS local, sem API)
 
 ## Sprint 8 — Offline-first (PWA)

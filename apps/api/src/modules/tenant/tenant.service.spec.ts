@@ -22,6 +22,7 @@ function makeService(overrides: Partial<Record<keyof TenantRepository, jest.Mock
     findByDomain: jest.fn().mockResolvedValue(null),
     findBySlug: jest.fn().mockResolvedValue(null),
     findById: jest.fn().mockResolvedValue(null),
+    update: jest.fn(),
     ...overrides,
   }
   const config = { get: jest.fn((_key: string, fallback: unknown) => fallback) } as unknown as ConfigService
@@ -97,6 +98,7 @@ describe('TenantService', () => {
         primaryColor: '#e6e51e',
         primaryInkColor: '#000000',
         accentColor: '#466cf3',
+        timezone: 'America/Sao_Paulo',
       })
     })
 
@@ -114,6 +116,35 @@ describe('TenantService', () => {
         expect.objectContaining({ code: 'TENANT_NOT_FOUND', statusCode: 404 }),
       )
       await expect(service.getCurrent('missing')).rejects.toBeInstanceOf(NotFoundError)
+    })
+  })
+
+  describe('updateCurrent', () => {
+    const input = {
+      name: 'Novo Nome',
+      logoUrl: null,
+      primaryColor: '#e6e51e',
+      accentColor: '#466cf3',
+      timezone: 'America/Sao_Paulo',
+    }
+
+    it('updates the tenant and resets primaryInkColor so it is recomputed from the new color', async () => {
+      const { service, repository } = makeService({
+        findById: jest.fn().mockResolvedValue(tenant),
+        update: jest.fn().mockResolvedValue({ ...tenant, ...input, primaryInkColor: null }),
+      })
+      const result = await service.updateCurrent('tenant_1', input)
+      expect(repository.update).toHaveBeenCalledWith('tenant_1', { ...input, primaryInkColor: null })
+      expect(result.name).toBe('Novo Nome')
+      expect(result.primaryInkColor).toBe('#000000')
+    })
+
+    it('throws TENANT_NOT_FOUND when the id does not exist', async () => {
+      const { service, repository } = makeService()
+      await expect(service.updateCurrent('missing', input)).rejects.toMatchObject(
+        expect.objectContaining({ code: 'TENANT_NOT_FOUND', statusCode: 404 }),
+      )
+      expect(repository.update).not.toHaveBeenCalled()
     })
   })
 })

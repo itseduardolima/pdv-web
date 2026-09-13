@@ -9,6 +9,7 @@ export const publicTenantSchema = z.object({
   primaryColor: hexColorSchema,
   primaryInkColor: hexColorSchema,
   accentColor: hexColorSchema,
+  timezone: z.string(),
 })
 export type PublicTenant = z.infer<typeof publicTenantSchema>
 
