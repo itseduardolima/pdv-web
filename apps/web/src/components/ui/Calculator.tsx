@@ -12,7 +12,10 @@ export function Calculator() {
 
   return (
     <div className="flex flex-col gap-3">
-      <output className="block w-full overflow-hidden text-ellipsis whitespace-nowrap rounded-input bg-canvas px-4 py-3 text-right font-heading text-3xl font-bold tabular-nums text-ink">
+      {/* Conta inteira num visor só, estilo iPhone ("8+2+2×3") — pra
+          contas longas o operador precisa ver tudo que já clicou, não
+          só o número atual (2026-09-13). */}
+      <output className="block w-full overflow-x-auto whitespace-nowrap rounded-input bg-canvas px-4 py-3 text-right font-heading text-3xl font-bold tabular-nums text-ink">
         {calc.display}
       </output>
 

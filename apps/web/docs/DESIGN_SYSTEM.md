@@ -484,14 +484,21 @@ operadores a loja tenha.
 ### Calculadora — `Calculator`, `CalculatorDialog`
 
 Botão de calculadora no cabeçalho de Vender (decisão de 2026-09-13, à
-esquerda do badge "Caixa #N"): cliente às vezes quer dividir a conta, o
-operador precisa de uma conta rápida sem sair da venda. `Calculator`
-(em `components/ui`, não `pos` — não tem nada a ver com carrinho, venda ou
-produto, é só uma ferramenta solta) usa lógica pura em
-`lib/utils/calculator.ts` (soma, subtração, multiplicação, divisão,
-encadeamento de operações, `C`/apagar, erro em divisão por zero — nunca
-quebra a tela). `CalculatorDialog` só embrulha isso num `Dialog` do Radix,
-mesmo padrão do `ConfirmDialog`. Sem ligação nenhuma com o total da venda.
+esquerda do badge "Caixa #N", ícone estático `public/icons/calculator.svg`
+— mesmo padrão de asset do protótipo que `PaymentMethodIllustration` já
+usa): cliente às vezes quer dividir a conta, o operador precisa de uma
+conta rápida sem sair da venda. `Calculator` (em `components/ui`, não
+`pos` — não tem nada a ver com carrinho, venda ou produto, é só uma
+ferramenta solta) usa lógica pura em `lib/utils/calculator.ts`: soma,
+subtração, multiplicação, divisão, `C`/apagar, erro em divisão por zero
+(nunca quebra a tela) e **encadeamento sem prioridade de operador,
+esquerda pra direita** — igual à calculadora do iPhone (`2+3×4` dá `20`,
+não `14`). O visor mostra a conta inteira enquanto o operador digita
+("8+2+2×3"), não só o número atual — sem isso o sinal clicado "sumia" da
+tela. `CalculatorDialog` embrulha isso num `Dialog` do Radix com o overlay
+desfocado (`backdrop-blur-sm`, diferente do `ConfirmDialog` comum — aqui
+o conteúdo atrás faz sentido continuar visível, só borrado). Sem ligação
+nenhuma com o total da venda.
 
 ### Filtro por categoria — `CategoryFilter`
 
