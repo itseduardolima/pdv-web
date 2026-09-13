@@ -20,26 +20,30 @@ interface InlineAlertProps {
 export function InlineAlert({ variant = 'danger', children, action, onDismiss }: InlineAlertProps) {
   const tone = variant === 'danger' ? 'bg-danger/[0.08] text-danger' : 'bg-warning/10 text-warning'
   return (
-    <div role="alert" className={`flex w-full animate-slide-down items-start gap-3 rounded-card-sm px-4 py-3 ${tone}`}>
-      <AlertIcon aria-hidden width="20" height="20" className="mt-0.5 shrink-0" />
-      <p className="flex-1 font-body text-sm font-medium">{children}</p>
+    <div role="alert" className={`flex w-full animate-slide-down flex-col gap-2 rounded-card-sm px-4 py-3 ${tone}`}>
+      {/* Texto sempre em linha cheia, nunca espremido ao lado de um botão —
+          um nome de produto longo precisa de espaço para quebrar normal. */}
+      <div className="flex items-start gap-3">
+        <AlertIcon aria-hidden width="20" height="20" className="mt-0.5 shrink-0" />
+        <p className="flex-1 font-body text-sm font-medium">{children}</p>
+        {onDismiss && (
+          <button
+            type="button"
+            onClick={onDismiss}
+            aria-label="Fechar aviso"
+            className="shrink-0 font-body text-sm font-bold"
+          >
+            ×
+          </button>
+        )}
+      </div>
       {action && (
         <button
           type="button"
           onClick={action.onClick}
-          className="shrink-0 font-body text-sm font-bold underline underline-offset-2"
+          className="ml-8 self-start font-body text-sm font-bold underline underline-offset-2"
         >
           {action.label}
-        </button>
-      )}
-      {onDismiss && (
-        <button
-          type="button"
-          onClick={onDismiss}
-          aria-label="Fechar aviso"
-          className="shrink-0 font-body text-sm font-bold"
-        >
-          ×
         </button>
       )}
     </div>

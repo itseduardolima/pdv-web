@@ -313,20 +313,22 @@ Informe o nome completo
   colar um valor já formatado também funciona. Código de barras aceita só
   números — nunca deixa digitar letra, porque o padrão (EAN/UPC) é numérico.
 
-### Ajustar estoque sem sair da venda — `QuickStockDialog`
+### Ajustar estoque sem sair da venda — `QuickStockAdjust`
 
 Quando a API recusa a venda por `INSUFFICIENT_STOCK`, o `InlineAlert` ganha
-uma ação "Ajustar estoque" (`action` prop, texto sublinhado antes do X de
-fechar) — só para Administrador, que é quem pode editar produto. Clicar
-abre `components/pos/QuickStockDialog` (Radix Dialog, mesmo padrão do
-`ConfirmDialog`): nome do produto, um `NumberStepper` já no estoque real
+uma ação "Ajustar estoque" em linha própria abaixo do texto (nunca ao lado
+— um nome de produto longo precisa de espaço pra quebrar sem espremer o
+botão) — só para Administrador, que é quem pode editar produto. Clicar
+abre `components/pos/QuickStockAdjust` **inline**, embaixo do próprio
+aviso (mesmo padrão do bloco de troco `CashReceived`) — nunca um modal: um
+`NumberStepper` rotulado com o nome do produto, já no estoque real
 (`details.available` do erro — nunca inflado pra cobrir o que falta na
-venda, quem decide o número certo é quem contou o produto) e "Salvar e
-continuar". Salvar chama a mesma
-rota de editar produto (`PATCH /products/:id`, só `stockQuantity`), fecha o
-diálogo e limpa o erro — o operador clica "Finalizar Venda" de novo sem
-perder o carrinho. Sem essa ação (Operador, ou erro de outro tipo), o
-`InlineAlert` continua só com o X de fechar.
+venda, quem decide o número certo é quem contou o produto) e
+"Cancelar"/"Salvar". Salvar chama a mesma rota de editar produto (`PATCH
+/products/:id`, só `stockQuantity`), fecha o painel e limpa o erro — o
+operador clica "Finalizar Venda" de novo sem perder o carrinho nem sair da
+tela. Sem essa ação (Operador, ou erro de outro tipo), o `InlineAlert`
+continua só com o X de fechar.
 
 ### 2. `InlineAlert` — erro de regra de negócio / ação bloqueada
 

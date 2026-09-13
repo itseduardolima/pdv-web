@@ -4,7 +4,7 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { CartLine } from '@/components/pos/CartLine'
 import { CashReceived } from '@/components/pos/CashReceived'
 import { PaymentMethodPicker } from '@/components/pos/PaymentMethodPicker'
-import { QuickStockDialog } from '@/components/pos/QuickStockDialog'
+import { QuickStockAdjust } from '@/components/pos/QuickStockAdjust'
 import { ProductTile } from '@/components/pos/ProductTile'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -140,13 +140,24 @@ export default function SellPage() {
             <InlineAlert
               onDismiss={page.dismissError}
               action={
-                page.insufficientStock && page.canAdjustStock
+                page.insufficientStock && page.canAdjustStock && !page.adjustingStock
                   ? { label: 'Ajustar estoque', onClick: page.openAdjustStock }
                   : undefined
               }
             >
               {page.errorMessage}
             </InlineAlert>
+          )}
+
+          {page.adjustingStock && page.insufficientStock && (
+            <QuickStockAdjust
+              productName={page.insufficientStock.productName}
+              initialQuantity={page.insufficientStock.available}
+              onConfirm={page.handleAdjustStock}
+              onCancel={page.closeAdjustStock}
+              confirmState={page.adjustStockState}
+              error={page.adjustStockError ?? undefined}
+            />
           )}
 
           <div className="flex flex-col gap-2">
@@ -165,20 +176,6 @@ export default function SellPage() {
           </div>
         </aside>
       </div>
-
-      {page.insufficientStock && (
-        <QuickStockDialog
-          open={page.adjustingStock}
-          onOpenChange={page.closeAdjustStock}
-          productName={page.insufficientStock.productName}
-          // Sugere o estoque real, não o que falta para a venda passar — quem
-          // decide o número é quem contou o produto na prateleira.
-          initialQuantity={page.insufficientStock.available}
-          onConfirm={page.handleAdjustStock}
-          confirmState={page.adjustStockState}
-          error={page.adjustStockError ?? undefined}
-        />
-      )}
     </>
   )
 }
