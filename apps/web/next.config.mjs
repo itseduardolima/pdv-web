@@ -1,3 +1,13 @@
+import withSerwistInit from '@serwist/next'
+
+// HU 8.3 (PWA): service worker desligado em dev — hot reload e cache de
+// service worker brigam entre si; só compila em build de produção.
+const withSerwist = withSerwistInit({
+  swSrc: 'src/app/sw.ts',
+  swDest: 'public/sw.js',
+  disable: process.env.NODE_ENV === 'development',
+})
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
@@ -14,4 +24,4 @@ const nextConfig = {
   },
 }
 
-export default nextConfig
+export default withSerwist(nextConfig)

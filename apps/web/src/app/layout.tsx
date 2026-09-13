@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 import { QueryProvider } from '@/components/providers/query-provider'
 import { TenantProvider } from '@/components/providers/tenant-provider'
@@ -8,7 +8,18 @@ import '@/styles/globals.css'
 
 export async function generateMetadata(): Promise<Metadata> {
   const { tenant } = await getCurrentTenant()
-  return { title: tenant?.name ?? 'PDV' }
+  return {
+    title: tenant?.name ?? 'PDV',
+    // PWA instalável (HU 8.3, manifest.ts): com logo, o ícone do app/aba
+    // passa a ser o do tenant; sem logo, cai no favicon.ico padrão da
+    // plataforma (arquivo estático em app/, resolvido pelo Next sozinho).
+    ...(tenant?.logoUrl ? { icons: { icon: tenant.logoUrl, apple: tenant.logoUrl } } : {}),
+  }
+}
+
+export async function generateViewport(): Promise<Viewport> {
+  const { tenant } = await getCurrentTenant()
+  return { themeColor: tenant?.primaryColor ?? '#e6e51e' }
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {

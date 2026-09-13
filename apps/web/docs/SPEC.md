@@ -137,22 +137,53 @@ para centavos só no submit (`lib/utils/money.ts`) — texto inválido vira
 
 ## Offline (ver `01-arquitetura.md` para a estratégia completa)
 
-- `lib/offline/db.ts`: tabelas Dexie — `productsCache`, `pendingSales`.
-- Ao finalizar uma venda: grava em `pendingSales` com UUID gerado no
-  cliente, atualiza a UI como concluída, dispara `sync.ts` em background.
-- `sync.ts` roda: ao voltar a ficar online (`online` event), a cada N
-  segundos como fallback, e a cada nova venda adicionada à fila. Remove da
-  fila local só depois de confirmação 2xx da API.
+- `lib/offline/db.ts`: tabelas Dexie — `productsCache` + `meta` (v1, HU 8.1),
+  `pendingSales` (v2, HU 8.2). Um banco por tenant (`pdv-web-<tenantId>`).
+- `lib/offline/products-cache.ts`: `saveProductsCache` (substitui a lista
+  inteira — exclusão no servidor some do cache), `readProductsCache` (`null`
+  = nunca sincronizou), `isBackendUnreachable` (`NETWORK_ERROR` ou 5xx —
+  401/403/400 nunca caem no cache) e os filtros que a API aplicaria.
+- `useProducts`/`useProductCategories` usam `networkMode: 'always'`: com o
+  padrão `'online'` o TanStack nem chama o `queryFn` sem `navigator.onLine`,
+  e o fallback pro cache não rodaria.
+- `lib/offline/pending-sales.ts`: fila `pendingSales` (Dexie v2) —
+  `queuePendingSale`/`listPendingSales`/`removePendingSale`.
+- `lib/offline/local-sale.ts`: monta um `Sale` local (mesmo formato da API,
+  id `pending-<uuid>`) a partir do carrinho — "Venda Confirmada" precisa de
+  algo pra mostrar na hora, sem esperar o servidor.
+- Checkout (`use-sell-page.ts`): `POST /sales` falhando por rede/servidor
+  (`isBackendUnreachable`) grava em `pendingSales` com o UUID já gerado no
+  carrinho, monta o `Sale` local e segue pra "Venda Confirmada" — erro de
+  regra (sem estoque, caixa fechado etc.) não cai aqui, continua na tela.
+- `lib/offline/sync.ts` (`syncPendingSales`) manda a fila pro
+  `POST /sales/sync` (lote de até 200, cada venda com seu próprio
+  resultado); só sai da fila local a que voltou `ok:true` — uma com erro de
+  regra na sincronização fica pra revisar, não é descartada.
+- `useOfflineSalesSync` (hook, montado uma vez no `AppShell`) dispara o
+  sync: ao montar (sobra de sessão anterior), no evento `online`, e a cada
+  30s como fallback.
 
-## PWA
+## PWA (HU 8.3)
 
-- Manifest e ícone da PWA usam nome/logo do **tenant** (não um nome fixo do
-  produto) — gerado dinamicamente no `app/manifest.ts` do Next a partir do
-  tenant resolvido no request, nunca um `manifest.json` estático com um nome
-  hardcoded.
-- Service worker (via `next-pwa`/Serwist): cachea shell da aplicação e
-  catálogo de produtos; não cachea páginas de autenticação (sempre busca
-  fresco, dado que login decide sessão).
+- `app/manifest.ts`: manifest dinâmico (`name`/`short_name`/`theme_color`
+  do tenant, resolvido no request — nunca um `manifest.json` estático com
+  nome hardcoded). Ícone: `tenant.logoUrl` quando existe (`sizes: 'any'`,
+  sem `type` fixo — o upload aceita PNG/JPEG/WebP e o tamanho real não é
+  rastreado); sem logo, cai nos ícones padrão da plataforma em
+  `public/icons/pwa/` (192/512 + variante `maskable`).
+- `app/layout.tsx`: `generateMetadata`/`generateViewport` seguem a mesma
+  regra pro favicon da aba (`icons.icon`/`icons.apple` = `logoUrl` quando
+  existe) e pro `theme-color` do navegador — sem logo, cai no
+  `app/favicon.ico` estático (convenção de arquivo do Next, sem código).
+- Service worker via **Serwist** (`app/sw.ts` + `withSerwist` em
+  `next.config.mjs`) — **desligado em dev** (`disable` quando
+  `NODE_ENV === 'development'`: hot reload e cache de service worker
+  brigam entre si), só compila em `next build`. Cacheia o shell da
+  aplicação (`defaultCache` do `@serwist/next/worker`) e `/api/products*`
+  (stale-while-revalidate — o cache "de verdade" que sustenta Vender
+  offline é o Dexie da HU 8.1; isto é só a camada de asset/navegação);
+  `/login`, `/forgot-pin`, `/set-pin` e `/api/auth/*` são `NetworkOnly`
+  (login decide sessão, nunca serve resposta velha).
 
 ## Testes (ver `04-padroes-codigo.md` para a régua geral)
 
