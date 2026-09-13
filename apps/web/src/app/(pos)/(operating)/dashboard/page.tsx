@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { PaymentMethodIllustration } from '@/components/pos/PaymentMethodIllustration'
 import { StatTile } from '@/components/pos/StatTile'
 import { TopProductRow } from '@/components/pos/TopProductRow'
+import { TotalCard } from '@/components/pos/TotalCard'
 import { WeekChart } from '@/components/pos/WeekChart'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { InlineAlert } from '@/components/ui/InlineAlert'
@@ -28,26 +29,13 @@ export default function DashboardPage() {
       {summary && (
         <>
           <div className="flex flex-col gap-3 md:flex-row md:gap-[18px]">
-            <div className="relative flex flex-1 flex-col justify-between gap-3 overflow-hidden rounded-card bg-[color-mix(in_srgb,var(--color-ink)_82%,var(--color-primary))] p-5 text-surface md:p-6">
-              <span
-                aria-hidden
-                className="pointer-events-none absolute -bottom-24 -right-20 h-64 w-64 rounded-pill bg-primary/20 blur-2xl"
-              />
-              <div className="relative">
-                <p className="font-body text-[13px] font-medium text-surface/55">Vendido hoje</p>
-                <p
-                  data-cy="today-total"
-                  className="mt-1 font-heading text-[34px] font-bold tracking-tight md:text-[46px]"
-                >
-                  {formatCurrency(summary.today.totalCents)}
-                </p>
-              </div>
-              <p className="relative font-body text-xs text-surface/50">
+            <TotalCard label="Vendido hoje" totalCents={summary.today.totalCents} dataCy="today-total">
+              <span className="font-body text-xs text-surface/50">
                 {summary.today.salesCount} {summary.today.salesCount === 1 ? 'venda realizada' : 'vendas realizadas'}
-              </p>
-            </div>
+              </span>
+            </TotalCard>
 
-            <div className="grid grid-cols-3 gap-2 md:flex-[1.5] md:gap-3.5">
+            <div className="grid min-w-0 grid-cols-3 gap-2 md:flex-[1.5] md:gap-3.5">
               {page.tiles.map(({ method, cents, percent }) => (
                 <StatTile
                   key={method}
