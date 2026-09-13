@@ -38,6 +38,24 @@ describe('Configurações da Loja', () => {
     cy.get('input[name=primaryColor]').clear().type('#112233')
     cy.contains('Botão de exemplo').should('have.css', 'background-color', 'rgb(17, 34, 51)')
 
+    // Lista de cores prontas: clique define a cor, sem digitar hex.
+    cy.get('[aria-label="Usar cor #fda4af"]').click()
+    cy.get('input[name=primaryColor]').should('have.value', '#fda4af')
+    cy.get('[aria-label="Usar cor #fda4af"]').should('have.attr', 'aria-pressed', 'true')
+    cy.contains('Botão de exemplo').should('have.css', 'background-color', 'rgb(253, 164, 175)')
+
+    // Seletor de arrastar (matiz/saturação-brilho): navegação por teclado
+    // já move o valor — arrastar de verdade é coberto no component test.
+    cy.get('[aria-label="Matiz da cor"]')
+      .focus()
+      .invoke('attr', 'aria-valuenow')
+      .then((before) => {
+        cy.get('[aria-label="Matiz da cor"]').type('{rightarrow}{rightarrow}')
+        cy.get('[aria-label="Matiz da cor"]').should('not.have.attr', 'aria-valuenow', before)
+      })
+    cy.get('input[name=primaryColor]').should('not.have.value', '#fda4af')
+
+    cy.get('input[name=primaryColor]').clear().type('#112233')
     cy.contains('label', 'Fuso horário').click()
     cy.contains('[role=option]', 'Manaus').click()
     cy.contains('button', 'Salvar').click()
