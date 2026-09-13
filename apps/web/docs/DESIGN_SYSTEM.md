@@ -502,14 +502,20 @@ nenhuma com o total da venda.
 
 ### Filtro por categoria — `CategoryFilter`
 
-Chips roláveis na horizontal ("Todas" + `DEFAULT_PRODUCT_CATEGORIES` mais o
-que a loja já usa, via `useProductCategories`), **um componente reusado**
-em `Produtos` (filtra a busca no servidor, `GET /products?category=`) e em
-`Vender` (filtra em memória a lista já carregada, junto com a busca por
-texto — o grid do caixa precisa da lista inteira de qualquer forma, para o
-leitor de código de barras funcionar). Selecionado fica `bg-primary`, o
-resto `bg-surface` com borda `--color-border`. A fileira leva `shrink-0`
-— item flex com `overflow-x-auto` perde o tamanho mínimo automático (vira 0) e sem isso fica espremido a quase nada dentro da coluna da página.
+Chips roláveis na horizontal até `lg` ("Todas" + `DEFAULT_PRODUCT_CATEGORIES`
+mais o que a loja já usa, via `useProductCategories`); a partir de `xl`
+(desktop de verdade — mesmo corte de `Sidebar`/`SplitAuthLayout`) vira um
+select de opção única com rótulo "Filtrar por:" ao lado (decisão de
+2026-09-13 — numa tela larga, uma fileira de chips ocupa espaço à toa e um
+select fica mais compacto e alinhado ao resto do cabeçalho). **Um
+componente reusado** em `Produtos` (filtra a busca no servidor, `GET
+/products?category=`) e em `Vender` (filtra em memória a lista já
+carregada, junto com a busca por texto — o grid do caixa precisa da lista
+inteira de qualquer forma, para o leitor de código de barras funcionar).
+Selecionado (chip) fica `bg-primary`, o resto `bg-surface` com borda
+`--color-border`. A fileira de chips leva `shrink-0` — item flex com
+`overflow-x-auto` perde o tamanho mínimo automático (vira 0) e sem isso
+fica espremido a quase nada dentro da coluna da página.
 
 ### Dashboard — `WeekChart`, `TopProductRow`
 
