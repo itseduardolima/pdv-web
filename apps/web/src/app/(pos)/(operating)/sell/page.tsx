@@ -37,7 +37,12 @@ export default function SellPage() {
       />
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 md:flex-row md:gap-[18px]">
-        <section className="flex min-w-0 flex-col gap-3.5 rounded-card bg-surface p-3 md:flex-[2.3] md:p-[18px]">
+        <section
+          // Tablet (retrato em md, deitado em lg — antes do xl virar
+          // desktop de verdade) encolhe o catálogo e dá mais espaço ao
+          // carrinho; deitado encolhe mais ainda — decisão de 2026-09-13.
+          className="flex min-w-0 flex-col gap-3.5 rounded-card bg-surface p-3 md:flex-[1.6] md:p-[18px] lg:flex-[1.4] xl:flex-[2.3]"
+        >
           <form
             onSubmit={(event) => {
               event.preventDefault()
@@ -70,8 +75,14 @@ export default function SellPage() {
 
           {page.productsError && <InlineAlert>{page.productsError}</InlineAlert>}
 
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded-input bg-canvas bg-[radial-gradient(circle,var(--color-border)_1px,transparent_1.4px)] p-2.5 [background-size:18px_18px] md:p-3.5">
-            <div className="grid grid-cols-3 gap-2.5 md:grid-cols-3 md:gap-3 lg:grid-cols-4">
+          <div
+            // Abaixo de md a página inteira cresce com a tela (sem altura
+            // travada), então "flex-1" sozinho não trava o grid — precisa de
+            // um teto fixo pra rolar por dentro em vez de crescer com a
+            // quantidade de produtos (decisão de 2026-09-13).
+            className="flex max-h-[46vh] min-h-0 flex-1 flex-col overflow-y-auto rounded-input bg-canvas bg-[radial-gradient(circle,var(--color-border)_1px,transparent_1.4px)] p-2.5 [background-size:18px_18px] md:max-h-none md:p-3.5"
+          >
+            <div className="grid grid-cols-3 gap-2.5 md:grid-cols-2 md:gap-3 lg:grid-cols-3 xl:grid-cols-4">
               {page.products.map((product) => (
                 <ProductTile key={product.id} product={product} onAdd={page.handleAdd} />
               ))}
@@ -89,7 +100,7 @@ export default function SellPage() {
           </div>
         </section>
 
-        <aside className="flex flex-col gap-3.5 rounded-card bg-surface p-4 md:min-w-[280px] md:max-w-[340px] md:flex-1 md:p-[22px]">
+        <aside className="flex flex-col gap-3.5 rounded-card bg-surface p-4 md:min-w-[280px] md:max-w-[380px] md:flex-1 md:p-[22px] lg:max-w-[420px] xl:max-w-[340px]">
           <div className="flex items-center justify-between">
             <h2 className="font-heading text-lg font-bold tracking-tight md:text-xl">Carrinho</h2>
             <span className="rounded-pill bg-ink px-3 py-1 font-body text-[11px] font-medium text-surface md:text-xs">
