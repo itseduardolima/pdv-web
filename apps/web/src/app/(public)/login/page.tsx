@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { SplitAuthLayout } from '@/components/layout/SplitAuthLayout'
-import { OperatorAvatarPicker } from '@/components/pos/OperatorAvatarPicker'
+import { COMPACT_THRESHOLD, OperatorAvatarPicker } from '@/components/pos/OperatorAvatarPicker'
 import { PinKeypad } from '@/components/pos/PinKeypad'
 import { Button } from '@/components/ui/Button'
 import { InlineAlert } from '@/components/ui/InlineAlert'
@@ -14,7 +14,7 @@ export default function LoginPage() {
   const page = useLoginPage()
 
   return (
-    <SplitAuthLayout>
+    <SplitAuthLayout wide={page.operators.length > COMPACT_THRESHOLD}>
       <div className="flex flex-col items-center gap-1">
         {tenant.logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- logo do tenant, domínio dinâmico
