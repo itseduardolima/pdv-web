@@ -25,7 +25,7 @@ export function QuickStockAdjust({
   const [quantity, setQuantity] = useState(initialQuantity)
 
   return (
-    <div data-cy="quick-stock-adjust" className="flex w-full flex-col gap-3 rounded-input p-3">
+    <div data-cy="quick-stock-adjust" className="flex w-full flex-col gap-3 rounded-input bg-canvas p-3">
       <NumberStepper label={`Estoque · ${productName}`} value={quantity} onChange={setQuantity} error={error} />
       <div className="flex justify-end gap-2">
         <Button type="button" variant="secondary" size="sm" onClick={onCancel}>
