@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { PhotoUploadBox } from '@/components/pos/PhotoUploadBox'
 import { Button } from '@/components/ui/Button'
 import { ColorInput } from '@/components/ui/ColorInput'
+import { ColorPreviewCard } from '@/components/ui/ColorPreviewCard'
 import { InlineAlert } from '@/components/ui/InlineAlert'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
@@ -16,6 +17,7 @@ export default function SettingsPage() {
   const { control, formState } = page.form
   const errors = formState.errors
   const logoUrl = page.form.watch('logoUrl')
+  const primaryColor = page.form.watch('primaryColor')
 
   return (
     <>
@@ -50,36 +52,22 @@ export default function SettingsPage() {
             )}
           />
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Controller
-              control={control}
-              name="primaryColor"
-              render={({ field }) => (
-                <ColorInput
-                  label="Cor primária"
-                  name={field.name}
-                  required
-                  error={errors.primaryColor?.message}
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              )}
-            />
-            <Controller
-              control={control}
-              name="accentColor"
-              render={({ field }) => (
-                <ColorInput
-                  label="Cor de acento"
-                  name={field.name}
-                  required
-                  error={errors.accentColor?.message}
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              )}
-            />
-          </div>
+          <Controller
+            control={control}
+            name="primaryColor"
+            render={({ field }) => (
+              <ColorInput
+                label="Cor primária"
+                name={field.name}
+                required
+                error={errors.primaryColor?.message}
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
+
+          <ColorPreviewCard primaryColor={primaryColor} />
 
           <Controller
             control={control}

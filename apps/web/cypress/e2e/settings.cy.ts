@@ -1,5 +1,5 @@
-// Configurações da Loja (HU 11.1-11.4): editar nome, logo, cores e fuso —
-// só Administrador.
+// Configurações da Loja (HU 11.1-11.5): editar nome, logo, cor primária e
+// fuso, com prévia ao vivo — só Administrador.
 const tenantHost = () => new URL(Cypress.config('baseUrl') as string).host
 const api = (path: string) => `${Cypress.config('baseUrl')}/api${path}`
 const headers = () => ({ 'x-tenant-host': tenantHost() })
@@ -11,7 +11,6 @@ describe('Configurações da Loja', () => {
     cy.visit('/settings')
     cy.get('input[name=name]').clear().type('Mercadinho Demo')
     cy.get('input[name=primaryColor]').clear().type('#e6e51e')
-    cy.get('input[name=accentColor]').clear().type('#466cf3')
     cy.contains('label', 'Fuso horário').click()
     cy.contains('[role=option]', 'São Paulo').click()
     cy.contains('button', 'Salvar').click()
@@ -32,12 +31,13 @@ describe('Configurações da Loja', () => {
       .should('eq', 'Mercadinho da Maria')
   })
 
-  it('edits the primary/accent colors and the timezone', () => {
+  it('edits the primary color and the timezone, and previews the color live', () => {
     cy.loginAs('Administrador', '1234')
     cy.visit('/settings')
 
     cy.get('input[name=primaryColor]').clear().type('#112233')
-    cy.get('input[name=accentColor]').clear().type('#445566')
+    cy.contains('Botão de exemplo').should('have.css', 'background-color', 'rgb(17, 34, 51)')
+
     cy.contains('label', 'Fuso horário').click()
     cy.contains('[role=option]', 'Manaus').click()
     cy.contains('button', 'Salvar').click()
@@ -45,7 +45,6 @@ describe('Configurações da Loja', () => {
 
     cy.request({ url: api('/tenant/current'), headers: headers() }).then(({ body }) => {
       expect(body.primaryColor).to.eq('#112233')
-      expect(body.accentColor).to.eq('#445566')
       expect(body.timezone).to.eq('America/Manaus')
       // Cor escura → tinta clara, recalculada pelo backend (11.3).
       expect(body.primaryInkColor).to.eq('#ffffff')

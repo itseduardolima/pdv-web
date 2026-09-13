@@ -125,9 +125,9 @@ frontend) — não quando o código só "existe".
 
 - [x] 11.1 — Editar nome da loja (`PATCH /tenant/current`, só `ADMIN`; `slug`/`domain` imutáveis) — página `/settings` (nav só ADMIN), `updateTenantSchema` já cobre 11.1-11.4 (logo/cores/timezone viajam inalterados até as HUs deles serem feitas); `publicTenantSchema` ganhou `timezone` (faltava para o form montar o payload completo)
 - [x] 11.2 — Upload de logo (`logoUrl` opcional, MinIO via `/uploads`, `PhotoUploadBox` kind `tenant-logo`) — mesmo fluxo de Produto/Operador (ticket assinado + confirm), sem endpoint novo (backend já cobria `tenant-logo` no `uploadKindSchema` e o controller de `/uploads` já era `ADMIN`-only). Cypress E2E cobre editar nome e bloqueio pra Operador
-- [x] 11.3 — Escolher cor primária e acento (`primaryColor`/`accentColor` hex obrigatórios; `primaryInkColor` calculado, não editável) — novo componente `ColorInput` (swatch nativo `type="color"` + hex digitável, validação só do backend)
-- [x] 11.4 — Ajustar fuso horário (select IANA, valida no backend, afeta Dashboard) — `Select` com `BR_TIMEZONES` (lista de apoio em `lib/timezones.ts`, backend aceita qualquer IANA válido via `Intl`); Cypress E2E cobre editar cores/timezone e confere `primaryInkColor` recalculado
-- [ ] 11.5 — Preview ao vivo das cores (mini card no form, só CSS local, sem API)
+- [x] 11.3 — Escolher cor primária (`primaryColor` hex obrigatório; `primaryInkColor` calculado, não editável) — novo componente `ColorInput` (swatch grande `type="color"`, abre o seletor visual nativo do navegador — arrasta matiz/saturação sem digitar hex — + hex digitável pra quem já sabe o código). **Decisão de 2026-09-13**: `accentColor` saiu do form (usuário leigo não lida bem com duas cores/hex ao mesmo tempo) — `docs/scrum/BACKLOG.md` HU 11.3 já atualizado; `accentColor` continua salvo sem mudança a cada PATCH (schema do backend não mudou)
+- [x] 11.4 — Ajustar fuso horário (select IANA, valida no backend, afeta Dashboard) — `Select` com `BR_TIMEZONES` (lista de apoio em `lib/timezones.ts`, backend aceita qualquer IANA válido via `Intl`)
+- [x] 11.5 — Preview ao vivo das cores (mini card no form, só CSS local, sem API) — `ColorPreviewCard` com botão de exemplo na cor primária digitada, tinta calculada no cliente (`lib/utils/contrast-ink-color.ts`, mesma fórmula do backend, só pra prévia — o valor que vale é sempre recalculado no PATCH). Cypress E2E cobre a prévia atualizando ao vivo (sem salvar) e o fluxo completo de nome/cor/fuso
 
 ## Sprint 8 — Offline-first (PWA)
 

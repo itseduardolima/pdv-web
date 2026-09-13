@@ -11,8 +11,9 @@ interface ColorInputProps {
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/
 
-// Campo de cor: swatch nativo (<input type="color">) + hex digitável — o
-// backend valida o formato (03/11.3), aqui é só conveniência de escolha.
+// Campo de cor: swatch grande (<input type="color">, abre o seletor visual
+// nativo do navegador — arrasta matiz/saturação, sem precisar saber hex) +
+// hex digitável para quem já sabe o código. Backend valida o formato (11.3).
 export function ColorInput({ label, name, value, onChange, error, required }: ColorInputProps) {
   return (
     <Input
@@ -30,7 +31,7 @@ export function ColorInput({ label, name, value, onChange, error, required }: Co
           aria-label={`Cor: ${label}`}
           value={HEX_RE.test(value) ? value : '#000000'}
           onChange={(event) => onChange(event.target.value)}
-          className="h-7 w-7 shrink-0 cursor-pointer rounded-pill border-none bg-transparent p-0"
+          className="h-9 w-9 shrink-0 cursor-pointer rounded-card-sm border-none bg-transparent p-0"
         />
       }
     />
