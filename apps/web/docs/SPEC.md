@@ -18,6 +18,8 @@ passa pelo client HTTP tipado (`src/lib/api-client.ts`) contra `apps/api`.
 src/app/
   (public)/
     login/page.tsx                      # seleção de operador + teclado de PIN
+    forgot-pin/page.tsx                 # "Esqueci meu PIN": pede e-mail, resposta sempre genérica
+    set-pin/page.tsx                    # ?token= — primeiro acesso ou redefinição, teclado de PIN
   (pos)/
     layout.tsx                          # AppShell: sidebar (desktop/tablet) / bottom-nav (celular)
     sell/page.tsx                       # Vender
@@ -31,9 +33,7 @@ src/app/
     operators/page.tsx
     operators/new/page.tsx
     operators/[id]/edit/page.tsx
-  (public)/
-    forgot-pin/page.tsx                 # "Esqueci meu PIN": pede e-mail, resposta sempre genérica
-    set-pin/page.tsx                    # ?token= — primeiro acesso ou redefinição, teclado de PIN
+    settings/page.tsx                   # Configurações da Loja (HU 11.1–11.5, só ADMIN)
 ```
 
 Rotas (URLs) em inglês, como o resto do código (ver `04-padroes-codigo.md`,

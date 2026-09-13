@@ -121,6 +121,22 @@ Tela: **Dashboard**.
 | 7.2 | Como Administrador, quero ver os produtos mais vendidos hoje, para saber o que repor.                                        | Mesma rota, `topProductsToday` ordenado por quantidade.                                     | 2   | P2         |
 | 7.3 | Como Administrador, quero ver um gráfico da semana, para entender a tendência de vendas.                                     | Agregação diária dos últimos 7 dias; gráfico simples (SVG, sem lib pesada — ver protótipo). | 3   | P2         |
 
+## Épico 11 — Configurações da Loja
+
+Tela: **Configurações da Loja** (`/settings` ou `/store-settings`). Permite ao
+Administrador ajustar a identidade visual e configurações operacionais da loja
+sem precisar editar o banco manualmente ou refazer o seed. É parte do
+white-label: o dono da loja deve poder trocar nome/logo/cores quando quiser,
+sem depender do revendedor.
+
+| #    | HU                                                                                                                                                        | Critérios de aceite                                                                                                                                                                                                                                                                                                                                                                           | Pts | Prioridade |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ---------- |
+| 11.1 | Como Administrador, quero editar o nome da minha loja, para corrigir erro de cadastro ou atualizar quando a identidade mudar.                             | `PATCH /tenant/current` (só `ADMIN`); campo `name` obrigatório, valida tamanho (1–100 chars); `slug` e `domain` **não** são editáveis (imutáveis — quebrariam URLs/DNS); alteração reflete na UI imediatamente (cache do tema já é invalidado a cada request, ver `tenant.service.ts`).                                                                                                       | 3   | P1         |
+| 11.2 | Como Administrador, quero trocar a logo da minha loja, para personalizar a marca sem recriar o tenant.                                                    | Campo `logoUrl` opcional no form; upload via `/uploads` (MinIO, mesmo fluxo de Produto/Operador); aceita PNG/JPEG/WebP até 5 MB; logo `null` é válido (sistema mostra nome da loja sem imagem); componente `PhotoUploadBox` reusado com `kind="tenant"`.                                                                                                                                      | 3   | P1         |
+| 11.3 | Como Administrador, quero escolher a cor primária e a cor de acento da loja, para combinar com a identidade visual da marca.                              | Campos `primaryColor` e `accentColor` obrigatórios, validados como hex (`#rrggbb`); `primaryInkColor` **não** é editável (calculado automaticamente por contraste WCAG em `tenant.service.ts:60`, nunca vem do form); color picker no frontend (input `type="color"` nativo ou componente simples); mudança reflete na próxima request (tema já é lido fresco, sem cache no `TenantService`). | 3   | P1         |
+| 11.4 | Como Administrador, quero ajustar o fuso horário da loja, para que o Dashboard e os totais do dia usem o horário correto da minha região.                 | Campo `timezone` obrigatório; select com zonas IANA comuns do Brasil (`America/Sao_Paulo`, `America/Manaus`, `America/Fortaleza`, etc.); validação no backend rejeita zona inválida (400 `INVALID_TIMEZONE`); afeta `GET /dashboard/summary` (o que é "hoje" muda conforme o fuso).                                                                                                           | 2   | P2         |
+| 11.5 | Como Administrador, quero ver uma prévia ao vivo das cores escolhidas, para não precisar salvar/recarregar a página para testar se a combinação funciona. | Preview no próprio formulário: aplica as cores num mini card de exemplo (ex: `PillButton` primary + accent, um texto, um input) antes do submit; só CSS/estado local, sem chamar API.                                                                                                                                                                                                         | 2   | P2         |
+
 ## Épico 8 — Offline-first (PWA)
 
 Sem isso o caixa para de vender se a internet da loja cair — é a diferença
@@ -175,6 +191,8 @@ do primeiro form real, não depois.
 | 8 — Offline (PWA)         | —      | 13     | 3      |
 | 9 — Deploy                | 5      | 5      | —      |
 | 10 — Validação e Feedback | 6      | 2      | —      |
-| **Total**                 | **64** | **48** | **16** |
+| 11 — Configurações        | —      | 9      | 4      |
+| **Total**                 | **64** | **57** | **20** |
 
 MVP (P0, "consigo vender algo de ponta a ponta em produção") = **64 pontos**.
+Produto completo para operação real (P0 + P1) = **121 pontos**.

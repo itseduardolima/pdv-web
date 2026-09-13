@@ -154,7 +154,24 @@ acompanha o negócio pelo Dashboard.
 **Total: 25 pts** (dividir em 2 sprints se 25 for grande demais pra 1
 semana — ver nota de recalibração abaixo).
 
-## Sprint 7 — Offline-first (PWA)
+## Sprint 7 — Configurações da Loja
+
+**Objetivo:** Administrador consegue ajustar nome, logo e cores da loja sem
+editar banco manualmente — completa o white-label (tenant customizável de
+ponta a ponta, sem depender do revendedor para toda mudança visual).
+
+| HU   | Descrição curta                      | Pts |
+| ---- | ------------------------------------ | --- |
+| 11.1 | Editar nome da loja                  | 3   |
+| 11.2 | Upload de logo                       | 3   |
+| 11.3 | Escolher cor primária e acento       | 3   |
+| 11.4 | Ajustar fuso horário                 | 2   |
+| 11.5 | Preview ao vivo das cores escolhidas | 2   |
+
+**Total: 13 pts.** Entrega: tela `/settings` funcional, Administrador troca
+identidade visual sem tocar código.
+
+## Sprint 8 — Offline-first (PWA)
 
 **Objetivo:** o caixa não para de vender se a internet da loja cair — sem
 isso o produto ainda depende de uma condição que o mercado-alvo já provou

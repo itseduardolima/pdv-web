@@ -133,3 +133,19 @@ servidor (`src/server/domain`), nunca só escondendo botão na UI.
   vendidos do dia, gráfico da semana. Tudo escopado ao tenant logado — nunca
   cruza dados entre tenants (ver isolamento em
   [01-arquitetura](./01-arquitetura.md)).
+
+## Configurações da Loja
+
+- Administrador pode editar: nome da loja, logo, cor primária, cor de acento,
+  fuso horário (zona IANA).
+- **Imutáveis** (não editáveis pela UI, só mudando no banco direto ou refazendo
+  seed): `slug` (quebraria URLs `<slug>.app.dominio.com`) e `domain`
+  (quebraria DNS/TLS).
+- `primaryInkColor` (cor do texto sobre a cor primária) é calculado
+  automaticamente por contraste WCAG — nunca vem do formulário, sempre
+  derivado de `primaryColor`.
+- Upload de logo segue o mesmo fluxo de foto de produto/operador (presigned
+  POST do MinIO, validação de tipo/tamanho, URL pública gravada em `logoUrl`).
+- Mudança de tema (nome/cor/logo) reflete **imediatamente** na próxima request
+  — o `TenantService` lê o tema fresco a cada chamada de `GET /tenant/current`,
+  sem cache (só o mapeamento host → id é cacheado, o tema em si não).

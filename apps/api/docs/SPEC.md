@@ -153,6 +153,7 @@ nunca vai na URL — é resolvido pelo host (`TenantMiddleware`).
 | Método | Rota              | Descrição                                                                         | Papel   |
 | ------ | ----------------- | --------------------------------------------------------------------------------- | ------- |
 | GET    | `/tenant/current` | Nome, logo e cores do tenant resolvido (usado pelo `apps/web` para montar o tema) | público |
+| PATCH  | `/tenant/current` | Edita nome, logo, cores e fuso horário da loja (HU 11.1–11.4)                     | admin   |
 
 ### `operator`
 

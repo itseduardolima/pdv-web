@@ -18,14 +18,11 @@ frontend) — não quando o código só "existe".
 
 ## Em andamento agora
 
-- Extra pós-Sprint 5 (2026-09-12): troco em venda em Dinheiro —
-  `amountReceivedCents`/`changeCents` na venda, calculados e validados na
-  API (`INSUFFICIENT_CASH`), campo "Valor recebido" no carrinho, troco na
-  confirmação e no histórico. Spec 03 § Venda atualizada.
-- Sprint 5 concluída no código (9.1, 1.4, E2E, imagens Docker buildadas).
-  9.2 (TLS) fica pendente de validação com domínio real no primeiro deploy.
-  Sprint 6 concluída (Operadores 6.1 → 6.7 + Dashboard 7.1 → 7.3).
-  Próximo: Sprint 7 — Offline-first (PWA).
+- Sprint 6 concluída (Operadores 6.1 → 6.7 + Dashboard 7.1 → 7.3).
+- Épico 11 (Configurações da Loja) documentado e inserido como **Sprint 7** —
+  prioridade P1, bloqueia white-label completo (hoje o admin não consegue
+  trocar nome/logo/cor sem editar o banco ou refazer seed).
+- Próximo: Sprint 7 — Configurações da Loja (HU 11.1 → 11.5, 13 pts).
 
 ---
 
@@ -124,7 +121,15 @@ frontend) — não quando o código só "existe".
 
 - [x] Botão de calculadora no cabeçalho de Vender (à esquerda do badge "Caixa #N") — ajuda o operador a dividir conta com o cliente sem sair da venda. `Calculator`/`CalculatorDialog`, lógica pura testável, sem ligação com carrinho/venda. Component tests.
 
-## Sprint 7 — Offline-first (PWA)
+## Sprint 7 — Configurações da Loja
+
+- [ ] 11.1 — Editar nome da loja (`PATCH /tenant/current`, só `ADMIN`; `slug`/`domain` imutáveis)
+- [ ] 11.2 — Upload de logo (`logoUrl` opcional, MinIO via `/uploads`, `PhotoUploadBox` kind `tenant`)
+- [ ] 11.3 — Escolher cor primária e acento (`primaryColor`/`accentColor` hex obrigatórios; `primaryInkColor` calculado, não editável)
+- [ ] 11.4 — Ajustar fuso horário (select IANA, valida no backend, afeta Dashboard)
+- [ ] 11.5 — Preview ao vivo das cores (mini card no form, só CSS local, sem API)
+
+## Sprint 8 — Offline-first (PWA)
 
 - [ ] 8.1 — Cache de catálogo offline (Dexie)
 - [ ] 8.2 — Fila de vendas offline + sincronização idempotente — `POST /sales` já é idempotente por `uuid` (gerado no carrinho); falta `POST /sales/sync` em lote e a fila Dexie
