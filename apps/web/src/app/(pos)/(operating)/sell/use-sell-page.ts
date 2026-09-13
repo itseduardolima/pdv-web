@@ -35,19 +35,21 @@ export function useSellPage() {
     [products.data, search, category],
   )
 
+  // Achou por código de barras exato (Enter no leitor, ou clique direto no
+  // resultado depois de digitar o código): a busca não serve mais pra nada
+  // depois disso, limpa pro próximo. Achou por nome, mantém — o operador
+  // costuma clicar em mais de um item da mesma busca (2026-09-13).
   function handleAdd(product: Product) {
     createSale.reset()
     cart.add({ productId: product.id, name: product.name, unit: product.unit, unitPriceCents: product.salePriceCents })
+    if (search.trim() !== '' && product.barcode === search.trim()) setSearch('')
   }
 
   // Leitor de código de barras "digita" o código e manda Enter: adiciona o
-  // produto exato e limpa a busca.
+  // produto exato (handleAdd já limpa a busca por ser código de barras).
   function handleSearchSubmit() {
     const exact = (products.data ?? []).find((product) => product.barcode === search.trim())
-    if (exact) {
-      handleAdd(exact)
-      setSearch('')
-    }
+    if (exact) handleAdd(exact)
   }
 
   function handleAmountReceivedChange(text: string) {
