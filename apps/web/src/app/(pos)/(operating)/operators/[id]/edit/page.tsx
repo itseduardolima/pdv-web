@@ -31,7 +31,7 @@ export default function EditOperatorPage() {
           photoError={page.photoError}
           after={
             page.operatorEmail ? (
-              <section className="flex h-full flex-col gap-3 rounded-card bg-surface p-4 md:p-[26px]">
+              <section className="flex h-full flex-col justify-center gap-3 rounded-card bg-surface p-4 md:p-[26px]">
                 <div>
                   <h2 className="font-heading text-lg font-bold tracking-tight">
                     {page.hasPin ? 'Esqueceu o PIN?' : 'Primeiro acesso'}
@@ -58,7 +58,7 @@ export default function EditOperatorPage() {
               <form
                 onSubmit={page.handlePinSubmit}
                 noValidate
-                className="flex h-full flex-col gap-3 rounded-card bg-surface p-4 md:p-[26px]"
+                className="flex h-full flex-col justify-center gap-3 rounded-card bg-surface p-4 md:p-[26px]"
               >
                 <div>
                   <h2 className="font-heading text-lg font-bold tracking-tight">Resetar PIN</h2>

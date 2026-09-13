@@ -52,7 +52,7 @@ export function OperatorForm({
     // Grade em duas linhas: foto | dados, zona de risco | Resetar PIN. Cada
     // linha tem a altura do card mais alto, e o par se alinha a ela. No celular vira uma coluna só,
     // na ordem foto, dados, PIN, excluir.
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-[260px_1fr] md:gap-5">
+    <div className="grid flex-1 grid-cols-1 gap-4 md:grid-cols-[260px_1fr] md:gap-5">
       <aside className="flex flex-col justify-center rounded-card bg-surface p-4 md:col-start-1 md:row-start-1 md:p-[22px]">
         <PhotoUploadBox
           value={photoUrl}
