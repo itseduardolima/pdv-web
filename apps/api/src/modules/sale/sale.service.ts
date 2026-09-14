@@ -21,7 +21,7 @@ export class SaleService {
     const existing = await this.sales.findByUuid(tenantId, input.uuid)
     if (existing) return toSale(existing)
 
-    const session = await this.cashSessions.requireOpen(tenantId)
+    const session = await this.cashSessions.requireOpen(tenantId, operator.id)
 
     const requested = mergeItems(input.items)
     const products = await this.sales.findProducts(

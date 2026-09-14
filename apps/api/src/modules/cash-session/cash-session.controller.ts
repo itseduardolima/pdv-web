@@ -11,10 +11,12 @@ import {
   ApiTags,
 } from '@nestjs/swagger'
 import {
+  cashSessionRegistersSchema,
   cashSessionSummarySchema,
   currentCashSessionSchema,
   openCashSessionSchema,
   saleSchema,
+  type CashSessionRegister,
   type CashSessionSummary,
   type CurrentCashSession,
   type Sale,
@@ -42,11 +44,38 @@ export class CashSessionController {
     return { session: await this.sessions.getCurrent(tenantId) }
   }
 
+  // HU 4.7: o caixa que O OPERADOR LOGADO abriu (não "qualquer" sessão do
+  // tenant) — é o que Vender/Fechamento usam pra saber com qual caixa agir.
+  @Get('mine')
+  @ApiOkResponse({
+    schema: openApi(currentCashSessionSchema),
+    description: 'Caixa aberto pelo operador logado, com totais ao vivo, ou { session: null }',
+  })
+  async getMine(
+    @CurrentTenant() tenantId: string,
+    @CurrentOperator() operator: OperatorSession,
+  ): Promise<CurrentCashSession> {
+    return { session: await this.sessions.getMine(tenantId, operator.id) }
+  }
+
+  // HU 4.6: status de cada caixa físico do tenant (livre, ou aberto por quem/desde quando).
+  @Get('registers')
+  @ApiOkResponse({ schema: openApi(cashSessionRegistersSchema), description: 'Status de cada caixa do tenant' })
+  async listRegisters(@CurrentTenant() tenantId: string): Promise<{ registers: CashSessionRegister[] }> {
+    return { registers: await this.sessions.listRegisters(tenantId) }
+  }
+
   @Post()
   @ApiBody({ schema: openApi(openCashSessionSchema) })
   @ApiCreatedResponse({ schema: openApi(cashSessionSummarySchema) })
-  @ApiBadRequestResponse({ schema: apiErrorOpenApi, description: 'VALIDATION' })
-  @ApiConflictResponse({ schema: apiErrorOpenApi, description: 'CASH_SESSION_ALREADY_OPEN' })
+  @ApiBadRequestResponse({
+    schema: apiErrorOpenApi,
+    description: 'VALIDATION (registerNumber fora do intervalo do tenant)',
+  })
+  @ApiConflictResponse({
+    schema: apiErrorOpenApi,
+    description: 'CASH_SESSION_ALREADY_OPEN (details.registerNumber)',
+  })
   open(
     @CurrentTenant() tenantId: string,
     @CurrentOperator() operator: OperatorSession,
@@ -58,8 +87,13 @@ export class CashSessionController {
   @Get(':id')
   @ApiOkResponse({ schema: openApi(cashSessionSummarySchema) })
   @ApiNotFoundResponse({ schema: apiErrorOpenApi, description: 'CASH_SESSION_NOT_FOUND' })
-  get(@CurrentTenant() tenantId: string, @Param('id') id: string): Promise<CashSessionSummary> {
-    return this.sessions.get(tenantId, id)
+  @ApiForbiddenResponse({ schema: apiErrorOpenApi, description: 'NOT_CASH_SESSION_OWNER' })
+  get(
+    @CurrentTenant() tenantId: string,
+    @Param('id') id: string,
+    @CurrentOperator() operator: OperatorSession,
+  ): Promise<CashSessionSummary> {
+    return this.sessions.get(tenantId, id, operator)
   }
 
   @Post(':id/close')
@@ -85,7 +119,12 @@ export class CashSessionController {
     description: 'Histórico de vendas da sessão (mais recente primeiro)',
   })
   @ApiNotFoundResponse({ schema: apiErrorOpenApi, description: 'CASH_SESSION_NOT_FOUND' })
-  listSales(@CurrentTenant() tenantId: string, @Param('id') id: string): Promise<Sale[]> {
-    return this.sessions.listSales(tenantId, id)
+  @ApiForbiddenResponse({ schema: apiErrorOpenApi, description: 'NOT_CASH_SESSION_OWNER' })
+  listSales(
+    @CurrentTenant() tenantId: string,
+    @Param('id') id: string,
+    @CurrentOperator() operator: OperatorSession,
+  ): Promise<Sale[]> {
+    return this.sessions.listSales(tenantId, id, operator)
   }
 }

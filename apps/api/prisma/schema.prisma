@@ -37,6 +37,9 @@ model Tenant {
   accentColor     String   @default("#466cf3")
   // Fuso da loja: define o que é "hoje" no Dashboard (IANA, ex. America/Sao_Paulo).
   timezone        String   @default("America/Sao_Paulo")
+  // Quantidade de caixas físicos da loja (HU 4.5-4.7, 11.6). 1 = comportamento
+  // de v1 (um único caixa lógico), sem seletor de caixa na UI.
+  registerCount   Int      @default(1)
   createdAt       DateTime @default(now())
 
   operators    Operator[]
@@ -116,6 +119,9 @@ model Product {
 model CashSession {
   id                 String    @id @default(cuid())
   tenantId           String
+  // Caixa físico (1..tenant.registerCount). HU 4.5: até tenant.registerCount
+  // sessões abertas simultaneamente no mesmo tenant, uma por registerNumber.
+  registerNumber     Int       @default(1)
   openedById         String
   openingAmountCents Int
   note               String?
@@ -129,7 +135,7 @@ model CashSession {
   openedBy Operator @relation(fields: [openedById], references: [id])
   sales    Sale[]
 
-  @@index([tenantId, closedAt])
+  @@index([tenantId, registerNumber, closedAt])
 }
 
 model Sale {
