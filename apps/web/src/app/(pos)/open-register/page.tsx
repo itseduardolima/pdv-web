@@ -28,7 +28,44 @@ export default function OpenRegisterPage() {
         <span className="font-body text-[13px] font-semibold">{page.operatorName} vai abrir o caixa</span>
       </div>
 
+      <button
+        type="button"
+        onClick={page.handleLogout}
+        disabled={page.isLoggingOut}
+        className="font-body text-xs font-medium text-ink/60 underline-offset-4 hover:underline disabled:opacity-60"
+      >
+        Não é você? Trocar de operador
+      </button>
+
       <hr className="w-full border-border" />
+
+      {page.showRegisterPicker && (
+        <div className="flex w-full flex-col items-center gap-2">
+          <span className="font-body text-[13px] font-medium text-ink/50">Qual caixa você vai abrir?</span>
+          <div className="flex flex-wrap justify-center gap-2 md:gap-2.5">
+            {page.registers.map((register) => {
+              const isTaken = register.openedById !== null
+              const isSelected = page.registerNumber === register.registerNumber
+              return (
+                <button
+                  key={register.registerNumber}
+                  type="button"
+                  disabled={isTaken}
+                  onClick={() => page.handleSelectRegister(register.registerNumber)}
+                  aria-pressed={isSelected}
+                  className={`rounded-pill border-[1.5px] px-4 py-2 font-body text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-50 md:text-[13px] ${
+                    isSelected ? 'border-ink bg-primary text-primary-ink' : 'border-ink bg-surface text-ink'
+                  }`}
+                >
+                  Caixa {register.registerNumber}
+                  {isTaken ? ` · ${register.openedByName}` : ''}
+                </button>
+              )
+            })}
+          </div>
+          <FieldError id="register-picker-error" message={page.registerError ?? undefined} />
+        </div>
+      )}
 
       <div className="flex w-full flex-col items-center gap-2">
         <label htmlFor="opening-amount" className="font-body text-[13px] font-medium text-ink/50">
@@ -71,7 +108,12 @@ export default function OpenRegisterPage() {
 
       {page.errorMessage && <InlineAlert onDismiss={page.dismissError}>{page.errorMessage}</InlineAlert>}
 
-      <Button onClick={page.handleSubmit} state={page.isSubmitting ? 'loading' : 'idle'} className="w-full">
+      <Button
+        onClick={page.handleSubmit}
+        state={page.isSubmitting ? 'loading' : 'idle'}
+        disabled={!page.canSubmit}
+        className="w-full"
+      >
         Abrir Caixa
       </Button>
     </SplitAuthLayout>
