@@ -16,6 +16,10 @@ export function WeekChart({ days }: WeekChartProps) {
   const heights = scaleBars(days.map((day) => day.totalCents))
   const columns = days.length
   const width = 100
+  // Além de ~10 colunas (ex.: Relatórios com período de um mês, 30 dias) a
+  // legenda por dia vira ilegível — os valores continuam disponíveis via
+  // tooltip (<title>) em cada barra.
+  const showCaption = columns <= 10
 
   return (
     <figure className="flex flex-col gap-3">
@@ -23,7 +27,7 @@ export function WeekChart({ days }: WeekChartProps) {
         viewBox={`0 0 ${width} ${CHART_HEIGHT}`}
         preserveAspectRatio="none"
         role="img"
-        aria-label="Vendas dos últimos 7 dias"
+        aria-label={`Vendas nos últimos ${columns} dias`}
         className="h-[140px] w-full md:h-[180px]"
       >
         {days.map((day, index) => {
@@ -47,21 +51,23 @@ export function WeekChart({ days }: WeekChartProps) {
           )
         })}
       </svg>
-      <figcaption
-        className="grid font-body text-[11px] text-ink/50 md:text-xs"
-        style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
-      >
-        {days.map((day, index) => (
-          <span
-            key={day.date}
-            data-cy="week-day"
-            className={`flex flex-col items-center gap-0.5 ${index === columns - 1 ? 'font-bold text-ink' : ''}`}
-          >
-            <span>{formatWeekdayShort(day.date)}</span>
-            <span className="hidden font-semibold text-ink md:inline">{formatCurrency(day.totalCents)}</span>
-          </span>
-        ))}
-      </figcaption>
+      {showCaption && (
+        <figcaption
+          className="grid font-body text-[11px] text-ink/50 md:text-xs"
+          style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
+        >
+          {days.map((day, index) => (
+            <span
+              key={day.date}
+              data-cy="week-day"
+              className={`flex flex-col items-center gap-0.5 ${index === columns - 1 ? 'font-bold text-ink' : ''}`}
+            >
+              <span>{formatWeekdayShort(day.date)}</span>
+              <span className="hidden font-semibold text-ink md:inline">{formatCurrency(day.totalCents)}</span>
+            </span>
+          ))}
+        </figcaption>
+      )}
     </figure>
   )
 }

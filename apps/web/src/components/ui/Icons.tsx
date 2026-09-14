@@ -50,6 +50,18 @@ export function DashboardIcon(props: IconProps) {
   )
 }
 
+export function ReportsIcon(props: IconProps) {
+  return (
+    <svg {...base} strokeWidth="2.2" width="20" height="20" {...props}>
+      <path d="M6 2h9l5 5v13a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z" />
+      <path d="M15 2v5h5" />
+      <path d="M9 17v-4" />
+      <path d="M12.5 17v-7" />
+      <path d="M16 17v-2.5" />
+    </svg>
+  )
+}
+
 export function OperatorsIcon(props: IconProps) {
   return (
     <svg {...base} strokeWidth="2.2" width="20" height="20" {...props}>
