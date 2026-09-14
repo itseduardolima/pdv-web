@@ -2,6 +2,7 @@
 
 import { Controller } from 'react-hook-form'
 import { TENANT_LIMITS } from '@pdv/shared'
+import { REGISTER_COUNT_OPTIONS } from '@/lib/register-count-options'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PhotoUploadBox } from '@/components/pos/PhotoUploadBox'
 import { Button } from '@/components/ui/Button'
@@ -69,6 +70,23 @@ export default function SettingsPage() {
                   name={field.name}
                   value={field.value}
                   onChange={field.onChange}
+                />
+              )}
+            />
+
+            <Controller
+              control={control}
+              name="registerCount"
+              render={({ field }) => (
+                <Select
+                  label="Quantidade de caixas"
+                  hint="Quantos caixas físicos a loja tem — cada um pode abrir uma sessão ao mesmo tempo"
+                  required
+                  options={REGISTER_COUNT_OPTIONS}
+                  error={errors.registerCount?.message}
+                  name={field.name}
+                  value={String(field.value)}
+                  onChange={(value) => field.onChange(Number(value))}
                 />
               )}
             />

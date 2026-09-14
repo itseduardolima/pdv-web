@@ -14,6 +14,7 @@ const tenant: Tenant = {
   primaryInkColor: null,
   timezone: 'America/Sao_Paulo',
   accentColor: '#466cf3',
+  registerCount: 1,
   createdAt: new Date('2026-01-01'),
 }
 
@@ -23,6 +24,7 @@ function makeService(overrides: Partial<Record<keyof TenantRepository, jest.Mock
     findBySlug: jest.fn().mockResolvedValue(null),
     findById: jest.fn().mockResolvedValue(null),
     update: jest.fn(),
+    updateIfNoRegisterAbove: jest.fn(),
     ...overrides,
   }
   const config = { get: jest.fn((_key: string, fallback: unknown) => fallback) } as unknown as ConfigService
@@ -97,6 +99,7 @@ describe('TenantService', () => {
         logoUrl: null,
         primaryColor: '#e6e51e',
         primaryInkColor: '#000000',
+        registerCount: 1,
         accentColor: '#466cf3',
         timezone: 'America/Sao_Paulo',
       })
@@ -126,6 +129,7 @@ describe('TenantService', () => {
       primaryColor: '#e6e51e',
       accentColor: '#466cf3',
       timezone: 'America/Sao_Paulo',
+      registerCount: 1,
     }
 
     it('updates the tenant and resets primaryInkColor so it is recomputed from the new color', async () => {
@@ -145,6 +149,49 @@ describe('TenantService', () => {
         expect.objectContaining({ code: 'TENANT_NOT_FOUND', statusCode: 404 }),
       )
       expect(repository.update).not.toHaveBeenCalled()
+    })
+
+    it('allows reducing registerCount when no open session uses a register above the new count', async () => {
+      const updated = { ...tenant, ...input, registerCount: 2, primaryInkColor: null }
+      const { service, repository } = makeService({
+        findById: jest.fn().mockResolvedValue({ ...tenant, registerCount: 3 }),
+        updateIfNoRegisterAbove: jest.fn().mockResolvedValue({ tenant: updated, conflictRegister: null }),
+      })
+      await expect(service.updateCurrent('tenant_1', { ...input, registerCount: 2 })).resolves.toMatchObject({
+        registerCount: 2,
+      })
+      expect(repository.updateIfNoRegisterAbove).toHaveBeenCalledWith(
+        'tenant_1',
+        { ...input, registerCount: 2, primaryInkColor: null },
+        2,
+      )
+      expect(repository.update).not.toHaveBeenCalled()
+    })
+
+    it('rejects reducing registerCount below an open session with 409 REGISTER_IN_USE (HU 11.6)', async () => {
+      const { service, repository } = makeService({
+        findById: jest.fn().mockResolvedValue({ ...tenant, registerCount: 3 }),
+        updateIfNoRegisterAbove: jest.fn().mockResolvedValue({ tenant, conflictRegister: 3 }),
+      })
+      await expect(service.updateCurrent('tenant_1', { ...input, registerCount: 2 })).rejects.toMatchObject({
+        code: 'REGISTER_IN_USE',
+        statusCode: 409,
+        details: { registerNumber: 3 },
+      })
+      expect(repository.update).not.toHaveBeenCalled()
+    })
+
+    it('checks and writes registerCount together, closing the window for a concurrent register open', async () => {
+      // A checagem (maior registerNumber aberto) e a gravação acontecem na
+      // MESMA transação do repositório — o Service só orquestra o resultado.
+      const { service, repository } = makeService({
+        findById: jest.fn().mockResolvedValue({ ...tenant, registerCount: 2 }),
+        updateIfNoRegisterAbove: jest
+          .fn()
+          .mockResolvedValue({ tenant: { ...tenant, registerCount: 1 }, conflictRegister: null }),
+      })
+      await service.updateCurrent('tenant_1', { ...input, registerCount: 1 })
+      expect(repository.updateIfNoRegisterAbove).toHaveBeenCalledTimes(1)
     })
   })
 })

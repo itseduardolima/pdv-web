@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import type { Tenant } from '@prisma/client'
 import type { PublicTenant, UpdateTenantInput } from '@pdv/shared'
-import { NotFoundError } from '../../common/errors/domain.error'
+import { ConflictError, NotFoundError } from '../../common/errors/domain.error'
 import { TenantResolver } from '../../common/tenant-context'
 import { contrastInkColor } from '../../common/utils/contrast-ink-color'
 import { parseTenantHost } from './tenant-host'
@@ -56,7 +56,28 @@ export class TenantService extends TenantResolver {
   async updateCurrent(tenantId: string, input: UpdateTenantInput): Promise<PublicTenant> {
     const tenant = await this.tenants.findById(tenantId)
     if (!tenant) throw new NotFoundError('TENANT_NOT_FOUND', 'Loja não encontrada.')
-    const updated = await this.tenants.update(tenantId, { ...input, primaryInkColor: null })
+    const patch = { ...input, primaryInkColor: null }
+
+    // Só reduzindo é que precisa checar (e paga o custo da transação) — o
+    // check e a gravação acontecem juntos pra não deixar uma abertura de
+    // caixa concorrente escapar entre os dois passos.
+    if (input.registerCount < tenant.registerCount) {
+      const { tenant: updated, conflictRegister } = await this.tenants.updateIfNoRegisterAbove(
+        tenantId,
+        patch,
+        input.registerCount,
+      )
+      if (conflictRegister !== null) {
+        throw new ConflictError(
+          'REGISTER_IN_USE',
+          `O Caixa ${conflictRegister} está aberto agora — feche-o antes de reduzir a quantidade de caixas.`,
+          { registerNumber: conflictRegister },
+        )
+      }
+      return this.toPublic(updated)
+    }
+
+    const updated = await this.tenants.update(tenantId, patch)
     return this.toPublic(updated)
   }
 
@@ -70,6 +91,7 @@ export class TenantService extends TenantResolver {
       primaryInkColor: tenant.primaryInkColor ?? contrastInkColor(tenant.primaryColor),
       accentColor: tenant.accentColor,
       timezone: tenant.timezone,
+      registerCount: tenant.registerCount,
     }
   }
 }

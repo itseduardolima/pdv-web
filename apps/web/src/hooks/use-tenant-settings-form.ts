@@ -10,6 +10,8 @@ export interface TenantSettingsFormValues {
   primaryColor: string
   accentColor: string
   timezone: string
+  // HU 11.6: quantidade de caixas físicos (Épico 4, 4.5-4.7).
+  registerCount: number
 }
 
 export function tenantToFormValues(tenant: PublicTenant): TenantSettingsFormValues {
@@ -19,6 +21,7 @@ export function tenantToFormValues(tenant: PublicTenant): TenantSettingsFormValu
     primaryColor: tenant.primaryColor,
     accentColor: tenant.accentColor,
     timezone: tenant.timezone,
+    registerCount: tenant.registerCount,
   }
 }
 
@@ -29,6 +32,7 @@ export function formValuesToUpdateInput(values: TenantSettingsFormValues): Updat
     primaryColor: values.primaryColor,
     accentColor: values.accentColor,
     timezone: values.timezone,
+    registerCount: values.registerCount,
   }
 }
 
@@ -58,6 +62,7 @@ function isFormField(field: string): field is keyof TenantSettingsFormValues {
     field === 'logoUrl' ||
     field === 'primaryColor' ||
     field === 'accentColor' ||
-    field === 'timezone'
+    field === 'timezone' ||
+    field === 'registerCount'
   )
 }

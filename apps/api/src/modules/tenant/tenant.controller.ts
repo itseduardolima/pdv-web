@@ -2,6 +2,7 @@ import { Body, Controller, Get, Patch, Query } from '@nestjs/common'
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiConflictResponse,
   ApiCookieAuth,
   ApiExcludeEndpoint,
   ApiForbiddenResponse,
@@ -43,6 +44,10 @@ export class TenantController {
   @ApiOkResponse({ schema: openApi(publicTenantSchema) })
   @ApiBadRequestResponse({ schema: apiErrorOpenApi, description: 'VALIDATION — details.fieldErrors por campo' })
   @ApiNotFoundResponse({ schema: apiErrorOpenApi, description: 'TENANT_NOT_FOUND' })
+  @ApiConflictResponse({
+    schema: apiErrorOpenApi,
+    description: 'REGISTER_IN_USE (details.registerNumber) — reduzir registerCount com aquele caixa aberto',
+  })
   updateCurrent(@CurrentTenant() tenantId: string, @Body() body: UpdateTenantDto): Promise<PublicTenant> {
     return this.tenants.updateCurrent(tenantId, body)
   }

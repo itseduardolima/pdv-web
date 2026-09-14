@@ -5,6 +5,8 @@ import { hexColorSchema, idSchema } from './common'
 // exibe como texto de apoio (nunca valida no cliente).
 export const TENANT_LIMITS = {
   name: { min: 1, max: 100 },
+  // HU 11.6: quantidade de caixas físicos do tenant (4.5-4.7).
+  registerCount: { min: 1, max: 10 },
 } as const
 
 export const publicTenantSchema = z.object({
@@ -16,6 +18,8 @@ export const publicTenantSchema = z.object({
   primaryInkColor: hexColorSchema,
   accentColor: hexColorSchema,
   timezone: z.string(),
+  // HU 4.5-4.7, 11.6: quantidade de caixas físicos da loja (default 1).
+  registerCount: z.number().int().positive(),
 })
 export type PublicTenant = z.infer<typeof publicTenantSchema>
 
@@ -41,5 +45,10 @@ export const updateTenantSchema = z.object({
       },
       { message: 'Fuso horário inválido.' },
     ),
+  registerCount: z
+    .number({ invalid_type_error: 'Quantidade de caixas inválida', required_error: 'Informe a quantidade de caixas' })
+    .int('Quantidade de caixas inválida')
+    .min(TENANT_LIMITS.registerCount.min, `Mínimo de ${TENANT_LIMITS.registerCount.min} caixa.`)
+    .max(TENANT_LIMITS.registerCount.max, `Máximo de ${TENANT_LIMITS.registerCount.max} caixas.`),
 })
 export type UpdateTenantInput = z.infer<typeof updateTenantSchema>
