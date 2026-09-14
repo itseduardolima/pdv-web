@@ -17,12 +17,13 @@ export function WeekChart({ days }: WeekChartProps) {
   const columns = days.length
   const width = 100
   // Até ~10 colunas dá pra rotular todo dia (dia da semana + valor, como o
-  // Dashboard sempre fez). Acima disso (ex.: Relatórios com um mês, 30
-  // dias) rotular todo dia ficaria ilegível — em vez de sumir com a
-  // legenda inteira, espaça as datas (a cada ~6ª barra, mais a última) só
-  // com "dia/mês"; o valor de cada barra continua no tooltip.
-  const dense = columns > 10
-  const tickEvery = dense ? Math.max(1, Math.round(columns / 6)) : 1
+  // Dashboard sempre fez). Acima disso (Relatórios com Mês/Ano, 30-365
+  // dias) a escala é sempre relativa ao maior dia do período, não um eixo
+  // em reais — uma legenda por dia (mesmo esparsa) não ajuda a ler o
+  // gráfico nesse caso, só polui; o valor exato de cada barra continua no
+  // tooltip ao passar o mouse (decisão de 2026-09-14, depois de explicar
+  // como o gráfico escala).
+  const showCaption = columns <= 10
 
   return (
     <figure className="flex flex-col gap-3">
@@ -58,32 +59,23 @@ export function WeekChart({ days }: WeekChartProps) {
           )
         })}
       </svg>
-      <figcaption
-        className="grid font-body text-[11px] text-ink/50 md:text-xs"
-        style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
-      >
-        {days.map((day, index) => {
-          const today = index === columns - 1
-          const showTick = !dense || index % tickEvery === 0 || today
-          return (
+      {showCaption && (
+        <figcaption
+          className="grid font-body text-[11px] text-ink/50 md:text-xs"
+          style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
+        >
+          {days.map((day, index) => (
             <span
               key={day.date}
               data-cy="week-day"
-              className={`flex flex-col items-center gap-0.5 ${today ? 'font-bold text-ink' : ''}`}
+              className={`flex flex-col items-center gap-0.5 ${index === columns - 1 ? 'font-bold text-ink' : ''}`}
             >
-              {showTick &&
-                (dense ? (
-                  <span className="whitespace-nowrap">{formatDayMonthShort(day.date)}</span>
-                ) : (
-                  <>
-                    <span>{formatWeekdayShort(day.date)}</span>
-                    <span className="hidden font-semibold text-ink md:inline">{formatCurrency(day.totalCents)}</span>
-                  </>
-                ))}
+              <span>{formatWeekdayShort(day.date)}</span>
+              <span className="hidden font-semibold text-ink md:inline">{formatCurrency(day.totalCents)}</span>
             </span>
-          )
-        })}
-      </figcaption>
+          ))}
+        </figcaption>
+      )}
     </figure>
   )
 }
