@@ -13,12 +13,15 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { FieldError } from '@/components/ui/FieldError'
 import { BarcodeIcon, SearchIcon } from '@/components/ui/Icons'
 import { InlineAlert } from '@/components/ui/InlineAlert'
+import { useTenant } from '@/hooks/use-tenant'
+import { cashSessionBadgeLabel } from '@/lib/utils/cash-session-badge'
 import { formatCurrency } from '@/lib/utils/format-currency'
 import { formatDayLong, formatTime } from '@/lib/utils/format-date'
 import { useSellPage } from './use-sell-page'
 
 export default function SellPage() {
   const page = useSellPage()
+  const tenant = useTenant()
   const openedAt = page.cashSession ? new Date(page.cashSession.openedAt) : null
 
   return (
@@ -42,7 +45,7 @@ export default function SellPage() {
                 <img src="/icons/calculator.svg" alt="" className="h-full w-full" />
               </button>
               <span className="rounded-pill bg-ink px-4 py-1.5 font-body text-[13px] font-medium text-surface">
-                Caixa #{page.cashSession.sequence}
+                {cashSessionBadgeLabel(tenant, page.cashSession)}
               </span>
             </>
           )

@@ -8,6 +8,8 @@ import { TotalCard } from '@/components/pos/TotalCard'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { InlineAlert } from '@/components/ui/InlineAlert'
+import { useTenant } from '@/hooks/use-tenant'
+import { cashSessionBadgeLabel } from '@/lib/utils/cash-session-badge'
 import { formatCurrency } from '@/lib/utils/format-currency'
 import { formatDayLong, formatTime } from '@/lib/utils/format-date'
 import { PAYMENT_METHOD_LABEL } from '@/lib/utils/payment-method'
@@ -15,6 +17,7 @@ import { useClosingPage } from './use-closing-page'
 
 export default function ClosingPage() {
   const page = useClosingPage()
+  const tenant = useTenant()
   const session = page.session
   const openedAt = session ? new Date(session.openedAt) : null
 
@@ -28,13 +31,38 @@ export default function ClosingPage() {
         actions={
           session && (
             <span className="rounded-pill bg-ink px-4 py-1.5 font-body text-[13px] font-medium text-surface">
-              Caixa #{session.sequence}
+              {cashSessionBadgeLabel(tenant, session)}
             </span>
           )
         }
       />
 
       {page.errorMessage && <InlineAlert onDismiss={page.dismissError}>{page.errorMessage}</InlineAlert>}
+
+      {/* HU 4.7: Administrador pode fechar qualquer caixa aberto, não só o
+          próprio — sempre visível quando há mais de 1 caixa aberto. */}
+      {page.showRegisterSwitcher && (
+        <div className="flex flex-wrap gap-2">
+          {page.openRegisters.map((register) => {
+            const isActive = register.sessionId === page.activeSessionId
+            const isMine = register.sessionId === page.myOwnSessionId
+            return (
+              <button
+                key={register.registerNumber}
+                type="button"
+                onClick={() => register.sessionId && page.handleSelectRegister(register.sessionId)}
+                aria-pressed={isActive}
+                className={`rounded-pill border-[1.5px] border-ink px-4 py-2 font-body text-xs font-semibold md:text-[13px] ${
+                  isActive ? 'bg-primary text-primary-ink' : 'bg-surface text-ink'
+                }`}
+              >
+                Caixa {register.registerNumber}
+                {isMine ? ' (você)' : ` · ${register.openedByName}`}
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {session && (
         <>
