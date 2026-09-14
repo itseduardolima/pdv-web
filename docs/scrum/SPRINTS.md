@@ -210,7 +210,7 @@ duas sessões simultâneas em caixas diferentes não colidem mais;
 dependência de sprint específica — pode entrar a qualquer momento depois da
 Sprint 3 (Caixa básico já existir).
 
-## Sprint 10 — Relatórios (planejada, não iniciada — decisão de 2026-09-14)
+## Sprint 10 — Relatórios (concluída — decisão de 2026-09-14)
 
 **Objetivo:** dar ao Administrador uma visão "olhar pra trás" que o
 Dashboard (Épico 7) não cobre — o Dashboard é só "hoje", sem intervalo de

@@ -18,10 +18,12 @@ frontend) — não quando o código só "existe".
 
 ## Em andamento agora
 
-- Sprints 0 a 9 concluídas, exceto 9.3/9.4 (backup diário, deploy automático
+- Sprints 0 a 10 concluídas, exceto 9.3/9.4 (backup diário, deploy automático
   via CI) — ficaram pendentes da Sprint 8, sem sprint própria ainda.
 - Sprint 9 (Múltiplos Caixas, decisão de 2026-09-13/14) concluída: 4.5, 4.6,
   4.7 e 11.6 — ver seção própria abaixo.
+- Sprint 10 (Relatórios, decisão de 2026-09-14) concluída: 12.1-12.7 — ver
+  seção própria abaixo.
 - Próximo: 9.3/9.4, ou nova prioridade a definir com o usuário.
 
 ---
@@ -170,23 +172,36 @@ comportamento atual não muda por padrão (`registerCount = 1`).
 - [x] 4.6 — Operador escolhe um caixa livre na tela de Abertura de Caixa — `GET /cash-sessions/registers` (`CashSessionService.listRegisters`, monta status 1..registerCount a partir das sessões abertas); `useCashSessionRegisters` + seletor de caixa em `open-register/page.tsx` (só aparece quando há mais de 1 caixa; pré-seleciona automaticamente se sobrar exatamente 1 livre; caixa ocupado mostra o nome de quem abriu e fica desabilitado); `registerCount = 1` (todo tenant hoje) mantém a tela idêntica à anterior, sem seletor. Jest cobre `listRegisters` (todos livres, e um ocupado com nome/hora)
 - [x] 4.7 — Vender/Fechamento/Dashboard identificam o caixa da sessão atual — `GET /cash-sessions/current` (tenant-wide, "a loja está operando hoje") virou dois conceitos: mantido como está para o guard de rota `(operating)/layout.tsx` (nenhuma mudança de comportamento — continua bastando QUALQUER caixa aberto no tenant pra liberar Vender/Produtos/Fechamento/Dashboard/Operadores, mesmo pra quem não abriu nenhum); `GET /cash-sessions/mine` novo, escopado ao operador logado (`CashSessionService.getMine`/`findOpenByOperator`), consumido por `useCurrentCashSession` (Vender/Fechamento) — é "meu" caixa, não "um" caixa qualquer. `SaleService.create` passou a chamar `requireOpen(tenantId, operator.id)`: uma venda só entra na sessão que o próprio operador abriu (antes, com múltiplos caixas, podia cair em qualquer sessão aberta do tenant). Badge "Caixa #N" no cabeçalho de Vender/Fechamento (`cashSessionBadgeLabel`) mostra o `registerNumber` físico quando `tenant.registerCount > 1`, senão mantém o `sequence` ordinal de sempre (zero mudança visual pro caso comum). Fechamento ganhou um seletor (Admin only) pra escolher qual caixa fechar quando o próprio Admin não abriu nenhum mas há outros abertos (`GET /cash-sessions/registers` + `GET /cash-sessions/:id`). Dashboard não precisou de mudança — já agregava por tenant/data, nunca por sessão. Jest cobre `getCurrent` (tenant-wide) vs `getMine` (só do operador) separadamente
 
-## Sprint 10 — Relatórios (planejada, não iniciada — decisão de 2026-09-14)
+## Sprint 10 — Relatórios (concluída — decisão de 2026-09-14)
 
 Visão "olhar pra trás" que o Dashboard (Épico 7) não cobre — período
 escolhido pelo usuário e comparação com o período anterior, em vez de só
 "hoje". Esboçada no protótipo
 (https://claude.ai/code/artifact/b115bb97-13a7-46a8-9550-6e63cce98f10, tela
 "Relatórios" nos 3 breakpoints). HUs em `docs/scrum/BACKLOG.md` Épico 12,
-detalhe do plano em `docs/scrum/SPRINTS.md`. Tudo P2 — sem dependência de
-sprint específica além do Dashboard já existir (reaproveita os componentes).
+detalhe do plano em `docs/scrum/SPRINTS.md`.
 
-- [ ] 12.1 — Seletor de período (Hoje/Semana/Mês/Personalizado)
-- [ ] 12.2 — Total do período + comparação com o período anterior
-- [ ] 12.3 — Total por forma de pagamento no período
-- [ ] 12.4 — Gráfico de vendas ao longo do período
-- [ ] 12.5 — Mais vendidos no período
-- [ ] 12.6 — Vendas por operador no período
-- [ ] 12.7 — Produtos parados no período
+- [x] 12.1-12.7 (endpoint único, como o Dashboard fez com 7.1-7.3) — `GET
+/reports/summary?period=today|week|month|custom&from&to` (`ReportsService.summary`,
+      só `ADMIN`); período resolvido no fuso da loja reaproveitando
+      `common/utils/time-zone.ts` (semana = 7 dias corridos, mês = 30 dias
+      corridos, não mês-calendário — mesmo raciocínio do Dashboard pra
+      "semana"); `period=custom` exige `from`/`to` (400 `VALIDATION` via
+      `.refine` no schema se faltar). Resposta cobre: total + `salesCount`;
+      `previousPeriod` (mesmo tamanho, imediatamente anterior; `deltaPercent`
+      `null` quando o período anterior não teve venda, evita divisão por
+      zero); `byPaymentMethod`; `days` (um por dia no intervalo, zero-filled,
+      pro gráfico); `topProducts` (top 5, mesma lógica do Dashboard);
+      `byOperator` (soma + `percent` do total, por operador); `stagnantProducts`
+      (produtos ativos com ≤2 unidades vendidas no período, **incluindo quem
+      vendeu 0** — parte da lista de produtos, não das vendas, senão quem não
+      vendeu nada nunca apareceria). 14 testes Jest cobrindo cada peça
+      isoladamente. Front: `/reports` (nav só `ADMIN`, ícone novo
+      `ReportsIcon`), pills de período + inputs de data pro personalizado,
+      reaproveita `TotalCard`/`StatTile`/`WeekChart`/`TopProductRow` do
+      Dashboard/Fechamento; `OperatorSalesRow` e `StagnantProductRow` novos.
+      `WeekChart` ganhou um ajuste (legenda por dia só até 10 colunas — o mês
+      de 30 dias ficaria ilegível; Dashboard, sempre 7 dias, não muda).
 
 ## Backlog P2 (sem sprint fixa ainda)
 
