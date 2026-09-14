@@ -17,6 +17,7 @@ import { StorageModule } from './modules/storage/storage.module'
 import { SaleModule } from './modules/sale/sale.module'
 import { OperatorModule } from './modules/operator/operator.module'
 import { DashboardModule } from './modules/dashboard/dashboard.module'
+import { ReportsModule } from './modules/reports/reports.module'
 import { MailModule } from './modules/mail/mail.module'
 
 // Módulos de domínio (operator) entram
@@ -50,6 +51,7 @@ import { MailModule } from './modules/mail/mail.module'
     ProductModule,
     OperatorModule,
     DashboardModule,
+    ReportsModule,
     CashSessionModule,
     StorageModule,
     SaleModule,
