@@ -210,6 +210,31 @@ duas sessões simultâneas em caixas diferentes não colidem mais;
 dependência de sprint específica — pode entrar a qualquer momento depois da
 Sprint 3 (Caixa básico já existir).
 
+## Sprint 10 — Relatórios (planejada, não iniciada — decisão de 2026-09-14)
+
+**Objetivo:** dar ao Administrador uma visão "olhar pra trás" que o
+Dashboard (Épico 7) não cobre — o Dashboard é só "hoje", sem intervalo de
+datas nem comparação entre períodos. Esboçada no protótipo
+(https://claude.ai/code/artifact/b115bb97-13a7-46a8-9550-6e63cce98f10, tela
+"Relatórios"). Tudo P2 — entra depois do MVP, sem bloquear nada.
+
+| HU   | Descrição curta                                      | Pts |
+| ---- | ---------------------------------------------------- | --- |
+| 12.1 | Seletor de período (Hoje/Semana/Mês/Personalizado)   | 3   |
+| 12.2 | Total do período + comparação com o período anterior | 5   |
+| 12.3 | Total por forma de pagamento no período              | 2   |
+| 12.4 | Gráfico de vendas ao longo do período                | 5   |
+| 12.5 | Mais vendidos no período                             | 3   |
+| 12.6 | Vendas por operador no período                       | 3   |
+| 12.7 | Produtos parados no período                          | 5   |
+
+**Total: 26 pts.** Entrega: tela `/reports` (só Admin), reaproveitando os
+componentes visuais do Dashboard/Fechamento (`TotalCard`, `StatTile`,
+gráfico SVG, ranking) com dado agregado por intervalo escolhido pelo
+usuário em vez de "hoje". Sem dependência de sprint específica — pode
+entrar a qualquer momento depois da Sprint 6 (Dashboard já existir, pra
+reaproveitar os componentes).
+
 ## Depois disso (P2 — backlog, sem sprint fixa ainda)
 
 Logout melhorado, exclusão de operador com histórico, refinos de Dashboard,

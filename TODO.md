@@ -170,6 +170,24 @@ comportamento atual não muda por padrão (`registerCount = 1`).
 - [x] 4.6 — Operador escolhe um caixa livre na tela de Abertura de Caixa — `GET /cash-sessions/registers` (`CashSessionService.listRegisters`, monta status 1..registerCount a partir das sessões abertas); `useCashSessionRegisters` + seletor de caixa em `open-register/page.tsx` (só aparece quando há mais de 1 caixa; pré-seleciona automaticamente se sobrar exatamente 1 livre; caixa ocupado mostra o nome de quem abriu e fica desabilitado); `registerCount = 1` (todo tenant hoje) mantém a tela idêntica à anterior, sem seletor. Jest cobre `listRegisters` (todos livres, e um ocupado com nome/hora)
 - [x] 4.7 — Vender/Fechamento/Dashboard identificam o caixa da sessão atual — `GET /cash-sessions/current` (tenant-wide, "a loja está operando hoje") virou dois conceitos: mantido como está para o guard de rota `(operating)/layout.tsx` (nenhuma mudança de comportamento — continua bastando QUALQUER caixa aberto no tenant pra liberar Vender/Produtos/Fechamento/Dashboard/Operadores, mesmo pra quem não abriu nenhum); `GET /cash-sessions/mine` novo, escopado ao operador logado (`CashSessionService.getMine`/`findOpenByOperator`), consumido por `useCurrentCashSession` (Vender/Fechamento) — é "meu" caixa, não "um" caixa qualquer. `SaleService.create` passou a chamar `requireOpen(tenantId, operator.id)`: uma venda só entra na sessão que o próprio operador abriu (antes, com múltiplos caixas, podia cair em qualquer sessão aberta do tenant). Badge "Caixa #N" no cabeçalho de Vender/Fechamento (`cashSessionBadgeLabel`) mostra o `registerNumber` físico quando `tenant.registerCount > 1`, senão mantém o `sequence` ordinal de sempre (zero mudança visual pro caso comum). Fechamento ganhou um seletor (Admin only) pra escolher qual caixa fechar quando o próprio Admin não abriu nenhum mas há outros abertos (`GET /cash-sessions/registers` + `GET /cash-sessions/:id`). Dashboard não precisou de mudança — já agregava por tenant/data, nunca por sessão. Jest cobre `getCurrent` (tenant-wide) vs `getMine` (só do operador) separadamente
 
+## Sprint 10 — Relatórios (planejada, não iniciada — decisão de 2026-09-14)
+
+Visão "olhar pra trás" que o Dashboard (Épico 7) não cobre — período
+escolhido pelo usuário e comparação com o período anterior, em vez de só
+"hoje". Esboçada no protótipo
+(https://claude.ai/code/artifact/b115bb97-13a7-46a8-9550-6e63cce98f10, tela
+"Relatórios" nos 3 breakpoints). HUs em `docs/scrum/BACKLOG.md` Épico 12,
+detalhe do plano em `docs/scrum/SPRINTS.md`. Tudo P2 — sem dependência de
+sprint específica além do Dashboard já existir (reaproveita os componentes).
+
+- [ ] 12.1 — Seletor de período (Hoje/Semana/Mês/Personalizado)
+- [ ] 12.2 — Total do período + comparação com o período anterior
+- [ ] 12.3 — Total por forma de pagamento no período
+- [ ] 12.4 — Gráfico de vendas ao longo do período
+- [ ] 12.5 — Mais vendidos no período
+- [ ] 12.6 — Vendas por operador no período
+- [ ] 12.7 — Produtos parados no período
+
 ## Backlog P2 (sem sprint fixa ainda)
 
 - [ ] Sessão com renovação deslizante por inatividade (hoje o JWT expira 12h fixas após o login — decisão da Sprint 1)

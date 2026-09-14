@@ -129,6 +129,30 @@ Tela: **Dashboard**.
 | 7.2 | Como Administrador, quero ver os produtos mais vendidos hoje, para saber o que repor.                                        | Mesma rota, `topProductsToday` ordenado por quantidade.                                     | 2   | P2         |
 | 7.3 | Como Administrador, quero ver um gráfico da semana, para entender a tendência de vendas.                                     | Agregação diária dos últimos 7 dias; gráfico simples (SVG, sem lib pesada — ver protótipo). | 3   | P2         |
 
+## Épico 12 — Relatórios
+
+Tela: **Relatórios** (`/reports`, só `ADMIN` — mesmo padrão de acesso do
+Dashboard). Esboçada no protótipo em 2026-09-14
+(https://claude.ai/code/artifact/b115bb97-13a7-46a8-9550-6e63cce98f10,
+tela "Relatórios" nos 3 breakpoints). Diferença do Dashboard (Épico 7):
+Dashboard é o retrato de **hoje**, sem intervalo de datas nem comparação
+entre períodos; Relatórios é a versão "olhar pra trás" — período escolhido
+pelo usuário, comparação com o período anterior, e duas visões que o
+Dashboard não tem (vendas por operador, produtos parados). Não duplica o
+que o Dashboard já mostra — reaproveita os mesmos componentes visuais
+(`TotalCard`/hero, `StatTile` de forma de pagamento, gráfico SVG,
+ranking de produtos) com dado agregado por intervalo em vez de "hoje".
+
+| #    | HU                                                                                                                                                             | Critérios de aceite                                                                                                                                                                                                                                                                                                               | Pts | Prioridade |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ---------- |
+| 12.1 | Como Administrador, quero escolher o período do relatório (Hoje/Semana/Mês/Personalizado), para analisar o intervalo de tempo que me interessa.                | `GET /reports/summary?period=today\|week\|month\|custom&from&to`; `period=custom` exige `from`/`to` (400 `VALIDATION` se faltar, `from` > `to` também rejeitado); resolução de "hoje"/"semana"/"mês" usa o fuso do tenant (`Tenant.timezone`, mesma regra do Dashboard). Seletor de período (pills) no front, igual ao protótipo. | 3   | P2         |
+| 12.2 | Como Administrador, quero ver o total vendido no período com comparação ao período anterior de mesmo tamanho, para saber se a loja está indo melhor.           | Resposta inclui `totalCents`, `salesCount` e `previousPeriod: { totalCents, deltaPercent }` (período anterior de duração idêntica, imediatamente anterior ao selecionado); `deltaPercent` null quando o período anterior não teve nenhuma venda (divisão por zero).                                                               | 5   | P2         |
+| 12.3 | Como Administrador, quero ver o total por forma de pagamento (Dinheiro/Cartão/Pix) no período, para entender a mistura de recebimento.                         | Mesma agregação do Fechamento/Dashboard (`groupBy paymentMethod`), agora sobre o intervalo do período em vez de uma sessão/dia; reusa `StatTile`/`stile`.                                                                                                                                                                         | 2   | P2         |
+| 12.4 | Como Administrador, quero ver um gráfico de vendas ao longo do período, para enxergar a tendência (não só o total).                                            | Agregação diária dentro do período (`period=month` agrega por dia, até ~31 pontos); gráfico SVG simples, mesmo estilo do Dashboard (sem lib pesada).                                                                                                                                                                              | 5   | P2         |
+| 12.5 | Como Administrador, quero ver os produtos mais vendidos no período (quantidade e receita), para saber o que repor.                                             | Extensão de `topProductsToday` (Dashboard) para aceitar o intervalo do período; ordenado por quantidade, mesmo componente de ranking com barra.                                                                                                                                                                                   | 3   | P2         |
+| 12.6 | Como Administrador, quero ver quanto cada operador vendeu no período, para entender a distribuição de vendas na equipe (não é vigilância, é visão de negócio). | Agregação de `Sale.totalCents` por `operatorId` dentro do período, com nome e percentual do total; só `ADMIN` (mesma regra de acesso da tela).                                                                                                                                                                                    | 3   | P2         |
+| 12.7 | Como Administrador, quero ver produtos parados (sem venda ou com pouquíssima venda) no período, para decidir promoção ou desova.                               | Produtos do tenant com `quantity` vendida no período abaixo de um limite configurável (ex.: 0-2 unidades) ou nenhuma venda; requer produtos sem `SaleItem` no intervalo aparecerem também (não é só "ordenar os mais vendidos ao contrário" — precisa incluir quem não vendeu nada).                                              | 5   | P2         |
+
 ## Épico 11 — Configurações da Loja
 
 Tela: **Configurações da Loja** (`/settings` ou `/store-settings`). Permite ao
@@ -201,7 +225,8 @@ do primeiro form real, não depois.
 | 9 — Deploy                | 5      | 5      | —      |
 | 10 — Validação e Feedback | 6      | 2      | —      |
 | 11 — Configurações        | —      | 12     | 4      |
-| **Total**                 | **64** | **73** | **20** |
+| 12 — Relatórios           | —      | —      | 26     |
+| **Total**                 | **64** | **73** | **46** |
 
 MVP (P0, "consigo vender algo de ponta a ponta em produção") = **64 pontos**.
 Produto completo para operação real (P0 + P1) = **137 pontos**.
