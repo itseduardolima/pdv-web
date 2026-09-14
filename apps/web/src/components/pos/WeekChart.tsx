@@ -32,7 +32,11 @@ export function WeekChart({ days }: WeekChartProps) {
       >
         {days.map((day, index) => {
           const slot = width / columns
-          const barWidth = slot * 0.55
+          // Com poucas colunas (ex.: período "Hoje", 1 dia só) a barra não
+          // pode crescer pra preencher o slot inteiro — vira um bloco
+          // sólido sem parecer gráfico nenhum. Largura máxima fixa, mesmo
+          // limite (7 colunas do Dashboard) já ficava perto disso.
+          const barWidth = Math.min(slot * 0.55, 8)
           const x = index * slot + (slot - barWidth) / 2
           const height = Math.max(MIN_BAR, (heights[index] ?? 0) * (CHART_HEIGHT - MIN_BAR))
           const today = index === columns - 1

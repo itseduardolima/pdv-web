@@ -4,27 +4,37 @@ import { useReportsSummary } from '@/hooks/queries/use-reports-summary'
 import { apiErrorMessage } from '@/lib/utils/api-error-message'
 import { PAYMENT_METHODS, percentOf } from '@/lib/utils/payment-method'
 
-export const PERIOD_OPTIONS: { value: ReportPeriod; label: string }[] = [
+// "Personalizado" não é um botão de troca direta — abre o calendário
+// (DateRangePopover) e só vira o período ativo quando o usuário aplica um
+// intervalo. Os outros três trocam na hora, como sempre.
+export const DIRECT_PERIOD_OPTIONS: { value: 'today' | 'week' | 'month'; label: string }[] = [
   { value: 'today', label: 'Hoje' },
   { value: 'week', label: 'Semana' },
   { value: 'month', label: 'Mês' },
-  { value: 'custom', label: 'Personalizado' },
 ]
 
 export function useReportsPage() {
   const [period, setPeriod] = useState<ReportPeriod>('week')
-  const [customFrom, setCustomFrom] = useState('')
-  const [customTo, setCustomTo] = useState('')
+  const [customFrom, setCustomFrom] = useState<string | null>(null)
+  const [customTo, setCustomTo] = useState<string | null>(null)
 
   const summary = useReportsSummary({
     period,
-    from: period === 'custom' ? customFrom || undefined : undefined,
-    to: period === 'custom' ? customTo || undefined : undefined,
+    from: period === 'custom' && customFrom ? customFrom : undefined,
+    to: period === 'custom' && customTo ? customTo : undefined,
   })
   const data = summary.data ?? null
 
-  function handlePeriodChange(next: ReportPeriod) {
+  function handlePeriodChange(next: 'today' | 'week' | 'month') {
     setPeriod(next)
+  }
+
+  // Só troca pra "custom" (e dispara a busca) quando o usuário aplica o
+  // intervalo no calendário — até lá, o período anterior continua na tela.
+  function handleApplyCustomRange(from: string, to: string) {
+    setCustomFrom(from)
+    setCustomTo(to)
+    setPeriod('custom')
   }
 
   const tiles = data
@@ -36,13 +46,11 @@ export function useReportsPage() {
     : []
 
   return {
-    periodOptions: PERIOD_OPTIONS,
+    directPeriodOptions: DIRECT_PERIOD_OPTIONS,
     period,
     handlePeriodChange,
-    customFrom,
-    setCustomFrom,
-    customTo,
-    setCustomTo,
+    customRange: { from: customFrom, to: customTo },
+    handleApplyCustomRange,
     summary: data,
     tiles,
     isLoading: summary.isPending,

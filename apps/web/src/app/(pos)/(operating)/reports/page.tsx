@@ -8,8 +8,8 @@ import { StatTile } from '@/components/pos/StatTile'
 import { TopProductRow } from '@/components/pos/TopProductRow'
 import { TotalCard } from '@/components/pos/TotalCard'
 import { WeekChart } from '@/components/pos/WeekChart'
+import { DateRangePopover } from '@/components/ui/DateRangePopover'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { Input } from '@/components/ui/Input'
 import { InlineAlert } from '@/components/ui/InlineAlert'
 import { Loader } from '@/components/ui/Loader'
 import { formatCurrency } from '@/lib/utils/format-currency'
@@ -32,7 +32,7 @@ export default function ReportsPage() {
         }
         actions={
           <div className="flex flex-wrap gap-2">
-            {page.periodOptions.map((option) => (
+            {page.directPeriodOptions.map((option) => (
               <button
                 key={option.value}
                 type="button"
@@ -45,26 +45,15 @@ export default function ReportsPage() {
                 {option.label}
               </button>
             ))}
+            <DateRangePopover
+              label="Personalizado"
+              active={page.period === 'custom'}
+              value={page.customRange}
+              onApply={page.handleApplyCustomRange}
+            />
           </div>
         }
       />
-
-      {page.period === 'custom' && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:max-w-md">
-          <Input
-            type="date"
-            label="De"
-            value={page.customFrom}
-            onChange={(event) => page.setCustomFrom(event.target.value)}
-          />
-          <Input
-            type="date"
-            label="Até"
-            value={page.customTo}
-            onChange={(event) => page.setCustomTo(event.target.value)}
-          />
-        </div>
-      )}
 
       {page.errorMessage && <InlineAlert>{page.errorMessage}</InlineAlert>}
 
