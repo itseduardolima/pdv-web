@@ -65,6 +65,13 @@ export function hourInTimeZone(date: Date, timeZone: string): number {
   return zonedParts(date, timeZone).hour
 }
 
+// Ano e mês local (mês 1-12) do instante `date` no fuso — pro filtro "Ano"
+// dos Relatórios agrupar por mês-calendário.
+export function yearMonthInTimeZone(date: Date, timeZone: string): { year: number; month: number } {
+  const p = zonedParts(date, timeZone)
+  return { year: p.year, month: p.month }
+}
+
 // Instante UTC em que o dia `dayKey` começa no fuso (respeita horário de verão).
 export function startOfDayInTimeZone(dayKey: string, timeZone: string): Date {
   const [year, month, day] = dayKey.split('-').map(Number) as [number, number, number]

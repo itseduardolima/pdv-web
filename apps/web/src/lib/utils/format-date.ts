@@ -7,6 +7,7 @@ function capitalize(text: string): string {
 
 const weekdayFormatter = new Intl.DateTimeFormat('pt-BR', { weekday: 'short' })
 const dayMonthFormatter = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'short' })
+const monthShortFormatter = new Intl.DateTimeFormat('pt-BR', { month: 'short' })
 
 // "2026-09-12" (dia no fuso da loja, vindo da API) -> Date local ao meio-dia,
 // só para formatar o rótulo sem risco de virar o dia anterior.
@@ -23,6 +24,11 @@ export function formatWeekdayShort(dayKey: string): string {
 // "12 de set"
 export function formatDayMonthShort(dayKey: string): string {
   return dayMonthFormatter.format(parseDayKey(dayKey)).replace('.', '')
+}
+
+// 3 (março) -> "Mar"
+export function formatMonthShort(month: number): string {
+  return capitalize(monthShortFormatter.format(new Date(2026, month - 1, 1)).replace('.', ''))
 }
 
 // "Sex, 11 de setembro"

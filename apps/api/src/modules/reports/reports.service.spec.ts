@@ -69,11 +69,13 @@ describe('ReportsService.summary', () => {
       expect(summary.days).toHaveLength(30)
     })
 
-    it('resolves "year" to the 365 store days ending today', async () => {
+    it('resolves "year" to the calendar year, from Jan 1st to today', async () => {
       const { service } = makeService([])
       const summary = await service.summary('t1', year, now)
+      expect(summary.from).toBe('2026-01-01')
       expect(summary.to).toBe('2026-09-13')
-      expect(summary.days).toHaveLength(365)
+      // Jan 1 to Sep 13, 2026: 256 days.
+      expect(summary.days).toHaveLength(256)
     })
 
     it('resolves "custom" to the exact from/to given', async () => {
@@ -170,6 +172,26 @@ describe('ReportsService.summary', () => {
       const { service } = makeService([sale('2026-09-10T14:00:00.000Z', 800, 'CARD')])
       const summary = await service.summary('t1', week, now)
       expect(summary.hours).toEqual([])
+    })
+  })
+
+  describe('months (chart for "Ano", HU 12.4)', () => {
+    it('returns 12 zero-filled months, in the store time zone, only for period=year', async () => {
+      const { service } = makeService([
+        sale('2026-03-05T14:30:00.000Z', 1000, 'CASH'), // março
+        sale('2026-09-13T23:10:00.000Z', 500, 'PIX'), // 20:10 em SP -> ainda 13/09
+      ])
+      const summary = await service.summary('t1', year, now)
+      expect(summary.months).toHaveLength(12)
+      expect(summary.months[2]).toEqual({ month: 3, totalCents: 1000, salesCount: 1 })
+      expect(summary.months[8]).toEqual({ month: 9, totalCents: 500, salesCount: 1 })
+      expect(summary.months[0]).toEqual({ month: 1, totalCents: 0, salesCount: 0 })
+    })
+
+    it('is empty for any period other than "year"', async () => {
+      const { service } = makeService([sale('2026-09-10T14:00:00.000Z', 800, 'CARD')])
+      const summary = await service.summary('t1', week, now)
+      expect(summary.months).toEqual([])
     })
   })
 

@@ -6,6 +6,7 @@ import {
   type PaymentMethod,
   type ReportDay,
   type ReportHour,
+  type ReportMonth,
   type ReportOperator,
   type ReportStagnantProduct,
   type ReportSummary,
@@ -18,16 +19,16 @@ import {
   hourInTimeZone,
   isValidTimeZone,
   startOfDayInTimeZone,
+  yearMonthInTimeZone,
 } from '../../common/utils/time-zone'
 import { ReportsRepository, type ReportSaleRow } from './reports.repository'
 
 const FALLBACK_TIME_ZONE = 'UTC'
-// Rolling windows, não mês-calendário: evita o caso de "mês" ter 1 dia só
-// no dia 1 do mês (03-regras-negocio não define mês-calendário em lugar
-// nenhum — Dashboard já usa o mesmo raciocínio pra "semana").
+// Semana e mês são janelas corridas (não mês-calendário): evita o caso de
+// "mês" ter 1 dia só no dia 1 do mês (Dashboard já usa o mesmo raciocínio
+// pra "semana"). "Ano" é diferente — ano-calendário mesmo (ver resolveRange).
 const WEEK_DAYS = 7
 const MONTH_DAYS = 30
-const YEAR_DAYS = 365
 
 @Injectable()
 export class ReportsService {
@@ -66,6 +67,10 @@ export class ReportsService {
     // HU 12.4: "Hoje" quebra por horário em vez de um único bloco de 1 dia
     // — os demais períodos não têm "hoje" fazendo sentido como granularidade.
     const hours: ReportHour[] = query.period === 'today' ? buildHourly(sales, timeZone) : []
+    // "Ano" quebra pelos 12 meses do ano corrente, não pelos ~260 dias
+    // corridos desde 1º de janeiro — 365 barras diárias não cabem em tela
+    // nenhuma de um jeito legível.
+    const months: ReportMonth[] = query.period === 'year' ? buildMonthly(sales, timeZone) : []
 
     const top = rankTopProducts(sales)
     const productIds = top.map((p) => p.productId)
@@ -91,6 +96,7 @@ export class ReportsService {
       byPaymentMethod: totalsByPaymentMethod(sales),
       days,
       hours,
+      months,
       topProducts,
       byOperator,
       stagnantProducts,
@@ -112,7 +118,9 @@ function resolveRange(query: ReportSummaryQuery, today: string): { fromKey: stri
     case 'month':
       return { fromKey: addDaysToDayKey(today, -(MONTH_DAYS - 1)), toKey: today }
     case 'year':
-      return { fromKey: addDaysToDayKey(today, -(YEAR_DAYS - 1)), toKey: today }
+      // Ano-calendário: 1º de janeiro do ano corrente até hoje (não os
+      // últimos 365 dias corridos) — o gráfico mostra os 12 meses do ano.
+      return { fromKey: `${today.slice(0, 4)}-01-01`, toKey: today }
     case 'custom':
       // Validado pelo schema (VALIDATION 400 se ausente) antes de chegar aqui.
       return { fromKey: query.from as string, toKey: query.to as string }
@@ -138,6 +146,23 @@ function buildHourly(sales: ReportSaleRow[], timeZone: string): ReportHour[] {
   return Array.from({ length: 24 }, (_, hour) => {
     const hourSales = byHour.get(hour) ?? []
     return { hour, totalCents: hourSales.reduce((s, x) => s + x.totalCents, 0), salesCount: hourSales.length }
+  })
+}
+
+// HU 12.4: 12 meses do ano corrente, zero-filled (inclui meses futuros do
+// próprio ano, que naturalmente não têm venda nenhuma ainda). `sales` já
+// vem só do intervalo do período (1º/jan até hoje), então basta agrupar
+// por mês — nunca tem venda de outro ano misturada aqui.
+function buildMonthly(sales: ReportSaleRow[], timeZone: string): ReportMonth[] {
+  const byMonth = new Map<number, ReportSaleRow[]>()
+  for (const sale of sales) {
+    const { month } = yearMonthInTimeZone(sale.soldAt, timeZone)
+    byMonth.set(month, [...(byMonth.get(month) ?? []), sale])
+  }
+  return Array.from({ length: 12 }, (_, index) => {
+    const month = index + 1
+    const monthSales = byMonth.get(month) ?? []
+    return { month, totalCents: monthSales.reduce((s, x) => s + x.totalCents, 0), salesCount: monthSales.length }
   })
 }
 

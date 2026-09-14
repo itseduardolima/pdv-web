@@ -2,6 +2,7 @@
 
 import { PageHeader } from '@/components/layout/PageHeader'
 import { HourChart } from '@/components/pos/HourChart'
+import { MonthChart } from '@/components/pos/MonthChart'
 import { OperatorSalesRow } from '@/components/pos/OperatorSalesRow'
 import { PaymentMethodIllustration } from '@/components/pos/PaymentMethodIllustration'
 import { StagnantProductRow } from '@/components/pos/StagnantProductRow'
@@ -92,10 +93,20 @@ export default function ReportsPage() {
             <div>
               <h2 className="font-heading text-lg font-bold tracking-tight">Vendas no Período</h2>
               <p className="font-body text-xs text-ink/45">
-                {summary.period === 'today' ? 'Total vendido por horário' : 'Total vendido por dia'}
+                {summary.period === 'today'
+                  ? 'Total vendido por horário'
+                  : summary.period === 'year'
+                    ? 'Total vendido por mês'
+                    : 'Total vendido por dia'}
               </p>
             </div>
-            {summary.period === 'today' ? <HourChart hours={summary.hours} /> : <WeekChart days={summary.days} />}
+            {summary.period === 'today' ? (
+              <HourChart hours={summary.hours} />
+            ) : summary.period === 'year' ? (
+              <MonthChart months={summary.months} />
+            ) : (
+              <WeekChart days={summary.days} />
+            )}
           </section>
 
           <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-3 md:gap-[18px]">

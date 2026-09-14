@@ -6,10 +6,12 @@ const cents = z.number().int().nonnegative()
 // (mesma convenção do Dashboard, ver schemas/dashboard.ts).
 const dayKey = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
 
-// HU 12.1: "hoje"/"semana"/"mês"/"ano" são calculados no fuso da loja a
-// partir de hoje (semana = 7 dias, mês = 30 dias, ano = 365 dias, todos
-// corridos, não calendário — evita o caso de dia 1 do mês/ano ter um
-// período de 1 dia só); "personalizado" exige from/to do próprio usuário.
+// HU 12.1: "hoje"/"semana"/"mês" são corridos, contados pra trás a partir
+// de hoje no fuso da loja (semana = 7 dias, mês = 30 dias — não
+// mês-calendário, evita o caso de dia 1 do mês ter um "mês" de 1 dia só).
+// "ano" é diferente (decisão de 2026-09-14): ano-calendário mesmo, de
+// 1º de janeiro até hoje — o gráfico mostra os 12 meses do ano corrente,
+// não 365 dias corridos. "personalizado" exige from/to do próprio usuário.
 export const reportPeriodSchema = z.enum(['today', 'week', 'month', 'year', 'custom'])
 export type ReportPeriod = z.infer<typeof reportPeriodSchema>
 
@@ -41,6 +43,15 @@ export const reportHourSchema = z.object({
   salesCount: z.number().int().nonnegative(),
 })
 export type ReportHour = z.infer<typeof reportHourSchema>
+
+// HU 12.4: período "Ano" quebrado pelos 12 meses do ano corrente (mês 1-12)
+// em vez de 365 barras diárias — só vem preenchido quando period === "year".
+export const reportMonthSchema = z.object({
+  month: z.number().int().min(1).max(12),
+  totalCents: cents,
+  salesCount: z.number().int().nonnegative(),
+})
+export type ReportMonth = z.infer<typeof reportMonthSchema>
 
 export const reportTopProductSchema = z.object({
   productId: z.string(),
@@ -93,6 +104,7 @@ export const reportSummarySchema = z.object({
   byPaymentMethod: z.record(paymentMethodSchema, cents),
   days: z.array(reportDaySchema),
   hours: z.array(reportHourSchema),
+  months: z.array(reportMonthSchema),
   topProducts: z.array(reportTopProductSchema),
   byOperator: z.array(reportOperatorSchema),
   stagnantProducts: z.array(reportStagnantProductSchema),
