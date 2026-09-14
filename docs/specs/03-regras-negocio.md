@@ -57,9 +57,14 @@ servidor (`src/server/domain`), nunca só escondendo botão na UI.
     de "Movimentações de Caixa" — decisão de produto já tomada no protótipo).
   - Uma vez fechada, a sessão é imutável — nenhuma venda pode ser adicionada a
     uma sessão fechada (mesmo por admin).
-- Duas sessões de caixa não podem estar abertas ao mesmo tempo no mesmo tenant
-  em v1 (1 loja = 1 caixa lógico; se o mercado tiver mais de um caixa físico,
-  isso é um requisito futuro, não v1).
+- Um tenant pode ter até `Tenant.registerCount` caixas físicos (HU 4.5-4.7,
+  11.6, decisão de 2026-09-13); cada caixa é identificado por um
+  `registerNumber` (1..`registerCount`) e pode ter no máximo 1 sessão aberta
+  por vez — duas sessões não podem estar abertas ao mesmo tempo **no mesmo
+  caixa**, mas dois caixas diferentes do mesmo tenant podem estar abertos
+  simultaneamente. `registerCount` nasce em 1 para todo tenant (comportamento
+  idêntico à v1: um único caixa lógico, sem seletor de caixa na UI) — só muda
+  se o Administrador aumentar em Configurações da Loja (HU 11.6).
 
 ## Venda (PDV)
 

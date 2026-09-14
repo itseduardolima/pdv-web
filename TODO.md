@@ -18,11 +18,11 @@ frontend) — não quando o código só "existe".
 
 ## Em andamento agora
 
-- Sprint 6 concluída (Operadores 6.1 → 6.7 + Dashboard 7.1 → 7.3).
-- Épico 11 (Configurações da Loja) documentado e inserido como **Sprint 7** —
-  prioridade P1, bloqueia white-label completo (hoje o admin não consegue
-  trocar nome/logo/cor sem editar o banco ou refazer seed).
-- Próximo: Sprint 7 — Configurações da Loja (HU 11.1 → 11.5, 13 pts).
+- Sprints 0 a 9 concluídas, exceto 9.3/9.4 (backup diário, deploy automático
+  via CI) — ficaram pendentes da Sprint 8, sem sprint própria ainda.
+- Sprint 9 (Múltiplos Caixas, decisão de 2026-09-13/14) concluída: 4.5, 4.6,
+  4.7 e 11.6 — ver seção própria abaixo.
+- Próximo: 9.3/9.4, ou nova prioridade a definir com o usuário.
 
 ---
 
@@ -137,6 +137,38 @@ frontend) — não quando o código só "existe".
   - [x] Favicon: `~/Downloads/favicon.ico` copiado pra `apps/web/src/app/favicon.ico` (convenção do Next — vira o default da plataforma); com logo, o `<link rel="icon">` passa a ser o do tenant (white-label, spec 06/07)
 - [ ] 9.3 — Backup diário do banco
 - [ ] 9.4 — Deploy automático via CI
+
+## Sprint 9 — Múltiplos Caixas (concluída — decisão de 2026-09-13/14)
+
+Hoje o sistema trava em "1 loja = 1 caixa lógico" por tenant
+(`docs/specs/03-regras-negocio.md` § Caixa). HUs novas em
+`docs/scrum/BACKLOG.md` Épico 4 (4.5-4.7) e Épico 11 (11.6), detalhe do
+plano em `docs/scrum/SPRINTS.md`. Sem dependência de sprint específica —
+comportamento atual não muda por padrão (`registerCount = 1`).
+
+- Correções pós-review/teste manual (2026-09-14), todas com `typecheck`+`lint`
+  passando: (1) code review próprio achou e corrigiu 4 problemas — `GET
+/cash-sessions/:id`/`:id/sales` sem checagem de dono (Operador conseguia
+  ver Fechamento de outro caixa via `sessionId` exposto em `/registers`,
+  agora exige dono ou Admin); corrida em `open()` virando 500 em vez de 409
+  (índice único agora tratado, `RegisterAlreadyOpenError`); corrida no
+  seletor de caixa da Abertura (podia submeter antes da lista carregar);
+  corrida ao reduzir `registerCount` (check+update agora na mesma
+  transação). (2) Teste manual revelou que `(operating)/layout.tsx` e
+  `open-register/layout.tsx` ainda usavam o caixa "de qualquer um" do
+  tenant pra decidir acesso — um Operador sem caixa próprio nunca chegava
+  na Abertura se OUTRO caixa já estivesse aberto (`getMyCashSession` novo,
+  escopado ao operador, corrige os dois guards; Admin continua entrando
+  sem caixa próprio se a loja estiver operando). (3) Fechamento só mostrava
+  o seletor de "outros caixas" quando o Admin não tinha um próprio — agora
+  o seletor sempre aparece com mais de 1 caixa aberto, dele incluso, pra
+  Admin poder fechar qualquer um. (4) Abertura de Caixa não tinha como
+  trocar de operador sem abrir um caixa órfão — botão "Trocar de operador"
+  adicionado (desloga sem precisar abrir nada).
+- [x] 11.6 — Administrador define a quantidade de caixas em Configurações da Loja — `Tenant.registerCount` exposto em `PublicTenant`/`updateTenantSchema` (`TENANT_LIMITS.registerCount` 1-10); `PATCH /tenant/current` bloqueia reduzir abaixo do maior `registerNumber` com sessão aberta (409 `REGISTER_IN_USE`, `details.registerNumber`) via `TenantRepository.findMaxOpenRegisterNumber`; `/settings` ganhou o `Select` "Quantidade de caixas" (`REGISTER_COUNT_OPTIONS`). Jest cobre reduzir sem colisão e 409 reduzindo com caixa aberto
+- [x] 4.5 — API permite N sessões de caixa abertas simultaneamente — `Tenant.registerCount` (default 1) + `CashSession.registerNumber`; índice único parcial `(tenantId, registerNumber) WHERE closedAt IS NULL` substitui o antigo `(tenantId) WHERE closedAt IS NULL`; `open()` valida `registerNumber` contra `tenant.registerCount` (400 `VALIDATION`) e contra sessão já aberta naquele caixa (409 `CASH_SESSION_ALREADY_OPEN`, `details.registerNumber`); migration converte todo tenant/sessão existente para `registerCount = 1`/`registerNumber = 1`, zero mudança de comportamento sem ação do admin. `openCashSessionSchema.registerNumber` opcional (default 1) até a tela de seleção existir (HU 4.6). Jest cobre: default pro caixa 1, 409 no caixa já aberto, dois caixas diferentes abrindo sem colidir, 400 fora do intervalo. `03-regras-negocio.md` § Caixa atualizado
+- [x] 4.6 — Operador escolhe um caixa livre na tela de Abertura de Caixa — `GET /cash-sessions/registers` (`CashSessionService.listRegisters`, monta status 1..registerCount a partir das sessões abertas); `useCashSessionRegisters` + seletor de caixa em `open-register/page.tsx` (só aparece quando há mais de 1 caixa; pré-seleciona automaticamente se sobrar exatamente 1 livre; caixa ocupado mostra o nome de quem abriu e fica desabilitado); `registerCount = 1` (todo tenant hoje) mantém a tela idêntica à anterior, sem seletor. Jest cobre `listRegisters` (todos livres, e um ocupado com nome/hora)
+- [x] 4.7 — Vender/Fechamento/Dashboard identificam o caixa da sessão atual — `GET /cash-sessions/current` (tenant-wide, "a loja está operando hoje") virou dois conceitos: mantido como está para o guard de rota `(operating)/layout.tsx` (nenhuma mudança de comportamento — continua bastando QUALQUER caixa aberto no tenant pra liberar Vender/Produtos/Fechamento/Dashboard/Operadores, mesmo pra quem não abriu nenhum); `GET /cash-sessions/mine` novo, escopado ao operador logado (`CashSessionService.getMine`/`findOpenByOperator`), consumido por `useCurrentCashSession` (Vender/Fechamento) — é "meu" caixa, não "um" caixa qualquer. `SaleService.create` passou a chamar `requireOpen(tenantId, operator.id)`: uma venda só entra na sessão que o próprio operador abriu (antes, com múltiplos caixas, podia cair em qualquer sessão aberta do tenant). Badge "Caixa #N" no cabeçalho de Vender/Fechamento (`cashSessionBadgeLabel`) mostra o `registerNumber` físico quando `tenant.registerCount > 1`, senão mantém o `sequence` ordinal de sempre (zero mudança visual pro caso comum). Fechamento ganhou um seletor (Admin only) pra escolher qual caixa fechar quando o próprio Admin não abriu nenhum mas há outros abertos (`GET /cash-sessions/registers` + `GET /cash-sessions/:id`). Dashboard não precisou de mudança — já agregava por tenant/data, nunca por sessão. Jest cobre `getCurrent` (tenant-wide) vs `getMine` (só do operador) separadamente
 
 ## Backlog P2 (sem sprint fixa ainda)
 

@@ -187,6 +187,29 @@ não ter garantida.
 
 **Total: 21 pts.**
 
+## Sprint 9 — Múltiplos Caixas
+
+**Objetivo:** mercados com mais de um caixa físico operam em paralelo — dois
+operadores vendem ao mesmo tempo sem um bloquear o outro. Decisão de
+2026-09-13: hoje o sistema trava em "1 loja = 1 caixa lógico"
+(`03-regras-negocio.md` § Caixa, já documentado como requisito futuro).
+Não é urgente pro mercadinho de 1 caixa — o padrão (`registerCount = 1`)
+mantém o comportamento atual idêntico, sem seletor de caixa visível.
+
+| HU   | Descrição curta                                                      | Pts |
+| ---- | -------------------------------------------------------------------- | --- |
+| 11.6 | Administrador define a quantidade de caixas em Configurações da Loja | 3   |
+| 4.5  | API permite N sessões de caixa abertas simultaneamente (1 por caixa) | 5   |
+| 4.6  | Operador escolhe um caixa livre na tela de Abertura de Caixa         | 5   |
+| 4.7  | Vender/Fechamento/Dashboard identificam o caixa da sessão atual      | 3   |
+
+**Total: 16 pts.** Entrega: Configurações ganha "Quantidade de caixas";
+Abertura de Caixa mostra o status de cada caixa (livre / aberto por quem);
+duas sessões simultâneas em caixas diferentes não colidem mais;
+`03-regras-negocio.md` § Caixa atualizado para refletir a nova regra. Sem
+dependência de sprint específica — pode entrar a qualquer momento depois da
+Sprint 3 (Caixa básico já existir).
+
 ## Depois disso (P2 — backlog, sem sprint fixa ainda)
 
 Logout melhorado, exclusão de operador com histórico, refinos de Dashboard,
