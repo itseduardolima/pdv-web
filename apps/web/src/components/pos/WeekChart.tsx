@@ -16,10 +16,13 @@ export function WeekChart({ days }: WeekChartProps) {
   const heights = scaleBars(days.map((day) => day.totalCents))
   const columns = days.length
   const width = 100
-  // Além de ~10 colunas (ex.: Relatórios com período de um mês, 30 dias) a
-  // legenda por dia vira ilegível — os valores continuam disponíveis via
-  // tooltip (<title>) em cada barra.
-  const showCaption = columns <= 10
+  // Até ~10 colunas dá pra rotular todo dia (dia da semana + valor, como o
+  // Dashboard sempre fez). Acima disso (ex.: Relatórios com um mês, 30
+  // dias) rotular todo dia ficaria ilegível — em vez de sumir com a
+  // legenda inteira, espaça as datas (a cada ~6ª barra, mais a última) só
+  // com "dia/mês"; o valor de cada barra continua no tooltip.
+  const dense = columns > 10
+  const tickEvery = dense ? Math.max(1, Math.round(columns / 6)) : 1
 
   return (
     <figure className="flex flex-col gap-3">
@@ -55,23 +58,32 @@ export function WeekChart({ days }: WeekChartProps) {
           )
         })}
       </svg>
-      {showCaption && (
-        <figcaption
-          className="grid font-body text-[11px] text-ink/50 md:text-xs"
-          style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
-        >
-          {days.map((day, index) => (
+      <figcaption
+        className="grid font-body text-[11px] text-ink/50 md:text-xs"
+        style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
+      >
+        {days.map((day, index) => {
+          const today = index === columns - 1
+          const showTick = !dense || index % tickEvery === 0 || today
+          return (
             <span
               key={day.date}
               data-cy="week-day"
-              className={`flex flex-col items-center gap-0.5 ${index === columns - 1 ? 'font-bold text-ink' : ''}`}
+              className={`flex flex-col items-center gap-0.5 ${today ? 'font-bold text-ink' : ''}`}
             >
-              <span>{formatWeekdayShort(day.date)}</span>
-              <span className="hidden font-semibold text-ink md:inline">{formatCurrency(day.totalCents)}</span>
+              {showTick &&
+                (dense ? (
+                  <span className="whitespace-nowrap">{formatDayMonthShort(day.date)}</span>
+                ) : (
+                  <>
+                    <span>{formatWeekdayShort(day.date)}</span>
+                    <span className="hidden font-semibold text-ink md:inline">{formatCurrency(day.totalCents)}</span>
+                  </>
+                ))}
             </span>
-          ))}
-        </figcaption>
-      )}
+          )
+        })}
+      </figcaption>
     </figure>
   )
 }
