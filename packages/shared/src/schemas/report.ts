@@ -6,11 +6,11 @@ const cents = z.number().int().nonnegative()
 // (mesma convenção do Dashboard, ver schemas/dashboard.ts).
 const dayKey = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
 
-// HU 12.1: "hoje"/"semana"/"mês" são calculados no fuso da loja a partir de
-// hoje (semana = 7 dias, mês = 30 dias corridos, não mês-calendário — evita
-// o caso de dia 1 do mês ter um "mês" de 1 dia só); "personalizado" exige
-// from/to do próprio usuário.
-export const reportPeriodSchema = z.enum(['today', 'week', 'month', 'custom'])
+// HU 12.1: "hoje"/"semana"/"mês"/"ano" são calculados no fuso da loja a
+// partir de hoje (semana = 7 dias, mês = 30 dias, ano = 365 dias, todos
+// corridos, não calendário — evita o caso de dia 1 do mês/ano ter um
+// período de 1 dia só); "personalizado" exige from/to do próprio usuário.
+export const reportPeriodSchema = z.enum(['today', 'week', 'month', 'year', 'custom'])
 export type ReportPeriod = z.infer<typeof reportPeriodSchema>
 
 export const reportSummaryQuerySchema = z
@@ -31,6 +31,16 @@ export const reportDaySchema = z.object({
   salesCount: z.number().int().nonnegative(),
 })
 export type ReportDay = z.infer<typeof reportDaySchema>
+
+// HU 12.4: período "Hoje" quebrado por horário (0-23, fuso da loja) em vez
+// de um único bloco de 1 dia — só faz sentido dentro de um único dia, por
+// isso só vem preenchido quando period === "today" (vazio nos demais).
+export const reportHourSchema = z.object({
+  hour: z.number().int().min(0).max(23),
+  totalCents: cents,
+  salesCount: z.number().int().nonnegative(),
+})
+export type ReportHour = z.infer<typeof reportHourSchema>
 
 export const reportTopProductSchema = z.object({
   productId: z.string(),
@@ -82,6 +92,7 @@ export const reportSummarySchema = z.object({
   }),
   byPaymentMethod: z.record(paymentMethodSchema, cents),
   days: z.array(reportDaySchema),
+  hours: z.array(reportHourSchema),
   topProducts: z.array(reportTopProductSchema),
   byOperator: z.array(reportOperatorSchema),
   stagnantProducts: z.array(reportStagnantProductSchema),

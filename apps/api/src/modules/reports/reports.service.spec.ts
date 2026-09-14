@@ -36,6 +36,7 @@ function makeService(
 const today: ReportSummaryQuery = { period: 'today' }
 const week: ReportSummaryQuery = { period: 'week' }
 const month: ReportSummaryQuery = { period: 'month' }
+const year: ReportSummaryQuery = { period: 'year' }
 
 describe('ReportsService.summary', () => {
   describe('period resolution (HU 12.1)', () => {
@@ -66,6 +67,13 @@ describe('ReportsService.summary', () => {
       expect(summary.from).toBe('2026-08-15')
       expect(summary.to).toBe('2026-09-13')
       expect(summary.days).toHaveLength(30)
+    })
+
+    it('resolves "year" to the 365 store days ending today', async () => {
+      const { service } = makeService([])
+      const summary = await service.summary('t1', year, now)
+      expect(summary.to).toBe('2026-09-13')
+      expect(summary.days).toHaveLength(365)
     })
 
     it('resolves "custom" to the exact from/to given', async () => {
@@ -142,6 +150,26 @@ describe('ReportsService.summary', () => {
       ])
       expect(summary.days[3]).toEqual({ date: '2026-09-10', totalCents: 800, salesCount: 1 })
       expect(summary.days[0]).toEqual({ date: '2026-09-07', totalCents: 0, salesCount: 0 })
+    })
+  })
+
+  describe('hours (chart for "Hoje", HU 12.4)', () => {
+    it('returns 24 zero-filled hours, in the store time zone, only for period=today', async () => {
+      const { service } = makeService([
+        sale('2026-09-13T14:30:00.000Z', 1000, 'CASH'), // 11:30 em SP -> hora 11
+        sale('2026-09-13T23:10:00.000Z', 500, 'PIX'), // 20:10 em SP -> hora 20
+      ])
+      const summary = await service.summary('t1', today, now)
+      expect(summary.hours).toHaveLength(24)
+      expect(summary.hours[11]).toEqual({ hour: 11, totalCents: 1000, salesCount: 1 })
+      expect(summary.hours[20]).toEqual({ hour: 20, totalCents: 500, salesCount: 1 })
+      expect(summary.hours[0]).toEqual({ hour: 0, totalCents: 0, salesCount: 0 })
+    })
+
+    it('is empty for any period other than "today" — an hourly axis only makes sense within one day', async () => {
+      const { service } = makeService([sale('2026-09-10T14:00:00.000Z', 800, 'CARD')])
+      const summary = await service.summary('t1', week, now)
+      expect(summary.hours).toEqual([])
     })
   })
 

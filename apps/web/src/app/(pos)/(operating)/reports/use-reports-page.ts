@@ -7,10 +7,11 @@ import { PAYMENT_METHODS, percentOf } from '@/lib/utils/payment-method'
 // "Personalizado" não é um botão de troca direta — abre o calendário
 // (DateRangePopover) e só vira o período ativo quando o usuário aplica um
 // intervalo. Os outros três trocam na hora, como sempre.
-export const DIRECT_PERIOD_OPTIONS: { value: 'today' | 'week' | 'month'; label: string }[] = [
+export const DIRECT_PERIOD_OPTIONS: { value: 'today' | 'week' | 'month' | 'year'; label: string }[] = [
   { value: 'today', label: 'Hoje' },
   { value: 'week', label: 'Semana' },
   { value: 'month', label: 'Mês' },
+  { value: 'year', label: 'Ano' },
 ]
 
 export function useReportsPage() {
@@ -25,7 +26,7 @@ export function useReportsPage() {
   })
   const data = summary.data ?? null
 
-  function handlePeriodChange(next: 'today' | 'week' | 'month') {
+  function handlePeriodChange(next: 'today' | 'week' | 'month' | 'year') {
     setPeriod(next)
   }
 

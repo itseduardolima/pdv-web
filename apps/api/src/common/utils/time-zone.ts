@@ -59,6 +59,12 @@ export function dayKeyInTimeZone(date: Date, timeZone: string): string {
   return `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`
 }
 
+// Hora local (0-23) do instante `date` no fuso — só o que o filtro "Hoje"
+// dos Relatórios precisa pra quebrar o dia por horário em vez de um único bloco.
+export function hourInTimeZone(date: Date, timeZone: string): number {
+  return zonedParts(date, timeZone).hour
+}
+
 // Instante UTC em que o dia `dayKey` começa no fuso (respeita horário de verão).
 export function startOfDayInTimeZone(dayKey: string, timeZone: string): Date {
   const [year, month, day] = dayKey.split('-').map(Number) as [number, number, number]

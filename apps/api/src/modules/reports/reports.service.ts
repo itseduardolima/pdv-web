@@ -5,13 +5,20 @@ import {
   REPORT_TOP_PRODUCTS,
   type PaymentMethod,
   type ReportDay,
+  type ReportHour,
   type ReportOperator,
   type ReportStagnantProduct,
   type ReportSummary,
   type ReportSummaryQuery,
   type ReportTopProduct,
 } from '@pdv/shared'
-import { addDaysToDayKey, dayKeyInTimeZone, isValidTimeZone, startOfDayInTimeZone } from '../../common/utils/time-zone'
+import {
+  addDaysToDayKey,
+  dayKeyInTimeZone,
+  hourInTimeZone,
+  isValidTimeZone,
+  startOfDayInTimeZone,
+} from '../../common/utils/time-zone'
 import { ReportsRepository, type ReportSaleRow } from './reports.repository'
 
 const FALLBACK_TIME_ZONE = 'UTC'
@@ -20,6 +27,7 @@ const FALLBACK_TIME_ZONE = 'UTC'
 // nenhum — Dashboard já usa o mesmo raciocínio pra "semana").
 const WEEK_DAYS = 7
 const MONTH_DAYS = 30
+const YEAR_DAYS = 365
 
 @Injectable()
 export class ReportsService {
@@ -55,6 +63,10 @@ export class ReportsService {
       days.push({ date, totalCents: daySales.reduce((s, x) => s + x.totalCents, 0), salesCount: daySales.length })
     }
 
+    // HU 12.4: "Hoje" quebra por horário em vez de um único bloco de 1 dia
+    // — os demais períodos não têm "hoje" fazendo sentido como granularidade.
+    const hours: ReportHour[] = query.period === 'today' ? buildHourly(sales, timeZone) : []
+
     const top = rankTopProducts(sales)
     const productIds = top.map((p) => p.productId)
     const photos = await this.reports.findProductPhotos(tenantId, productIds)
@@ -78,6 +90,7 @@ export class ReportsService {
       },
       byPaymentMethod: totalsByPaymentMethod(sales),
       days,
+      hours,
       topProducts,
       byOperator,
       stagnantProducts,
@@ -98,6 +111,8 @@ function resolveRange(query: ReportSummaryQuery, today: string): { fromKey: stri
       return { fromKey: addDaysToDayKey(today, -(WEEK_DAYS - 1)), toKey: today }
     case 'month':
       return { fromKey: addDaysToDayKey(today, -(MONTH_DAYS - 1)), toKey: today }
+    case 'year':
+      return { fromKey: addDaysToDayKey(today, -(YEAR_DAYS - 1)), toKey: today }
     case 'custom':
       // Validado pelo schema (VALIDATION 400 se ausente) antes de chegar aqui.
       return { fromKey: query.from as string, toKey: query.to as string }
@@ -110,6 +125,20 @@ function dayKeyDiff(fromKey: string, toKey: string): number {
   const [ty, tm, td] = toKey.split('-').map(Number) as [number, number, number]
   const msPerDay = 24 * 60 * 60 * 1000
   return Math.round((Date.UTC(ty, tm - 1, td) - Date.UTC(fy, fm - 1, fd)) / msPerDay)
+}
+
+// HU 12.4: 24 horas, zero-filled — mesmo raciocínio de `days`, uma hora
+// sem venda entra como 0 em vez de sumir do gráfico.
+function buildHourly(sales: ReportSaleRow[], timeZone: string): ReportHour[] {
+  const byHour = new Map<number, ReportSaleRow[]>()
+  for (const sale of sales) {
+    const hour = hourInTimeZone(sale.soldAt, timeZone)
+    byHour.set(hour, [...(byHour.get(hour) ?? []), sale])
+  }
+  return Array.from({ length: 24 }, (_, hour) => {
+    const hourSales = byHour.get(hour) ?? []
+    return { hour, totalCents: hourSales.reduce((s, x) => s + x.totalCents, 0), salesCount: hourSales.length }
+  })
 }
 
 function totalsByPaymentMethod(sales: ReportSaleRow[]): Record<PaymentMethod, number> {
