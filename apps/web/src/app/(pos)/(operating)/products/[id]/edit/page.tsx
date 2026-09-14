@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { TrashIcon } from '@/components/ui/Icons'
 import { InlineAlert } from '@/components/ui/InlineAlert'
+import { Loader } from '@/components/ui/Loader'
 import { useEditProductPage } from './use-edit-product-page'
 
 export default function EditProductPage() {
@@ -29,6 +30,8 @@ export default function EditProductPage() {
       />
       {page.loadErrorMessage ? (
         <InlineAlert>{page.loadErrorMessage}</InlineAlert>
+      ) : page.isLoading ? (
+        <Loader className="flex-1" />
       ) : (
         <ProductForm
           form={page.form}

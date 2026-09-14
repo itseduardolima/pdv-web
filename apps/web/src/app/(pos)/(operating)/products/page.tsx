@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PlusIcon } from '@/components/ui/Icons'
 import { InlineAlert } from '@/components/ui/InlineAlert'
+import { Loader } from '@/components/ui/Loader'
 import { SearchBar } from '@/components/ui/SearchBar'
 import { useProductsPage } from './use-products-page'
 
@@ -42,6 +43,8 @@ export default function ProductsPage() {
       )}
 
       {page.errorMessage && <InlineAlert>{page.errorMessage}</InlineAlert>}
+
+      {page.isLoading && <Loader className="flex-1" />}
 
       <div className="flex flex-col gap-2.5 md:grid md:grid-cols-2 md:gap-4 xl:grid-cols-3">
         {page.products.map((product) => (

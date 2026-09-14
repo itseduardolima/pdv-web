@@ -8,6 +8,7 @@ import { TotalCard } from '@/components/pos/TotalCard'
 import { WeekChart } from '@/components/pos/WeekChart'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { InlineAlert } from '@/components/ui/InlineAlert'
+import { Loader } from '@/components/ui/Loader'
 import { formatCurrency } from '@/lib/utils/format-currency'
 import { formatDayLong, parseDayKey } from '@/lib/utils/format-date'
 import { PAYMENT_METHOD_LABEL } from '@/lib/utils/payment-method'
@@ -25,6 +26,8 @@ export default function DashboardPage() {
       />
 
       {page.errorMessage && <InlineAlert>{page.errorMessage}</InlineAlert>}
+
+      {page.isLoading && <Loader className="flex-1" />}
 
       {summary && (
         <>

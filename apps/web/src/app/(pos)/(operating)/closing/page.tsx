@@ -8,6 +8,7 @@ import { TotalCard } from '@/components/pos/TotalCard'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { InlineAlert } from '@/components/ui/InlineAlert'
+import { Loader } from '@/components/ui/Loader'
 import { useTenant } from '@/hooks/use-tenant'
 import { cashSessionBadgeLabel } from '@/lib/utils/cash-session-badge'
 import { formatCurrency } from '@/lib/utils/format-currency'
@@ -64,6 +65,8 @@ export default function ClosingPage() {
         </div>
       )}
 
+      {page.isLoading && <Loader className="flex-1" />}
+
       {session && (
         <>
           <div className="flex flex-col gap-3 md:flex-row md:gap-[18px]">
@@ -113,7 +116,7 @@ export default function ClosingPage() {
           >
             <h2 className="font-heading text-lg font-bold tracking-tight">Histórico de Vendas</h2>
             {page.isLoadingSales ? (
-              <p className="font-body text-sm text-ink/50">Carregando...</p>
+              <Loader className="flex-1" />
             ) : page.sales.length === 0 ? (
               <EmptyState title="Nenhuma venda ainda" description="As vendas deste caixa aparecem aqui." />
             ) : (

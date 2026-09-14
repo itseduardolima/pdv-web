@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { FieldError } from '@/components/ui/FieldError'
 import { BarcodeIcon, SearchIcon } from '@/components/ui/Icons'
 import { InlineAlert } from '@/components/ui/InlineAlert'
+import { Loader } from '@/components/ui/Loader'
 import { useTenant } from '@/hooks/use-tenant'
 import { cashSessionBadgeLabel } from '@/lib/utils/cash-session-badge'
 import { formatCurrency } from '@/lib/utils/format-currency'
@@ -98,6 +99,7 @@ export default function SellPage() {
             // quantidade de produtos (decisão de 2026-09-13).
             className="flex max-h-[46vh] min-h-0 flex-1 flex-col overflow-y-auto rounded-input bg-canvas bg-[radial-gradient(circle,var(--color-border)_1px,transparent_1.4px)] p-2.5 [background-size:18px_18px] md:max-h-none md:p-3.5"
           >
+            {page.isLoadingProducts && <Loader className="flex-1" />}
             <div className="grid grid-cols-3 gap-2.5 md:grid-cols-2 md:gap-3 lg:grid-cols-3 xl:grid-cols-4">
               {page.products.map((product) => (
                 <ProductTile key={product.id} product={product} onAdd={page.handleAdd} />
