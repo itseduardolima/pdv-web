@@ -26,6 +26,11 @@ export function formatDayMonthShort(dayKey: string): string {
   return dayMonthFormatter.format(parseDayKey(dayKey)).replace('.', '')
 }
 
+// "2026-09-12" -> "12"
+export function formatDayNumber(dayKey: string): string {
+  return String(parseDayKey(dayKey).getDate())
+}
+
 // 3 (março) -> "Mar"
 export function formatMonthShort(month: number): string {
   return capitalize(monthShortFormatter.format(new Date(2026, month - 1, 1)).replace('.', ''))

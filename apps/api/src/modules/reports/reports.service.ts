@@ -24,11 +24,11 @@ import {
 import { ReportsRepository, type ReportSaleRow } from './reports.repository'
 
 const FALLBACK_TIME_ZONE = 'UTC'
-// Semana e mês são janelas corridas (não mês-calendário): evita o caso de
-// "mês" ter 1 dia só no dia 1 do mês (Dashboard já usa o mesmo raciocínio
-// pra "semana"). "Ano" é diferente — ano-calendário mesmo (ver resolveRange).
+// "Semana" é janela corrida (não semana-calendário) — mesmo raciocínio do
+// Dashboard, sempre os últimos 7 dias terminando hoje. "Mês" e "Ano" são
+// mês/ano-calendário mesmo, do dia 1 até o fim do período (incluindo dias
+// futuros do próprio mês/ano, que aparecem zerados — ver resolveRange).
 const WEEK_DAYS = 7
-const MONTH_DAYS = 30
 
 @Injectable()
 export class ReportsService {
@@ -115,8 +115,14 @@ function resolveRange(query: ReportSummaryQuery, today: string): { fromKey: stri
       return { fromKey: today, toKey: today }
     case 'week':
       return { fromKey: addDaysToDayKey(today, -(WEEK_DAYS - 1)), toKey: today }
-    case 'month':
-      return { fromKey: addDaysToDayKey(today, -(MONTH_DAYS - 1)), toKey: today }
+    case 'month': {
+      // Mês-calendário: dia 1 até o último dia do mês corrente (não os
+      // últimos 30 dias corridos) — inclui dias futuros do próprio mês,
+      // que aparecem zerados (mesmo raciocínio do "Ano" com meses futuros).
+      const [year, month] = today.split('-').map(Number) as [number, number]
+      const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate()
+      return { fromKey: `${today.slice(0, 7)}-01`, toKey: `${today.slice(0, 7)}-${String(lastDay).padStart(2, '0')}` }
+    }
     case 'year':
       // Ano-calendário: 1º de janeiro do ano corrente até hoje (não os
       // últimos 365 dias corridos) — o gráfico mostra os 12 meses do ano.

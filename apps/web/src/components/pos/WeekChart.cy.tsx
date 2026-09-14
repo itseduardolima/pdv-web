@@ -12,6 +12,9 @@ const days = [
 
 describe('WeekChart', () => {
   it('draws one bar per day scaled to the best day, with weekday labels', () => {
+    // "Hoje" é decidido comparando a data real com cada barra (não mais só
+    // "a última coluna") — trava o relógio no dia dos dados de teste.
+    cy.clock(new Date('2026-09-12T12:00:00').getTime())
     cy.mount(<WeekChart days={days} />)
     cy.get('rect').should('have.length', 7)
     cy.get('[data-cy=week-day]').should('have.length', 7).first().should('contain', 'Dom')

@@ -61,11 +61,13 @@ describe('ReportsService.summary', () => {
       expect(summary.days).toHaveLength(7)
     })
 
-    it('resolves "month" to the 30 store days ending today', async () => {
+    it('resolves "month" to the calendar month, from the 1st to its last day', async () => {
       const { service } = makeService([])
       const summary = await service.summary('t1', month, now)
-      expect(summary.from).toBe('2026-08-15')
-      expect(summary.to).toBe('2026-09-13')
+      expect(summary.from).toBe('2026-09-01')
+      // Setembro tem 30 dias — inclui dias futuros do mês (17 a 30), que
+      // entram zerados no gráfico (ver "months" para o mesmo raciocínio em "Ano").
+      expect(summary.to).toBe('2026-09-30')
       expect(summary.days).toHaveLength(30)
     })
 

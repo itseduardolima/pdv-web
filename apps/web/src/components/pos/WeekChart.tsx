@@ -1,7 +1,7 @@
 import type { DashboardDay } from '@pdv/shared'
 import { scaleBars } from '@/lib/utils/chart'
-import { formatCurrency } from '@/lib/utils/format-currency'
-import { formatDayMonthShort, formatWeekdayShort } from '@/lib/utils/format-date'
+import { formatCurrency, formatCurrencyCompact } from '@/lib/utils/format-currency'
+import { formatDayMonthShort, formatDayNumber, formatWeekdayShort } from '@/lib/utils/format-date'
 
 interface WeekChartProps {
   days: DashboardDay[]
@@ -16,14 +16,16 @@ export function WeekChart({ days }: WeekChartProps) {
   const heights = scaleBars(days.map((day) => day.totalCents))
   const columns = days.length
   const width = 100
-  // Até ~10 colunas dá pra rotular todo dia (dia da semana + valor, como o
-  // Dashboard sempre fez). Acima disso (Relatórios com Mês/Ano, 30-365
-  // dias) a escala é sempre relativa ao maior dia do período, não um eixo
-  // em reais — uma legenda por dia (mesmo esparsa) não ajuda a ler o
-  // gráfico nesse caso, só polui; o valor exato de cada barra continua no
-  // tooltip ao passar o mouse (decisão de 2026-09-14, depois de explicar
-  // como o gráfico escala).
-  const showCaption = columns <= 10
+  // Até ~10 colunas dá pra rotular o dia da semana por extenso (como o
+  // Dashboard sempre fez). Acima disso (Relatórios com Mês, 30 dias) o rótulo
+  // vira só o número do dia (1, 2, 3...) — cabe mais apertado, mas ainda dá
+  // pra ler qual dia é qual sem precisar passar o mouse em cada barra.
+  const dense = columns > 10
+  // Períodos calendário (Mês/Ano) podem incluir dias futuros do próprio
+  // mês — "hoje" não é necessariamente a última coluna, precisa comparar
+  // a data mesmo (mesmo raciocínio do destaque de hora atual no HourChart).
+  const now = new Date()
+  const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
   return (
     <figure className="flex flex-col gap-3">
@@ -43,7 +45,7 @@ export function WeekChart({ days }: WeekChartProps) {
           const barWidth = Math.min(slot * 0.55, 8)
           const x = index * slot + (slot - barWidth) / 2
           const height = Math.max(MIN_BAR, (heights[index] ?? 0) * (CHART_HEIGHT - MIN_BAR))
-          const today = index === columns - 1
+          const isToday = day.date === todayKey
           return (
             <rect
               key={day.date}
@@ -52,30 +54,40 @@ export function WeekChart({ days }: WeekChartProps) {
               width={barWidth}
               height={height}
               rx={1.5}
-              className={day.totalCents === 0 ? 'fill-border' : today ? 'fill-primary' : 'fill-primary/45'}
+              className={day.totalCents === 0 ? 'fill-border' : isToday ? 'fill-primary' : 'fill-primary/45'}
             >
               <title>{`${formatDayMonthShort(day.date)}: ${formatCurrency(day.totalCents)}`}</title>
             </rect>
           )
         })}
       </svg>
-      {showCaption && (
-        <figcaption
-          className="grid font-body text-[11px] text-ink/50 md:text-xs"
-          style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
-        >
-          {days.map((day, index) => (
+      <figcaption
+        className={`grid font-body text-ink/50 ${dense ? 'text-[9px] md:text-[10px]' : 'text-[11px] md:text-xs'}`}
+        style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
+      >
+        {days.map((day) => (
+          <span
+            key={day.date}
+            data-cy="week-day"
+            className={`flex flex-col items-center gap-0.5 overflow-hidden ${day.date === todayKey ? 'font-bold text-ink' : ''}`}
+          >
+            <span>{dense ? formatDayNumber(day.date) : formatWeekdayShort(day.date)}</span>
             <span
-              key={day.date}
-              data-cy="week-day"
-              className={`flex flex-col items-center gap-0.5 ${index === columns - 1 ? 'font-bold text-ink' : ''}`}
+              className={
+                dense
+                  ? 'h-3 whitespace-nowrap text-[8px] leading-3 font-semibold text-ink md:text-[9px]'
+                  : 'hidden font-semibold text-ink md:inline'
+              }
             >
-              <span>{formatWeekdayShort(day.date)}</span>
-              <span className="hidden font-semibold text-ink md:inline">{formatCurrency(day.totalCents)}</span>
+              {day.totalCents > 0
+                ? dense
+                  ? formatCurrencyCompact(day.totalCents)
+                  : formatCurrency(day.totalCents)
+                : ''}
             </span>
-          ))}
-        </figcaption>
-      )}
+          </span>
+        ))}
+      </figcaption>
     </figure>
   )
 }
