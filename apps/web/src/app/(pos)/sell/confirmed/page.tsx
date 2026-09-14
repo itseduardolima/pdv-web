@@ -16,7 +16,7 @@ export default function SaleConfirmedPage() {
   const PaymentIcon = ICONS[sale.paymentMethod]
 
   return (
-    <SplitAuthLayout>
+    <SplitAuthLayout illustrationSrc="/sale-confirmed-illustration.svg">
       <span className="flex h-[60px] w-[60px] items-center justify-center rounded-pill bg-primary text-primary-ink md:h-[76px] md:w-[76px]">
         <CheckCircleIcon aria-hidden />
       </span>
