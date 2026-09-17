@@ -1,5 +1,5 @@
 import { useRouter } from 'next/navigation'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import type { CreateSaleInput, Product } from '@pdv/shared'
 import { useAdjustStock } from '@/hooks/queries/use-adjust-stock'
@@ -8,6 +8,7 @@ import { useProductCategories } from '@/hooks/queries/use-product-categories'
 import { useCurrentCashSession } from '@/hooks/queries/use-current-cash-session'
 import { useProducts } from '@/hooks/queries/use-products'
 import { useCart } from '@/hooks/use-cart'
+import { useFlyToCart } from '@/hooks/use-fly-to-cart'
 import { useSession } from '@/hooks/use-session'
 import { useTenant } from '@/hooks/use-tenant'
 import { apiErrorMessage, apiGeneralErrorMessage } from '@/lib/utils/api-error-message'
@@ -34,6 +35,23 @@ export function useSellPage() {
   const [category, setCategory] = useState<string | null>(null)
   const [adjustingStock, setAdjustingStock] = useState(false)
   const [calculatorOpen, setCalculatorOpen] = useState(false)
+  const flyToCart = useFlyToCart()
+  const cartRef = useRef<HTMLElement>(null)
+  const cartBadgeRef = useRef<HTMLSpanElement>(null)
+  const [cartPulse, setCartPulse] = useState(false)
+  const previousItemCountRef = useRef(cart.itemCount)
+
+  // Carrinho saindo de vazio pro 1º item: dá mais destaque (rola até ele e
+  // pulsa) em vez de deixar o operador ter que notar sozinho lá embaixo.
+  useEffect(() => {
+    const previousItemCount = previousItemCountRef.current
+    previousItemCountRef.current = cart.itemCount
+    if (previousItemCount !== 0 || cart.itemCount !== 1) return
+    cartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    setCartPulse(true)
+    const timeout = window.setTimeout(() => setCartPulse(false), 1200)
+    return () => window.clearTimeout(timeout)
+  }, [cart.itemCount])
 
   // Categoria e busca já filtram o mesmo grid em memória (a lista inteira
   // já está carregada para o leitor de código de barras funcionar).
@@ -49,10 +67,12 @@ export function useSellPage() {
   // resultado depois de digitar o código): a busca não serve mais pra nada
   // depois disso, limpa pro próximo. Achou por nome, mantém — o operador
   // costuma clicar em mais de um item da mesma busca (2026-09-13).
-  function handleAdd(product: Product) {
+  function handleAdd(product: Product, tileRect?: DOMRect) {
     createSale.reset()
     cart.add({ productId: product.id, name: product.name, unit: product.unit, unitPriceCents: product.salePriceCents })
     if (search.trim() !== '' && product.barcode === search.trim()) setSearch('')
+    const badgeRect = cartBadgeRef.current?.getBoundingClientRect()
+    if (tileRect && badgeRect) flyToCart.fly(tileRect, badgeRect)
   }
 
   // Leitor de código de barras "digita" o código e manda Enter: adiciona o
@@ -178,5 +198,9 @@ export function useSellPage() {
     calculatorOpen,
     openCalculator: () => setCalculatorOpen(true),
     setCalculatorOpen,
+    cartRef,
+    cartBadgeRef,
+    cartPulse,
+    flights: flyToCart.flights,
   }
 }

@@ -330,9 +330,19 @@ que cada tela mostra uma informação diferente ali.
 
 Decisão de 2026-09-13: o grid de produtos não pode crescer com a
 quantidade de produtos — abaixo de `md` a página cresce livremente (sem
-altura travada), então o container do catálogo leva `max-h-[46vh]` com
-rolagem própria (`md:max-h-none` retoma o `flex-1` normal, que já é
-travado pela altura fixa da tela a partir de `md` via `AppShell`).
+altura travada), então o container do catálogo leva um teto com rolagem
+própria (`md:max-h-none` retoma o `flex-1` normal, que já é travado pela
+altura fixa da tela a partir de `md` via `AppShell`). Teto baixado de
+`46vh` pra `32vh` em 2026-09-16 — o carrinho ficava fora da primeira dobra
+no celular; ver também o destaque animado do carrinho abaixo.
+
+Carrinho saindo de vazio pro 1º item ganha destaque (decisão de
+2026-09-16, `useSellPage`): rola até ele (`scrollIntoView`) e pulsa
+(`animate-cart-pulse`, keyframe em `globals.css`) — chama atenção sem
+precisar que o operador role a página sozinho pra notar. Tocar num
+produto também anima um pontinho voando do card até o badge do carrinho
+(`useFlyToCart` + `FlyToCartLayer`, CSS puro via `getBoundingClientRect`,
+sem lib de animação).
 
 A proporção catálogo/carrinho também muda por faixa: `md` (tablet
 retrato/desktop pequeno) usa a proporção padrão (`flex-[2.3]`, grid de 3

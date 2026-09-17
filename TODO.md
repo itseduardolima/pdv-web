@@ -24,7 +24,10 @@ frontend) — não quando o código só "existe".
   4.7 e 11.6 — ver seção própria abaixo.
 - Sprint 10 (Relatórios, decisão de 2026-09-14) concluída: 12.1-12.7 — ver
   seção própria abaixo.
-- Próximo: 9.3/9.4, ou nova prioridade a definir com o usuário.
+- Épico 13 (Painel Superadmin — criar loja nova por UI em vez de rodar o
+  seed manualmente, decisão de 2026-09-16) adicionado ao backlog, HUs
+  13.1-13.8 em `docs/scrum/BACKLOG.md`. Ainda sem sprint definida.
+- Próximo: 9.3/9.4, Épico 13, ou nova prioridade a definir com o usuário.
 
 ---
 
@@ -216,6 +219,12 @@ detalhe do plano em `docs/scrum/SPRINTS.md`.
       num item "Mais" (`MoreIcon` novo) que abre uma folha (Radix Dialog)
       com a lista; operador comum (3 itens) não muda. Ver
       `docs/specs/05-componentizacao.md` § shell de navegação.
+- [x] Fix (2026-09-16): tela Vender no mobile dava pouca visibilidade ao
+      carrinho — grid de produtos baixou de `max-h-[46vh]` pra `32vh`;
+      carrinho ganha destaque quando sai de vazio pro 1º item (`scrollIntoView` + `animate-cart-pulse`, keyframe em `globals.css`); toque num produto
+      anima um pontinho voando até o badge do carrinho (`useFlyToCart` em
+      `hooks/`, `FlyToCartLayer` em `components/pos/`) — sem lib de animação,
+      só CSS + `getBoundingClientRect`.
 
 ## Backlog P2 (sem sprint fixa ainda)
 

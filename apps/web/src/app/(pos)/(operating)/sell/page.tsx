@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { CartLine } from '@/components/pos/CartLine'
 import { CashReceived } from '@/components/pos/CashReceived'
 import { CategoryFilter } from '@/components/pos/CategoryFilter'
+import { FlyToCartLayer } from '@/components/pos/FlyToCartLayer'
 import { PaymentMethodPicker } from '@/components/pos/PaymentMethodPicker'
 import { QuickStockAdjust } from '@/components/pos/QuickStockAdjust'
 import { ProductTile } from '@/components/pos/ProductTile'
@@ -96,8 +97,10 @@ export default function SellPage() {
             // Abaixo de md a página inteira cresce com a tela (sem altura
             // travada), então "flex-1" sozinho não trava o grid — precisa de
             // um teto fixo pra rolar por dentro em vez de crescer com a
-            // quantidade de produtos (decisão de 2026-09-13).
-            className="flex max-h-[46vh] min-h-0 flex-1 flex-col overflow-y-auto rounded-input bg-canvas bg-[radial-gradient(circle,var(--color-border)_1px,transparent_1.4px)] p-2.5 [background-size:18px_18px] md:max-h-none md:p-3.5"
+            // quantidade de produtos (decisão de 2026-09-13). Teto baixado de
+            // 46vh pra 32vh (2026-09-16): o carrinho abaixo ficava fora da
+            // tela sem rolar a página — agora aparece já na primeira dobra.
+            className="flex max-h-[32vh] min-h-0 flex-1 flex-col overflow-y-auto rounded-input bg-canvas bg-[radial-gradient(circle,var(--color-border)_1px,transparent_1.4px)] p-2.5 [background-size:18px_18px] md:max-h-none md:p-3.5"
           >
             {page.isLoadingProducts && <Loader className="flex-1" />}
             <div className="grid grid-cols-3 gap-2.5 md:grid-cols-2 md:gap-3 lg:grid-cols-3 xl:grid-cols-4">
@@ -118,10 +121,16 @@ export default function SellPage() {
           </div>
         </section>
 
-        <aside className="flex flex-col gap-3.5 rounded-card bg-surface p-4 md:min-w-[280px] md:max-w-[480px] md:flex-1 md:p-[22px] lg:max-w-[420px] xl:max-w-[340px]">
+        <aside
+          ref={page.cartRef}
+          className={`flex flex-col gap-3.5 rounded-card bg-surface p-4 md:min-w-[280px] md:max-w-[480px] md:flex-1 md:p-[22px] lg:max-w-[420px] xl:max-w-[340px] ${page.cartPulse ? 'animate-cart-pulse' : ''}`}
+        >
           <div className="flex items-center justify-between">
             <h2 className="font-heading text-lg font-bold tracking-tight md:text-xl">Carrinho</h2>
-            <span className="rounded-pill bg-ink px-3 py-1 font-body text-[11px] font-medium text-surface md:text-xs">
+            <span
+              ref={page.cartBadgeRef}
+              className="rounded-pill bg-ink px-3 py-1 font-body text-[11px] font-medium text-surface md:text-xs"
+            >
               {page.cart.itemCount} {page.cart.itemCount === 1 ? 'item' : 'itens'}
             </span>
           </div>
@@ -213,6 +222,7 @@ export default function SellPage() {
         </aside>
       </div>
 
+      <FlyToCartLayer flights={page.flights} />
       <CalculatorDialog open={page.calculatorOpen} onOpenChange={page.setCalculatorOpen} />
     </>
   )

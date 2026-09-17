@@ -5,7 +5,7 @@ import { isLowStock } from '@/lib/utils/stock-status'
 
 interface ProductTileProps {
   product: Product
-  onAdd: (product: Product) => void
+  onAdd: (product: Product, tileRect: DOMRect) => void
 }
 
 // Card compacto do grid de venda: toque adiciona 1 unidade ao carrinho.
@@ -14,7 +14,7 @@ export function ProductTile({ product, onAdd }: ProductTileProps) {
   return (
     <button
       type="button"
-      onClick={() => onAdd(product)}
+      onClick={(event) => onAdd(product, event.currentTarget.getBoundingClientRect())}
       aria-label={`Adicionar ${product.name}`}
       className="relative flex min-h-[100px] flex-col gap-1.5 rounded-input bg-surface p-2.5 text-left md:min-h-[120px] md:gap-2 md:rounded-card-sm md:p-3.5"
     >
