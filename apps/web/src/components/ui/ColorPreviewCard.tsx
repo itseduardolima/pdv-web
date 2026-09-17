@@ -19,7 +19,6 @@ export function ColorPreviewCard({ primaryColor }: { primaryColor: string }) {
         >
           Botão de exemplo
         </span>
-        <span className="font-body text-sm text-ink/70">Assim fica a cor da sua loja no app</span>
       </div>
     </div>
   )
