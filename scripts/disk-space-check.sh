@@ -14,10 +14,14 @@
 set -e
 
 threshold="${DISK_ALERT_THRESHOLD:-80}"
-paths="${*:-/}"
 fail=0
 
-for path in $paths; do
+# "$@" preserva cada argumento como uma unidade (mesmo com espaço) — juntar
+# tudo numa string e refazer word-splitting (como `paths="$*"` faria)
+# quebraria um caminho como "/mnt/meu disco" em dois.
+[ "$#" -eq 0 ] && set -- /
+
+for path in "$@"; do
   # `df -P` (POSIX): saída em colunas fixas, sem quebra de linha em nomes
   # longos de filesystem — a última coluna da 2ª linha é o % de uso.
   usage=$(df -P "$path" | awk 'NR==2 { gsub("%", "", $5); print $5 }')
