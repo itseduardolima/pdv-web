@@ -230,6 +230,13 @@ detalhe do plano em `docs/scrum/SPRINTS.md`.
       sessão), só usa o `TenantProvider` do layout raiz pra manter marca do
       tenant; reaproveita `EmptyState` (ilustração "box") + `Button`. "Voltar
       ao início" manda pra `/`, que já decide Vender ou Login pela sessão.
+- [x] Fix (2026-09-17): ilustração do Login (operador) e do
+      `/platform/login` (superadmin) trocada — imagem fornecida pelo
+      usuário (render de balcão de caixa), redimensionada pra 900px/~270KB
+      e salva em `public/cash-counter-illustration.png`; `SplitAuthLayout`
+      ganhou `illustrationSrc` por prop nessas duas telas (o padrão
+      `store-illustration.svg` continua em Esqueci meu PIN e Definir PIN —
+      não pedido pro usuário mudar).
 
 ## Backlog P2 (sem sprint fixa ainda)
 

@@ -14,7 +14,7 @@ export default function LoginPage() {
   const page = useLoginPage()
 
   return (
-    <SplitAuthLayout wide={page.operators.length > COMPACT_THRESHOLD}>
+    <SplitAuthLayout illustrationSrc="/cash-counter-illustration.png" wide={page.operators.length > COMPACT_THRESHOLD}>
       <div className="flex flex-col items-center gap-1">
         {tenant.logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- logo do tenant, domínio dinâmico
