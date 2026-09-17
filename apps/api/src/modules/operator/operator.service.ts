@@ -1,15 +1,17 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import argon2 from 'argon2'
 import {
   ADMIN_EMAIL_REQUIRED_MESSAGE,
   type CreateOperatorInput,
+  type DeletedOperator,
   type Operator,
   type UpdateOperatorInput,
 } from '@pdv/shared'
 import { ConflictError, DomainError, NotFoundError } from '../../common/errors/domain.error'
 import type { OperatorSession } from '../../common/types/request'
 import { PinTokenService } from '../auth/pin-token.service'
-import { OperatorRepository, type OperatorRow } from './operator.repository'
+import { StorageService } from '../storage/storage.service'
+import { OperatorNotEligibleForAnonymizationError, OperatorRepository, type OperatorRow } from './operator.repository'
 
 const operatorNotFound = () => new NotFoundError('OPERATOR_NOT_FOUND', 'Operador não encontrado.')
 const lastAdmin = () =>
@@ -23,12 +25,19 @@ const adminNeedsEmail = () =>
     formErrors: [],
     fieldErrors: { email: [ADMIN_EMAIL_REQUIRED_MESSAGE] },
   })
+const operatorNotDeleted = () =>
+  new ConflictError('OPERATOR_NOT_DELETED', 'Só é possível remover os dados pessoais de um operador já excluído.')
+const alreadyAnonymized = () =>
+  new ConflictError('ALREADY_ANONYMIZED', 'Os dados pessoais deste operador já foram removidos.')
 
 @Injectable()
 export class OperatorService {
+  private readonly logger = new Logger(OperatorService.name)
+
   constructor(
     private readonly operators: OperatorRepository,
     private readonly pinTokens: PinTokenService,
+    private readonly storage: StorageService,
   ) {}
 
   async list(tenantId: string): Promise<Operator[]> {
@@ -101,6 +110,35 @@ export class OperatorService {
     await this.operators.softDelete(tenantId, id)
   }
 
+  // LGPD (08-seguranca § 13): quem já excluiu comum (soft-delete) some da
+  // lista principal — aqui é a única forma de o Administrador achar de
+  // novo quem já saiu, pra atender um pedido de exclusão definitiva que
+  // pode chegar bem depois do desligamento.
+  async listDeleted(tenantId: string): Promise<DeletedOperator[]> {
+    const rows = await this.operators.findDeleted(tenantId)
+    return rows.map(toPublicDeleted)
+  }
+
+  // Zera name/photoUrl/pinHash — nunca apaga a linha (histórico de
+  // Sale/CashSession continua íntegro). Irreversível: sem "desfazer".
+  async anonymize(tenantId: string, id: string, actor: OperatorSession): Promise<void> {
+    const current = await this.operators.findAnyById(tenantId, id)
+    if (!current) throw operatorNotFound()
+    if (!current.deletedAt) throw operatorNotDeleted()
+    if (current.anonymizedAt) throw alreadyAnonymized()
+
+    await this.storage.deletePhotoByUrl(current.photoUrl)
+    try {
+      await this.operators.anonymize(tenantId, id)
+    } catch (error) {
+      // Corrida entre o check acima e o update (ex.: duas chamadas
+      // concorrentes) — mesmíssima causa, mesma mensagem 409.
+      if (error instanceof OperatorNotEligibleForAnonymizationError) throw alreadyAnonymized()
+      throw error
+    }
+    this.logger.log(`Operator ${id} personal data anonymized by admin ${actor.id}`)
+  }
+
   private async require(tenantId: string, id: string): Promise<OperatorRow> {
     const row = await this.operators.findById(tenantId, id)
     if (!row) throw operatorNotFound()
@@ -131,5 +169,18 @@ function toPublic(row: OperatorRow): Operator {
     active: row.active,
     photoUrl: row.photoUrl,
     createdAt: row.createdAt.toISOString(),
+  }
+}
+
+// role/hasPin/active não fazem sentido pra alguém já excluído — só o
+// necessário pra decidir se ainda dá pra anonimizar (deletedAt sempre
+// presente aqui; anonymizedAt indica se já foi feito).
+function toPublicDeleted(row: OperatorRow): DeletedOperator {
+  return {
+    id: row.id,
+    name: row.name,
+    photoUrl: row.photoUrl,
+    deletedAt: (row.deletedAt as Date).toISOString(),
+    anonymizedAt: row.anonymizedAt ? row.anonymizedAt.toISOString() : null,
   }
 }

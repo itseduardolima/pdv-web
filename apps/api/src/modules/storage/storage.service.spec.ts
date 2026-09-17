@@ -8,6 +8,7 @@ const SCRIPT = new Uint8Array(Buffer.from('<script>alert'))
 
 function makeService(overrides: Partial<Record<keyof StorageClient, jest.Mock>> = {}) {
   const client = {
+    publicBaseUrl: 'http://localhost:9000/pdv-media',
     presignPost: jest
       .fn()
       .mockResolvedValue({ url: 'http://minio/pdv-media', fields: { key: 'x', 'Content-Type': 'image/png' } }),
@@ -82,6 +83,28 @@ describe('StorageService', () => {
       })
       await expect(service.confirmUpload('t1', key)).rejects.toMatchObject({ code: 'INVALID_UPLOAD' })
       expect(client.delete).toHaveBeenCalledWith(key)
+    })
+  })
+
+  // LGPD (08-seguranca § 13): apaga a foto de verdade do bucket quando um
+  // operador é anonimizado.
+  describe('deletePhotoByUrl', () => {
+    it('deletes the object derived from a url matching the bucket prefix', async () => {
+      const { service, client } = makeService()
+      await service.deletePhotoByUrl('http://localhost:9000/pdv-media/tenants/t1/operator/abc.png')
+      expect(client.delete).toHaveBeenCalledWith('tenants/t1/operator/abc.png')
+    })
+
+    it('does nothing for a null url', async () => {
+      const { service, client } = makeService()
+      await service.deletePhotoByUrl(null)
+      expect(client.delete).not.toHaveBeenCalled()
+    })
+
+    it('does nothing for a url that does not match this bucket (never throws)', async () => {
+      const { service, client } = makeService()
+      await expect(service.deletePhotoByUrl('https://other-bucket.example.com/x.png')).resolves.toBeUndefined()
+      expect(client.delete).not.toHaveBeenCalled()
     })
   })
 })

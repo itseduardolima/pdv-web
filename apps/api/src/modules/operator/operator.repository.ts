@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common'
-import type { Operator, OperatorRole } from '@prisma/client'
+import { Prisma, type Operator, type OperatorRole } from '@prisma/client'
 import { PRISMA, type PrismaService } from '../../prisma/prisma.client'
 
 // pinHash nunca sai do Repository: só entra (create / setPin). Sai apenas
@@ -15,7 +15,15 @@ const publicSelect = {
   photoUrl: true,
   createdAt: true,
   deletedAt: true,
+  anonymizedAt: true,
 } as const
+
+// anonymize() só aplica se a linha já estiver soft-deleted e ainda não
+// anonimizada (where estendido, mesmo padrão de update()/setActive()
+// abaixo) — se o update não achar nenhuma linha assim, o Prisma lança
+// P2025, que vira este marker error; o Service traduz em 404/409 conforme
+// o motivo real (id inexistente, ainda ativo, ou já anonimizado antes).
+export class OperatorNotEligibleForAnonymizationError extends Error {}
 
 export interface NewOperator {
   name: string
@@ -49,6 +57,23 @@ export class OperatorRepository {
   async findById(tenantId: string, id: string): Promise<OperatorRow | null> {
     const row = await this.prisma.operator.findFirst({ where: { tenantId, id, deletedAt: null }, select: rowSelect })
     return row ? toRow(row) : null
+  }
+
+  // Sem filtro de deletedAt — usado só pelo fluxo de anonimização (LGPD),
+  // que precisa achar exatamente quem já foi excluído (o oposto de findById).
+  async findAnyById(tenantId: string, id: string): Promise<OperatorRow | null> {
+    const row = await this.prisma.operator.findFirst({ where: { tenantId, id }, select: rowSelect })
+    return row ? toRow(row) : null
+  }
+
+  // Só quem já foi soft-deleted — tela de "operadores excluídos" (LGPD).
+  async findDeleted(tenantId: string): Promise<OperatorRow[]> {
+    const rows = await this.prisma.operator.findMany({
+      where: { tenantId, deletedAt: { not: null } },
+      select: rowSelect,
+      orderBy: { deletedAt: 'desc' },
+    })
+    return rows.map(toRow)
   }
 
   async findByEmail(tenantId: string, email: string): Promise<OperatorRow | null> {
@@ -86,6 +111,29 @@ export class OperatorRepository {
         select: rowSelect,
       }),
     )
+  }
+
+  // LGPD (08-seguranca § 13): zera name/photoUrl/pinHash — nunca apaga a
+  // linha (Sale/CashSession referenciam Operator sem cascade). O where
+  // estendido (deletedAt/anonymizedAt) é a guarda de verdade contra
+  // anonimizar alguém ainda ativo ou anonimizar duas vezes; o Service já
+  // checa isso antes pra dar uma mensagem específica, isto aqui é o
+  // backstop contra corrida entre o check e o update.
+  async anonymize(tenantId: string, id: string): Promise<OperatorRow> {
+    try {
+      return toRow(
+        await this.prisma.operator.update({
+          where: { id, tenantId, deletedAt: { not: null }, anonymizedAt: null },
+          data: { name: 'Operador removido', photoUrl: null, pinHash: null, anonymizedAt: new Date() },
+          select: rowSelect,
+        }),
+      )
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new OperatorNotEligibleForAnonymizationError()
+      }
+      throw error
+    }
   }
 }
 

@@ -1,7 +1,8 @@
 import argon2 from 'argon2'
 import type { OperatorSession } from '../../common/types/request'
 import type { PinTokenService } from '../auth/pin-token.service'
-import { OperatorRepository, type OperatorRow } from './operator.repository'
+import type { StorageService } from '../storage/storage.service'
+import { OperatorNotEligibleForAnonymizationError, OperatorRepository, type OperatorRow } from './operator.repository'
 import { OperatorService } from './operator.service'
 
 const admin: OperatorRow = {
@@ -15,8 +16,15 @@ const admin: OperatorRow = {
   photoUrl: null,
   createdAt: new Date('2026-01-01'),
   deletedAt: null,
+  anonymizedAt: null,
 }
 const clerk: OperatorRow = { ...admin, id: 'o2', name: 'Carlos', role: 'OPERATOR', email: null }
+const deletedClerk: OperatorRow = {
+  ...clerk,
+  active: false,
+  deletedAt: new Date('2026-02-01'),
+  photoUrl: 'http://localhost:9000/pdv-media/tenants/t1/operator/carlos.png',
+}
 const actor: OperatorSession = { id: 'o1', tenantId: 't1', role: 'ADMIN' }
 const otherAdminActor: OperatorSession = { id: 'o9', tenantId: 't1', role: 'ADMIN' }
 
@@ -24,7 +32,9 @@ function makeService(overrides: Partial<Record<keyof OperatorRepository, jest.Mo
   const repository = {
     findMany: jest.fn().mockResolvedValue([admin, clerk]),
     findById: jest.fn().mockResolvedValue(null),
+    findAnyById: jest.fn().mockResolvedValue(null),
     findByEmail: jest.fn().mockResolvedValue(null),
+    findDeleted: jest.fn().mockResolvedValue([]),
     countActiveAdmins: jest.fn().mockResolvedValue(1),
     create: jest.fn().mockImplementation(async (_t: string, { pinHash, ...data }: { pinHash: string | null }) => ({
       ...admin,
@@ -37,14 +47,17 @@ function makeService(overrides: Partial<Record<keyof OperatorRepository, jest.Mo
     setPin: jest.fn().mockResolvedValue(admin),
     setActive: jest.fn().mockImplementation(async (_t: string, _id: string, active: boolean) => ({ ...admin, active })),
     softDelete: jest.fn().mockResolvedValue({ ...clerk, deletedAt: new Date(), active: false }),
+    anonymize: jest.fn().mockResolvedValue({ ...deletedClerk, name: 'Operador removido', photoUrl: null }),
     ...overrides,
   }
   const pinTokens = { sendPinLink: jest.fn().mockResolvedValue(undefined) }
+  const storage = { deletePhotoByUrl: jest.fn().mockResolvedValue(undefined) }
   const service = new OperatorService(
     repository as unknown as OperatorRepository,
     pinTokens as unknown as PinTokenService,
+    storage as unknown as StorageService,
   )
-  return { service, repository, pinTokens }
+  return { service, repository, pinTokens, storage }
 }
 
 describe('OperatorService', () => {
@@ -209,6 +222,80 @@ describe('OperatorService', () => {
         code: 'SELF_CHANGE',
       })
       await expect(service.remove('t1', 'o1', actor)).rejects.toMatchObject({ code: 'SELF_CHANGE', statusCode: 409 })
+    })
+  })
+
+  describe('listDeleted (LGPD)', () => {
+    it('maps deleted rows without role/hasPin/active', async () => {
+      const { service, repository } = makeService({ findDeleted: jest.fn().mockResolvedValue([deletedClerk]) })
+      const result = await service.listDeleted('t1')
+      expect(repository.findDeleted).toHaveBeenCalledWith('t1')
+      expect(result).toEqual([
+        {
+          id: deletedClerk.id,
+          name: deletedClerk.name,
+          photoUrl: deletedClerk.photoUrl,
+          deletedAt: deletedClerk.deletedAt?.toISOString(),
+          anonymizedAt: null,
+        },
+      ])
+    })
+  })
+
+  describe('anonymize (LGPD)', () => {
+    it('deletes the photo from storage and anonymizes the row when already soft-deleted', async () => {
+      const { service, repository, storage } = makeService({
+        findAnyById: jest.fn().mockResolvedValue(deletedClerk),
+      })
+      await service.anonymize('t1', 'o2', actor)
+      expect(storage.deletePhotoByUrl).toHaveBeenCalledWith(deletedClerk.photoUrl)
+      expect(repository.anonymize).toHaveBeenCalledWith('t1', 'o2')
+    })
+
+    it('does not touch storage when the operator never had a photo', async () => {
+      const { service, storage } = makeService({
+        findAnyById: jest.fn().mockResolvedValue({ ...deletedClerk, photoUrl: null }),
+      })
+      await service.anonymize('t1', 'o2', actor)
+      expect(storage.deletePhotoByUrl).toHaveBeenCalledWith(null)
+    })
+
+    it('rejects OPERATOR_NOT_FOUND for an unknown id, without touching storage/repository.anonymize', async () => {
+      const { service, storage, repository } = makeService({ findAnyById: jest.fn().mockResolvedValue(null) })
+      await expect(service.anonymize('t1', 'nope', actor)).rejects.toMatchObject({
+        code: 'OPERATOR_NOT_FOUND',
+        statusCode: 404,
+      })
+      expect(storage.deletePhotoByUrl).not.toHaveBeenCalled()
+      expect(repository.anonymize).not.toHaveBeenCalled()
+    })
+
+    it('rejects OPERATOR_NOT_DELETED for an operator that was never soft-deleted', async () => {
+      const { service, repository } = makeService({ findAnyById: jest.fn().mockResolvedValue(clerk) })
+      await expect(service.anonymize('t1', 'o2', actor)).rejects.toMatchObject({
+        code: 'OPERATOR_NOT_DELETED',
+        statusCode: 409,
+      })
+      expect(repository.anonymize).not.toHaveBeenCalled()
+    })
+
+    it('rejects ALREADY_ANONYMIZED when it was already anonymized before', async () => {
+      const { service, repository } = makeService({
+        findAnyById: jest.fn().mockResolvedValue({ ...deletedClerk, anonymizedAt: new Date('2026-02-02') }),
+      })
+      await expect(service.anonymize('t1', 'o2', actor)).rejects.toMatchObject({
+        code: 'ALREADY_ANONYMIZED',
+        statusCode: 409,
+      })
+      expect(repository.anonymize).not.toHaveBeenCalled()
+    })
+
+    it('translates a race at the repository level (P2025) into ALREADY_ANONYMIZED too', async () => {
+      const { service } = makeService({
+        findAnyById: jest.fn().mockResolvedValue(deletedClerk),
+        anonymize: jest.fn().mockRejectedValue(new OperatorNotEligibleForAnonymizationError()),
+      })
+      await expect(service.anonymize('t1', 'o2', actor)).rejects.toMatchObject({ code: 'ALREADY_ANONYMIZED' })
     })
   })
 })

@@ -94,6 +94,11 @@ model Operator {
   photoUrl  String?
   createdAt DateTime     @default(now())
   deletedAt DateTime?
+  // Preenchido só depois de um pedido formal de exclusão definitiva de
+  // dado pessoal (LGPD) — sempre posterior a deletedAt. Não apaga a linha
+  // (Sale/CashSession referenciam Operator sem cascade — RESTRICT), só
+  // zera name/photoUrl/pinHash (08-seguranca § 13).
+  anonymizedAt DateTime?
 
   tenant       Tenant        @relation(fields: [tenantId], references: [id])
   cashSessions CashSession[]

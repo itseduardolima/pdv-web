@@ -43,6 +43,18 @@ export class StorageService {
     }
     return { url: this.storage.publicUrl(key) }
   }
+
+  // LGPD (08-seguranca § 13): apaga o objeto de verdade do bucket, não só
+  // desliga a URL salva no banco. `publicUrl(key)` só monta pra frente —
+  // deriva a key do prefixo aqui. No-op silencioso (nunca lança) se a URL
+  // não bater com o prefixo do próprio bucket (defensivo: URL nula, de
+  // outro storage, ou já sem sentido).
+  async deletePhotoByUrl(url: string | null): Promise<void> {
+    if (!url) return
+    const prefix = `${this.storage.publicBaseUrl}/`
+    if (!url.startsWith(prefix)) return
+    await this.storage.delete(url.slice(prefix.length))
+  }
 }
 
 function extensionContentType(key: string): UploadContentType | null {

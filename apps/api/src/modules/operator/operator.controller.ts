@@ -13,10 +13,12 @@ import {
 } from '@nestjs/swagger'
 import {
   createOperatorSchema,
+  deletedOperatorSchema,
   operatorSchema,
   setActiveSchema,
   setPinSchema,
   updateOperatorSchema,
+  type DeletedOperator,
   type Operator,
 } from '@pdv/shared'
 import { z } from 'zod'
@@ -44,6 +46,16 @@ export class OperatorController {
   @ApiOkResponse({ schema: openApi(z.array(operatorSchema)), description: 'Operadores da loja, inativos inclusos' })
   list(@CurrentTenant() tenantId: string): Promise<Operator[]> {
     return this.operators.list(tenantId)
+  }
+
+  // Antes de `:id` de propósito — "deleted" seria capturado como um id.
+  @Get('deleted')
+  @ApiOkResponse({
+    schema: openApi(z.array(deletedOperatorSchema)),
+    description: 'Operadores já excluídos (soft-delete) — para atender um pedido de exclusão definitiva (LGPD)',
+  })
+  listDeleted(@CurrentTenant() tenantId: string): Promise<DeletedOperator[]> {
+    return this.operators.listDeleted(tenantId)
   }
 
   @Get(':id')
@@ -121,5 +133,20 @@ export class OperatorController {
     @CurrentOperator() actor: OperatorSession,
   ): Promise<void> {
     return this.operators.remove(tenantId, id, actor)
+  }
+
+  // LGPD (08-seguranca § 13): irreversível — só chamar depois de o
+  // Administrador confirmar o pedido de exclusão definitiva.
+  @Post(':id/anonymize')
+  @HttpCode(204)
+  @ApiNoContentResponse({ description: 'Remove nome, foto e PIN de vez; histórico de vendas continua íntegro' })
+  @ApiNotFoundResponse({ schema: apiErrorOpenApi, description: 'OPERATOR_NOT_FOUND' })
+  @ApiConflictResponse({ schema: apiErrorOpenApi, description: 'OPERATOR_NOT_DELETED / ALREADY_ANONYMIZED' })
+  anonymize(
+    @CurrentTenant() tenantId: string,
+    @Param('id') id: string,
+    @CurrentOperator() actor: OperatorSession,
+  ): Promise<void> {
+    return this.operators.anonymize(tenantId, id, actor)
   }
 }

@@ -26,6 +26,20 @@ export const operatorSchema = z.object({
 })
 export type Operator = z.infer<typeof operatorSchema>
 
+// LGPD (08-seguranca § 13): quem já foi soft-deleted, candidato a ter o
+// dado pessoal removido de vez. Sem role/hasPin/active — não fazem
+// sentido pra alguém que não trabalha mais na loja.
+export const deletedOperatorSchema = z.object({
+  id: idSchema,
+  name: z.string(),
+  photoUrl: httpUrlSchema().nullable(),
+  deletedAt: z.string().datetime(),
+  // Presente quando o pedido de exclusão definitiva já foi atendido —
+  // nesse ponto name/photoUrl já viraram o placeholder/null.
+  anonymizedAt: z.string().datetime().nullable(),
+})
+export type DeletedOperator = z.infer<typeof deletedOperatorSchema>
+
 // Só letras (com acento) e espaço — sem número nem símbolo. Diferente de
 // Produto (código/quantidade no nome são normais); nome de pessoa não tem
 // por quê.
