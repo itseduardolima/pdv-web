@@ -13,6 +13,7 @@ import { ColorSwatchList } from '@/components/ui/ColorSwatchList'
 import { InlineAlert } from '@/components/ui/InlineAlert'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
+import { useMediaQuery } from '@/hooks/use-media-query'
 import { BR_TIMEZONES } from '@/lib/timezones'
 import { useSettingsPage } from './use-settings-page'
 
@@ -22,6 +23,24 @@ export default function SettingsPage() {
   const errors = formState.errors
   const logoUrl = page.form.watch('logoUrl')
   const primaryColor = page.form.watch('primaryColor')
+  // No desktop (mesmo corte md do flex-row abaixo) o seletor visual de cor
+  // sai do formulário e vira um bloco próprio embaixo da foto, aproveitando
+  // o espaço vazio da coluna esquerda; no mobile/tablet continua junto do
+  // formulário, como sempre foi (decisão de 2026-09-17).
+  const isDesktop = useMediaQuery('(min-width: 768px)')
+  const colorPicker = (
+    <>
+      <ColorGradientPicker
+        value={primaryColor}
+        onChange={(hex) => page.form.setValue('primaryColor', hex, { shouldDirty: true })}
+      />
+      <ColorSwatchList
+        value={primaryColor}
+        onChange={(hex) => page.form.setValue('primaryColor', hex, { shouldDirty: true })}
+      />
+      <ColorPreviewCard primaryColor={primaryColor} />
+    </>
+  )
 
   return (
     <>
@@ -36,6 +55,12 @@ export default function SettingsPage() {
             error={page.logoError ?? errors.logoUrl?.message}
             label="Adicionar logo"
           />
+          {isDesktop && (
+            <div className="mt-5 flex flex-col gap-4 border-t border-border pt-5">
+              <p className="font-heading text-sm font-bold tracking-tight">Cor da loja</p>
+              {colorPicker}
+            </div>
+          )}
         </aside>
 
         <section className="flex flex-1 flex-col gap-4 rounded-card bg-surface p-4 md:p-[26px]">
@@ -107,17 +132,7 @@ export default function SettingsPage() {
             )}
           />
 
-          <ColorGradientPicker
-            value={primaryColor}
-            onChange={(hex) => page.form.setValue('primaryColor', hex, { shouldDirty: true })}
-          />
-
-          <ColorSwatchList
-            value={primaryColor}
-            onChange={(hex) => page.form.setValue('primaryColor', hex, { shouldDirty: true })}
-          />
-
-          <ColorPreviewCard primaryColor={primaryColor} />
+          {!isDesktop && colorPicker}
 
           <div>
             <Button type="submit" state={page.submitState} successLabel="Salvo">

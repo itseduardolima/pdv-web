@@ -244,6 +244,15 @@ detalhe do plano em `docs/scrum/SPRINTS.md`.
       `localStorage`, valendo em qualquer largura de tela. Botão novo no
       topo da sidebar (chevron reaproveitado, rotacionado). `BottomNav`
       (mobile) não muda.
+- [x] Feature (2026-09-17): Configurações — seletor visual de cor
+      (`ColorGradientPicker`/`ColorSwatchList`/`ColorPreviewCard`) sai do
+      formulário e vira bloco próprio ("Cor da loja") embaixo do upload de
+      logo, só no desktop (`useMediaQuery`, novo hook em `hooks/`, mesmo
+      corte `md` do `flex-row` da página — aproveita o espaço vazio da
+      coluna esquerda). No mobile/tablet continua dentro do formulário,
+      como sempre foi. O campo hex validado (`ColorInput`) não muda de
+      lugar — só o trio visual/exploratório é reposicionado, uma única
+      instância renderizada por vez (sem duplicar estado/DOM).
 
 ## Épico 13 — Painel Superadmin (decisão de 2026-09-16)
 
