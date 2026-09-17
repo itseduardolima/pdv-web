@@ -65,7 +65,7 @@ Fundação + módulos `tenant`, `auth`, `product`, `cash-session`, `storage` e
   de campo em português vivem no `createProductSchema` de `packages/shared`.
   `DELETE` (soft-delete) entra na HU 3.5.
 - `prisma/seed.ts` parametrizado por env (`SEED_TENANT_SLUG`, ...) e
-  compilado em `dist/seed/seed.js` no build, ver
+  compilado em `dist/seed/prisma/seed.js` no build, ver
   `docs/specs/07-multitenant-whitelabel.md` § Onboarding.
 - `modules/cash-session/`: `GET /cash-sessions/current` devolve
   `{ session | null }` (envelope: um `null` solto vira corpo vazio no Nest)

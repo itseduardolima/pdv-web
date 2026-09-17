@@ -26,6 +26,18 @@ enum ProductUnit {
   CX
 }
 
+// Conta do dono do sistema (revendedor) — fora do isolamento por tenant, de
+// propósito (mesmo padrão de Tenant: não tem tenantId, não entra na
+// migration de Row-Level Security). Não é um Operator: gerencia lojas, não
+// pertence a nenhuma.
+model PlatformAdmin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+}
+
 model Tenant {
   id              String   @id @default(cuid())
   slug            String   @unique
@@ -41,6 +53,9 @@ model Tenant {
   // de v1 (um único caixa lógico), sem seletor de caixa na UI.
   registerCount   Int      @default(1)
   createdAt       DateTime @default(now())
+  // HU 13.7: suspender sem apagar dado nenhum — false bloqueia acesso (403
+  // TENANT_SUSPENDED no TenantMiddleware), reativar restaura na hora.
+  active          Boolean  @default(true)
 
   operators    Operator[]
   products     Product[]

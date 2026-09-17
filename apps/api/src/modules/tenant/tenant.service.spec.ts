@@ -16,6 +16,7 @@ const tenant: Tenant = {
   accentColor: '#466cf3',
   registerCount: 1,
   createdAt: new Date('2026-01-01'),
+  active: true,
 }
 
 function makeService(overrides: Partial<Record<keyof TenantRepository, jest.Mock>> = {}) {
@@ -38,22 +39,27 @@ describe('TenantService', () => {
   describe('resolveByHost', () => {
     it('resolves by custom domain first', async () => {
       const { service, repository } = makeService({ findByDomain: jest.fn().mockResolvedValue(tenant) })
-      await expect(service.resolveByHost('caixa.demo.com.br')).resolves.toEqual({ id: 'tenant_1' })
+      await expect(service.resolveByHost('caixa.demo.com.br')).resolves.toEqual({ id: 'tenant_1', active: true })
       expect(repository.findBySlug).not.toHaveBeenCalled()
     })
 
     it('resolves by slug when the host is a subdomain of the base domain', async () => {
       const { service, repository } = makeService({ findBySlug: jest.fn().mockResolvedValue(tenant) })
-      await expect(service.resolveByHost('demo.app.localhost')).resolves.toEqual({ id: 'tenant_1' })
+      await expect(service.resolveByHost('demo.app.localhost')).resolves.toEqual({ id: 'tenant_1', active: true })
       expect(repository.findByDomain).toHaveBeenCalledWith('demo.app.localhost')
       expect(repository.findBySlug).toHaveBeenCalledWith('demo')
     })
 
     it('normalizes port and case before looking up', async () => {
       const { service, repository } = makeService({ findBySlug: jest.fn().mockResolvedValue(tenant) })
-      await expect(service.resolveByHost('DEMO.app.localhost:3000')).resolves.toEqual({ id: 'tenant_1' })
+      await expect(service.resolveByHost('DEMO.app.localhost:3000')).resolves.toEqual({ id: 'tenant_1', active: true })
       expect(repository.findByDomain).toHaveBeenCalledWith('demo.app.localhost')
       expect(repository.findBySlug).toHaveBeenCalledWith('demo')
+    })
+
+    it('carries active=false through so a suspended tenant is blocked (HU 13.7)', async () => {
+      const { service } = makeService({ findBySlug: jest.fn().mockResolvedValue({ ...tenant, active: false }) })
+      await expect(service.resolveByHost('demo.app.localhost')).resolves.toEqual({ id: 'tenant_1', active: false })
     })
 
     it('returns null for an unknown host and does not try a slug outside the base domain', async () => {

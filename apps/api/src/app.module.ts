@@ -19,6 +19,7 @@ import { OperatorModule } from './modules/operator/operator.module'
 import { DashboardModule } from './modules/dashboard/dashboard.module'
 import { ReportsModule } from './modules/reports/reports.module'
 import { MailModule } from './modules/mail/mail.module'
+import { PlatformModule } from './modules/platform/platform.module'
 
 // Módulos de domínio (operator) entram
 // aqui conforme forem criados, um por vez.
@@ -55,6 +56,7 @@ import { MailModule } from './modules/mail/mail.module'
     CashSessionModule,
     StorageModule,
     SaleModule,
+    PlatformModule,
   ],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },
@@ -65,8 +67,13 @@ import { MailModule } from './modules/mail/mail.module'
   ],
 })
 export class AppModule implements NestModule {
-  // Toda rota exige tenant resolvido; só o Swagger fica fora.
+  // Toda rota exige tenant resolvido; só o Swagger e o painel de superadmin
+  // (platform/*, que não pertence a loja nenhuma — ver PlatformModule) ficam
+  // fora.
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(TenantMiddleware).exclude('docs', 'docs/{*path}', 'tenant/tls-check').forRoutes('*path')
+    consumer
+      .apply(TenantMiddleware)
+      .exclude('docs', 'docs/{*path}', 'tenant/tls-check', 'platform/{*path}')
+      .forRoutes('*path')
   }
 }

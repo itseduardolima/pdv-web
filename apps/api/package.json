@@ -15,7 +15,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:seed": "ts-node --transpile-only prisma/seed.ts",
-    "db:seed:prod": "node dist/seed/seed.js"
+    "db:seed:prod": "node dist/seed/prisma/seed.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1130.0",

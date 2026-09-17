@@ -14,5 +14,5 @@ export function getTenantId(): string {
 
 // Implementado pelo módulo tenant; o middleware depende só desta abstração.
 export abstract class TenantResolver {
-  abstract resolveByHost(host: string): Promise<{ id: string } | null>
+  abstract resolveByHost(host: string): Promise<{ id: string; active: boolean } | null>
 }

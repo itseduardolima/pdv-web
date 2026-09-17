@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express'
-import { NotFoundError } from '../errors/domain.error'
+import { ForbiddenError, NotFoundError } from '../errors/domain.error'
 import { getTenantId, TenantResolver } from '../tenant-context'
 import { TenantMiddleware } from './tenant.middleware'
 
@@ -23,7 +23,9 @@ describe('TenantMiddleware', () => {
   })
 
   it('runs next inside the tenant context using x-tenant-host', async () => {
-    const resolver: TenantResolver = { resolveByHost: jest.fn().mockResolvedValue({ id: 'tenant_1' }) }
+    const resolver: TenantResolver = {
+      resolveByHost: jest.fn().mockResolvedValue({ id: 'tenant_1', active: true }),
+    }
     let seenTenantId: string | undefined
     const next = jest.fn(() => {
       seenTenantId = getTenantId()
@@ -36,10 +38,27 @@ describe('TenantMiddleware', () => {
   })
 
   it('falls back to the request hostname when x-tenant-host is absent', async () => {
-    const resolver: TenantResolver = { resolveByHost: jest.fn().mockResolvedValue({ id: 'tenant_1' }) }
+    const resolver: TenantResolver = {
+      resolveByHost: jest.fn().mockResolvedValue({ id: 'tenant_1', active: true }),
+    }
 
     await new TenantMiddleware(resolver).use(makeRequest({}, 'demo.app.localhost'), response, jest.fn())
 
     expect(resolver.resolveByHost).toHaveBeenCalledWith('demo.app.localhost')
+  })
+
+  it('calls next with 403 TENANT_SUSPENDED for a suspended tenant (HU 13.7)', async () => {
+    const resolver: TenantResolver = {
+      resolveByHost: jest.fn().mockResolvedValue({ id: 'tenant_1', active: false }),
+    }
+    const next = jest.fn()
+
+    await new TenantMiddleware(resolver).use(makeRequest({ 'x-tenant-host': 'suspensa.app.localhost' }), response, next)
+
+    expect(next).toHaveBeenCalledTimes(1)
+    const error = next.mock.calls[0]?.[0] as ForbiddenError
+    expect(error).toBeInstanceOf(ForbiddenError)
+    expect(error.code).toBe('TENANT_SUSPENDED')
+    expect(error.statusCode).toBe(403)
   })
 })

@@ -96,7 +96,7 @@ docker compose logs -f api      # aguardar "Nest application successfully starte
 
 # primeira loja (ver docs/specs/07-multitenant-whitelabel.md § Onboarding)
 docker compose exec -e SEED_TENANT_SLUG=karol -e SEED_TENANT_NAME='Mercadinho da Karol' \
-  -e SEED_ADMIN_NAME=Karol -e SEED_ADMIN_PIN=4321 api node dist/seed/seed.js
+  -e SEED_ADMIN_NAME=Karol -e SEED_ADMIN_PIN=4321 api node dist/seed/prisma/seed.js
 ```
 
 Depois disso `https://karol.app.seudominio.com.br` abre com certificado

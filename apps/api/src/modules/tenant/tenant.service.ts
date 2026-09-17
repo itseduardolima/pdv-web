@@ -10,6 +10,7 @@ import { TenantRepository } from './tenant.repository'
 
 interface CacheEntry {
   tenantId: string | null
+  active: boolean
   expiresAt: number
 }
 
@@ -30,18 +31,29 @@ export class TenantService extends TenantResolver {
     this.cacheTtlMs = Number(config.get<string | number>('TENANT_CACHE_TTL_MS', 60_000))
   }
 
-  async resolveByHost(rawHost: string): Promise<{ id: string } | null> {
+  async resolveByHost(rawHost: string): Promise<{ id: string; active: boolean } | null> {
     const { host, slug } = parseTenantHost(rawHost, this.baseDomain)
 
     const cached = this.cache.get(host)
     if (cached && cached.expiresAt > Date.now()) {
-      return cached.tenantId ? { id: cached.tenantId } : null
+      return cached.tenantId ? { id: cached.tenantId, active: cached.active } : null
     }
 
     const tenant = (await this.tenants.findByDomain(host)) ?? (slug ? await this.tenants.findBySlug(slug) : null)
 
-    this.cache.set(host, { tenantId: tenant?.id ?? null, expiresAt: Date.now() + this.cacheTtlMs })
-    return tenant ? { id: tenant.id } : null
+    this.cache.set(host, {
+      tenantId: tenant?.id ?? null,
+      active: tenant?.active ?? true,
+      expiresAt: Date.now() + this.cacheTtlMs,
+    })
+    return tenant ? { id: tenant.id, active: tenant.active } : null
+  }
+
+  // Chamado pelo painel Superadmin ao suspender/reativar uma loja (HU 13.7):
+  // sem isso, o host ficaria até `TENANT_CACHE_TTL_MS` preso no valor antigo
+  // de `active` — "reativar restaura o acesso na hora" não seria verdade.
+  clearHostCache(): void {
+    this.cache.clear()
   }
 
   async getCurrent(tenantId: string): Promise<PublicTenant> {
