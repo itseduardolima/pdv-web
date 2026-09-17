@@ -20,6 +20,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module'
 import { ReportsModule } from './modules/reports/reports.module'
 import { MailModule } from './modules/mail/mail.module'
 import { PlatformModule } from './modules/platform/platform.module'
+import { HealthModule } from './modules/health/health.module'
 
 // Módulos de domínio (operator) entram
 // aqui conforme forem criados, um por vez.
@@ -57,6 +58,7 @@ import { PlatformModule } from './modules/platform/platform.module'
     StorageModule,
     SaleModule,
     PlatformModule,
+    HealthModule,
   ],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },
@@ -67,13 +69,14 @@ import { PlatformModule } from './modules/platform/platform.module'
   ],
 })
 export class AppModule implements NestModule {
-  // Toda rota exige tenant resolvido; só o Swagger e o painel de superadmin
-  // (platform/*, que não pertence a loja nenhuma — ver PlatformModule) ficam
-  // fora.
+  // Toda rota exige tenant resolvido; só o Swagger, o painel de superadmin
+  // (platform/*, que não pertence a loja nenhuma — ver PlatformModule) e o
+  // health check (09-operacao § 1, não faz sentido exigir tenant pra saber
+  // se o serviço está vivo) ficam fora.
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(TenantMiddleware)
-      .exclude('docs', 'docs/{*path}', 'tenant/tls-check', 'platform/{*path}')
+      .exclude('docs', 'docs/{*path}', 'tenant/tls-check', 'platform/{*path}', 'health')
       .forRoutes('*path')
   }
 }
