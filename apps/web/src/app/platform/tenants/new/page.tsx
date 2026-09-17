@@ -6,13 +6,10 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { PlatformShell } from '@/components/platform/PlatformShell'
 import { Button } from '@/components/ui/Button'
 import { ColorSwatchList } from '@/components/ui/ColorSwatchList'
-import { FieldError } from '@/components/ui/FieldError'
-import { FieldLabel } from '@/components/ui/FieldLabel'
 import { Input } from '@/components/ui/Input'
 import { InlineAlert } from '@/components/ui/InlineAlert'
 import { env } from '@/lib/env'
 import { initials } from '@/lib/utils/initials'
-import { PinKeypad } from '@/components/pos/PinKeypad'
 import { useNewPlatformTenantPage } from './use-new-platform-tenant-page'
 
 export default function NewPlatformTenantPage() {
@@ -100,24 +97,14 @@ export default function NewPlatformTenantPage() {
                 <Input
                   label="E-mail do administrador"
                   type="email"
-                  hint="Opcional · usado para recuperar o PIN"
+                  required
+                  hint="Recebe o link para definir o PIN de acesso"
                   autoComplete="off"
                   error={errors.adminEmail?.message}
                   {...field}
                 />
               )}
             />
-          </div>
-
-          <div className="mt-auto flex flex-col items-center gap-2">
-            <FieldLabel required>PIN inicial do administrador</FieldLabel>
-            <PinKeypad
-              pin={page.pin}
-              onDigit={page.onPinDigit}
-              onBackspace={page.onPinBackspace}
-              onClear={page.onPinClear}
-            />
-            <FieldError id="admin-pin-error" message={page.pinError} />
           </div>
 
           {page.errorMessage && <InlineAlert onDismiss={page.dismissError}>{page.errorMessage}</InlineAlert>}

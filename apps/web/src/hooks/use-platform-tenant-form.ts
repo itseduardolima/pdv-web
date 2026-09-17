@@ -9,7 +9,6 @@ export interface PlatformTenantFormValues {
   primaryColor: string
   adminName: string
   adminEmail: string
-  adminPin: string
 }
 
 export const emptyPlatformTenantFormValues: PlatformTenantFormValues = {
@@ -18,10 +17,8 @@ export const emptyPlatformTenantFormValues: PlatformTenantFormValues = {
   primaryColor: PRESET_COLORS[0]!,
   adminName: '',
   adminEmail: '',
-  adminPin: '',
 }
 
-// "" em adminEmail vai como está: o schema da API trata vazio como ausente.
 export function formValuesToCreateInput(values: PlatformTenantFormValues): CreatePlatformTenantInput {
   return {
     name: values.name,
@@ -29,7 +26,6 @@ export function formValuesToCreateInput(values: PlatformTenantFormValues): Creat
     primaryColor: values.primaryColor,
     adminName: values.adminName,
     adminEmail: values.adminEmail,
-    adminPin: values.adminPin,
   }
 }
 
