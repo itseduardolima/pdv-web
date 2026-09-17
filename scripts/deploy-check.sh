@@ -4,7 +4,7 @@
 set -e
 cd "$(dirname "$0")/.."
 [ -f .env ] || { echo "ERRO: .env não existe. cp .env.example .env e preencha." >&2; exit 1; }
-required="APP_DOMAIN API_DOMAIN MEDIA_DOMAIN ACME_EMAIL POSTGRES_PASSWORD APP_DB_PASSWORD STORAGE_SECRET_KEY SESSION_SECRET"
+required="APP_DOMAIN API_DOMAIN MEDIA_DOMAIN ACME_EMAIL POSTGRES_PASSWORD APP_DB_PASSWORD STORAGE_SECRET_KEY SESSION_SECRET PLATFORM_SESSION_SECRET"
 fail=0
 for name in $required; do
   value=$(grep -E "^${name}=" .env | tail -1 | cut -d= -f2- | sed 's/[[:space:]]*#.*$//')

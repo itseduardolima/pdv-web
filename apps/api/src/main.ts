@@ -3,12 +3,14 @@ import { ConfigService } from '@nestjs/config'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import cookieParser from 'cookie-parser'
 import { AppModule } from './app.module'
+import { assertProductionSecrets } from './common/assert-production-secrets'
 import { corsOriginMatcher } from './common/cors'
 import { SESSION_COOKIE } from './common/types/request'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
   const config = app.get(ConfigService)
+  assertProductionSecrets(config)
 
   app.use(cookieParser())
   // CORS_ORIGIN aceita lista separada por vírgula e curinga de subdomínio
