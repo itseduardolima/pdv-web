@@ -144,7 +144,7 @@ frontend) — não quando o código só "existe".
 - [ ] 9.4 — Deploy automático via CI
 - [x] 9.5 — Health check (`GET /health`) — `HealthModule`/`HealthService` (`SELECT 1` puro no Postgres, sem tenant; erro vira 500 `INTERNAL_ERROR` normal via `DomainExceptionFilter`, nunca engolido). Rota pública, excluída do `TenantMiddleware` (`app.module.ts`). `apps/web`: `GET /api/health` próprio (route handler do Next, não depende da API). Validado com `curl` (200 mesmo com host desconhecido). Jest: `health.service.spec.ts`
 - [ ] 9.6 — Monitor de uptime externo (UptimeRobot ou equivalente) — **P0, bloqueia produção**: depende de 9.5 existir primeiro
-- [ ] 9.7 — Logs estruturados (JSON) com `requestId`/`tenantId` correlacionáveis — hoje é só o logger padrão do Nest, sem `requestId`
+- [x] 9.7 — Logs estruturados (JSON) com `requestId`/`tenantId` correlacionáveis — `StructuredLogger` (`common/logger/`) substitui o logger padrão do Nest via `app.useLogger()` (`bufferLogs: true` no bootstrap pra não perder log nenhum antes disso); `RequestIdMiddleware` (`common/middlewares/`) gera o `requestId` ANTES do `TenantMiddleware`, sem exclude nenhum, seta `x-request-id` na resposta e propaga via `AsyncLocalStorage` (`common/request-context.ts`, mesmo mecanismo de `tenant-context.ts`). `debug`/`verbose` só fora de produção. Validado: header `x-request-id` conferido por `curl`, resto por Jest (`request-id.middleware.spec.ts`, `structured-logger.spec.ts`)
 - [ ] 9.8 — Alerta de espaço em disco da VPS (`df` + cron) — não existe ainda
 
 ## Sprint 9 — Múltiplos Caixas (concluída — decisão de 2026-09-13/14)

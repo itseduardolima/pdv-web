@@ -5,10 +5,15 @@ import cookieParser from 'cookie-parser'
 import { AppModule } from './app.module'
 import { assertProductionSecrets } from './common/assert-production-secrets'
 import { corsOriginMatcher } from './common/cors'
+import { StructuredLogger } from './common/logger/structured-logger'
 import { SESSION_COOKIE } from './common/types/request'
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule)
+  // bufferLogs: nenhum log do bootstrap (antes do useLogger abaixo) se
+  // perde — fica em buffer e é escoado pro StructuredLogger assim que ele
+  // é setado.
+  const app = await NestFactory.create(AppModule, { bufferLogs: true })
+  app.useLogger(new StructuredLogger())
   const config = app.get(ConfigService)
   assertProductionSecrets(config)
 

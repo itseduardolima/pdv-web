@@ -8,6 +8,7 @@ import { PrismaModule } from './prisma/prisma.module'
 import { DomainExceptionFilter } from './common/filters/domain-exception.filter'
 import { AuthGuard } from './common/guards/auth.guard'
 import { RolesGuard } from './common/guards/roles.guard'
+import { RequestIdMiddleware } from './common/middlewares/request-id.middleware'
 import { TenantMiddleware } from './common/middlewares/tenant.middleware'
 import { TenantModule } from './modules/tenant/tenant.module'
 import { AuthModule } from './modules/auth/auth.module'
@@ -69,11 +70,16 @@ import { HealthModule } from './modules/health/health.module'
   ],
 })
 export class AppModule implements NestModule {
-  // Toda rota exige tenant resolvido; só o Swagger, o painel de superadmin
-  // (platform/*, que não pertence a loja nenhuma — ver PlatformModule) e o
-  // health check (09-operacao § 1, não faz sentido exigir tenant pra saber
-  // se o serviço está vivo) ficam fora.
   configure(consumer: MiddlewareConsumer) {
+    // RequestIdMiddleware primeiro, sem exclude nenhum (09-operacao § 3):
+    // todo log de toda rota, mesmo fora de tenant, precisa do requestId já
+    // no AsyncLocalStorage antes do resto da cadeia rodar.
+    consumer.apply(RequestIdMiddleware).forRoutes('*path')
+
+    // Toda rota exige tenant resolvido; só o Swagger, o painel de superadmin
+    // (platform/*, que não pertence a loja nenhuma — ver PlatformModule) e o
+    // health check (09-operacao § 1, não faz sentido exigir tenant pra saber
+    // se o serviço está vivo) ficam fora.
     consumer
       .apply(TenantMiddleware)
       .exclude('docs', 'docs/{*path}', 'tenant/tls-check', 'platform/{*path}', 'health')
