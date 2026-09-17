@@ -1,5 +1,5 @@
 import type { DashboardDay } from '@pdv/shared'
-import { scaleBars } from '@/lib/utils/chart'
+import { isSparseLabelIndex, scaleBars } from '@/lib/utils/chart'
 import { formatCurrency, formatCurrencyCompact } from '@/lib/utils/format-currency'
 import { formatDayMonthShort, formatDayNumber, formatWeekdayShort } from '@/lib/utils/format-date'
 
@@ -26,9 +26,20 @@ export function WeekChart({ days }: WeekChartProps) {
   // a data mesmo (mesmo raciocínio do destaque de hora atual no HourChart).
   const now = new Date()
   const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  // No mobile, período denso não cabe um valor por barra — resume no maior
+  // dia do período um único destaque fixo em vez de tentar espremer todos.
+  const peakDay = dense
+    ? days.reduce<DashboardDay | null>((best, day) => (day.totalCents > (best?.totalCents ?? 0) ? day : best), null)
+    : null
 
   return (
     <figure className="flex flex-col gap-3">
+      {peakDay ? (
+        <div className="flex items-center justify-between rounded-pill border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-ink md:hidden">
+          <span>Maior venda: {formatDayMonthShort(peakDay.date)}</span>
+          <span>{formatCurrency(peakDay.totalCents)}</span>
+        </div>
+      ) : null}
       <svg
         viewBox={`0 0 ${width} ${CHART_HEIGHT}`}
         preserveAspectRatio="none"
@@ -65,28 +76,33 @@ export function WeekChart({ days }: WeekChartProps) {
         className={`grid font-body text-ink/50 ${dense ? 'text-[9px] md:text-[10px]' : 'text-[11px] md:text-xs'}`}
         style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
       >
-        {days.map((day) => (
-          <span
-            key={day.date}
-            data-cy="week-day"
-            className={`flex flex-col items-center gap-0.5 overflow-hidden ${day.date === todayKey ? 'font-bold text-ink' : ''}`}
-          >
-            <span>{dense ? formatDayNumber(day.date) : formatWeekdayShort(day.date)}</span>
+        {days.map((day, index) => {
+          const sparse = !dense || isSparseLabelIndex(index, columns)
+          return (
             <span
-              className={
-                dense
-                  ? 'h-3 whitespace-nowrap text-[8px] leading-3 font-semibold text-ink md:text-[9px]'
-                  : 'hidden font-semibold text-ink md:inline'
-              }
+              key={day.date}
+              data-cy="week-day"
+              className={`flex min-w-0 flex-col items-center gap-0.5 overflow-hidden ${day.date === todayKey ? 'font-bold text-ink' : ''} ${dense && !sparse ? 'invisible md:visible' : ''}`}
             >
-              {day.totalCents > 0
-                ? dense
-                  ? formatCurrencyCompact(day.totalCents)
-                  : formatCurrency(day.totalCents)
-                : ''}
+              <span className="whitespace-nowrap">
+                {dense ? formatDayNumber(day.date) : formatWeekdayShort(day.date)}
+              </span>
+              <span
+                className={
+                  dense
+                    ? 'hidden h-3 whitespace-nowrap text-[8px] leading-3 font-semibold text-ink md:inline md:text-[9px]'
+                    : 'hidden font-semibold text-ink md:inline'
+                }
+              >
+                {day.totalCents > 0
+                  ? dense
+                    ? formatCurrencyCompact(day.totalCents)
+                    : formatCurrency(day.totalCents)
+                  : ''}
+              </span>
             </span>
-          </span>
-        ))}
+          )
+        })}
       </figcaption>
     </figure>
   )

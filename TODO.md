@@ -202,6 +202,13 @@ detalhe do plano em `docs/scrum/SPRINTS.md`.
       Dashboard/Fechamento; `OperatorSalesRow` e `StagnantProductRow` novos.
       `WeekChart` ganhou um ajuste (legenda por dia só até 10 colunas — o mês
       de 30 dias ficaria ilegível; Dashboard, sempre 7 dias, não muda).
+- [x] Fix (2026-09-16): legenda do eixo X sobrepondo texto no mobile em
+      períodos densos (`WeekChart` com mês/30 dias, `HourChart` com 24
+      horas) — `isSparseLabelIndex()` (`lib/utils/chart.ts`) escolhe ~6
+      rótulos espaçados pra mobile, o resto só aparece a partir do `md`; o
+      valor de cada barra some no mobile denso e vira um chip fixo acima do
+      gráfico com o maior valor do período ("Maior venda: ..."). `MonthChart`
+      (12 colunas) não precisou de ajuste.
 
 ## Backlog P2 (sem sprint fixa ainda)
 

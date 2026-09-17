@@ -1,5 +1,5 @@
 import type { ReportHour } from '@pdv/shared'
-import { scaleBars } from '@/lib/utils/chart'
+import { isSparseLabelIndex, scaleBars } from '@/lib/utils/chart'
 import { formatCurrency, formatCurrencyCompact } from '@/lib/utils/format-currency'
 
 interface HourChartProps {
@@ -14,15 +14,29 @@ const MIN_BAR = 3
 // tooltip com o valor exato), só que por hora em vez de por dia. Diferente
 // do WeekChart em períodos densos, aqui o horário e o valor de cada barra
 // ficam sempre visíveis (não só no hover) — pedido explícito do usuário,
-// já que "Hoje" é o período mais consultado durante o expediente.
+// já que "Hoje" é o período mais consultado durante o expediente. Isso vale
+// a partir do breakpoint md; no mobile as 24 colunas não cabem um valor por
+// barra sem sobrepor texto, então só um subconjunto espaçado de horários
+// aparece e o horário de maior venda ganha um destaque fixo (mesma solução
+// usada no WeekChart denso).
 export function HourChart({ hours }: HourChartProps) {
   const heights = scaleBars(hours.map((h) => h.totalCents))
   const columns = hours.length
   const width = 100
   const currentHour = new Date().getHours()
+  const peakHour = hours.reduce<ReportHour | null>(
+    (best, h) => (h.totalCents > (best?.totalCents ?? 0) ? h : best),
+    null,
+  )
 
   return (
     <figure className="flex flex-col gap-2">
+      {peakHour ? (
+        <div className="flex items-center justify-between rounded-pill border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-ink md:hidden">
+          <span>Maior venda: {String(peakHour.hour).padStart(2, '0')}h</span>
+          <span>{formatCurrency(peakHour.totalCents)}</span>
+        </div>
+      ) : null}
       <svg
         viewBox={`0 0 ${width} ${CHART_HEIGHT}`}
         preserveAspectRatio="none"
@@ -55,17 +69,20 @@ export function HourChart({ hours }: HourChartProps) {
         className="grid font-body text-[9px] text-ink/50 md:text-[10px]"
         style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
       >
-        {hours.map((h) => (
-          <span
-            key={h.hour}
-            className={`flex flex-col items-center gap-0.5 overflow-hidden ${h.hour === currentHour ? 'font-bold text-ink' : ''}`}
-          >
-            <span className="h-3 whitespace-nowrap text-[8px] leading-3 md:text-[9px]">
-              {h.totalCents > 0 ? formatCurrencyCompact(h.totalCents) : ''}
+        {hours.map((h, index) => {
+          const sparse = isSparseLabelIndex(index, columns)
+          return (
+            <span
+              key={h.hour}
+              className={`flex min-w-0 flex-col items-center gap-0.5 overflow-hidden ${h.hour === currentHour ? 'font-bold text-ink' : ''} ${sparse ? '' : 'invisible md:visible'}`}
+            >
+              <span className="hidden h-3 whitespace-nowrap text-[8px] leading-3 md:inline md:text-[9px]">
+                {h.totalCents > 0 ? formatCurrencyCompact(h.totalCents) : ''}
+              </span>
+              <span className="whitespace-nowrap">{String(h.hour).padStart(2, '0')}h</span>
             </span>
-            <span>{String(h.hour).padStart(2, '0')}h</span>
-          </span>
-        ))}
+          )
+        })}
       </figcaption>
     </figure>
   )
