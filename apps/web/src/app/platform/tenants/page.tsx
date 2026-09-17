@@ -9,6 +9,7 @@ import { OperatorsIcon, PlusIcon, ProductsIcon } from '@/components/ui/Icons'
 import { InlineAlert } from '@/components/ui/InlineAlert'
 import { Loader } from '@/components/ui/Loader'
 import { SearchBar } from '@/components/ui/SearchBar'
+import { env } from '@/lib/env'
 import { initials } from '@/lib/utils/initials'
 import { usePlatformTenantsPage } from './use-platform-tenants-page'
 
@@ -92,7 +93,7 @@ export default function PlatformTenantsPage() {
               <div className="min-w-0">
                 <span className="block truncate font-heading text-[15px] font-bold tracking-tight">{tenant.name}</span>
                 <span className="block truncate font-body text-xs text-ink/45">
-                  {tenant.domain ?? `${tenant.slug}.app.seudominio.com`}
+                  {tenant.domain ?? `${tenant.slug}.${env.appBaseDomain}`}
                 </span>
               </div>
             </div>

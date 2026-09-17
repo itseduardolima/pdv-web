@@ -11,7 +11,9 @@ RUN pnpm install --frozen-lockfile
 
 FROM deps AS build
 ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_APP_BASE_DOMAIN
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_APP_BASE_DOMAIN=$NEXT_PUBLIC_APP_BASE_DOMAIN
 COPY packages ./packages
 COPY apps/web ./apps/web
 RUN pnpm --filter @pdv/shared build && pnpm --filter web build

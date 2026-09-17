@@ -27,6 +27,10 @@ services:
       args:
         # Inlinado no bundle do browser em build time (NEXT_PUBLIC_*).
         NEXT_PUBLIC_API_URL: https://${API_DOMAIN:-api.localhost}
+        # Mesmo domínio base do APP_BASE_DOMAIN da api (abaixo) — usado só
+        # pra montar o endereço da loja (<slug>.<domínio>) exibido no
+        # painel Superadmin, nunca pra resolver tenant de verdade.
+        NEXT_PUBLIC_APP_BASE_DOMAIN: ${APP_DOMAIN:-app.localhost}
     restart: unless-stopped
     environment:
       API_INTERNAL_URL: http://api:3001

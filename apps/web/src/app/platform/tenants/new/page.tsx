@@ -10,6 +10,7 @@ import { FieldError } from '@/components/ui/FieldError'
 import { FieldLabel } from '@/components/ui/FieldLabel'
 import { Input } from '@/components/ui/Input'
 import { InlineAlert } from '@/components/ui/InlineAlert'
+import { env } from '@/lib/env'
 import { initials } from '@/lib/utils/initials'
 import { PinKeypad } from '@/components/pos/PinKeypad'
 import { useNewPlatformTenantPage } from './use-new-platform-tenant-page'
@@ -34,7 +35,7 @@ export default function NewPlatformTenantPage() {
             </div>
             <div className="font-heading text-[15px] font-bold">{page.name || 'Nome da loja'}</div>
             <div className="break-all font-body text-xs text-ink/40">
-              {(page.slug || 'identificador') + '.app.seudominio.com'}
+              {(page.slug || 'identificador') + '.' + env.appBaseDomain}
             </div>
           </div>
           <ColorSwatchList value={page.primaryColor} onChange={(hex) => page.form.setValue('primaryColor', hex)} />
@@ -68,7 +69,7 @@ export default function NewPlatformTenantPage() {
                 label="Identificador (slug)"
                 required
                 placeholder="Ex.: mercadinho-da-maria"
-                hint="Vira o endereço: <identificador>.app.seudominio.com"
+                hint={`Vira o endereço: <identificador>.${env.appBaseDomain}`}
                 maxLength={PLATFORM_TENANT_LIMITS.slug.max}
                 autoComplete="off"
                 error={errors.slug?.message}
