@@ -267,3 +267,22 @@ export function MoreIcon(props: IconProps) {
     </svg>
   )
 }
+
+export function EyeIcon(props: IconProps) {
+  return (
+    <svg {...base} strokeWidth="2.2" width="20" height="20" {...props}>
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  )
+}
+
+export function EyeOffIcon(props: IconProps) {
+  return (
+    <svg {...base} strokeWidth="2.2" width="20" height="20" {...props}>
+      <path d="M3 3l18 18" />
+      <path d="M10.6 5.2A10.6 10.6 0 0112 5c6.5 0 10 7 10 7a15.6 15.6 0 01-3.6 4.4M6.6 6.6C4 8.3 2 12 2 12s3.5 7 10 7a9.9 9.9 0 004.4-1" />
+      <path d="M9.9 9.9a3 3 0 004.2 4.2" />
+    </svg>
+  )
+}

@@ -3,7 +3,7 @@ import type { PublicTenant } from '@pdv/shared'
 import { usePlatformLogout } from '@/hooks/queries/use-platform-logout'
 import { usePlatformSession } from '@/hooks/use-platform-session'
 import { useSidebarCollapse } from '@/hooks/use-sidebar-collapse'
-import { ProductsIcon } from '@/components/ui/Icons'
+import { ProductsIcon, SettingsIcon } from '@/components/ui/Icons'
 import { isNavItemActive, type NavItem } from '@/lib/navigation'
 
 // Sidebar/BottomNav (components/layout) pedem um PublicTenant pra montar a
@@ -26,6 +26,7 @@ const PLATFORM_BRAND: PublicTenant = {
 
 const PLATFORM_NAV_ITEMS: NavItem[] = [
   { key: 'tenants', label: 'Lojas', href: '/platform/tenants', icon: ProductsIcon },
+  { key: 'account', label: 'Minha Conta', href: '/platform/account', icon: SettingsIcon },
 ]
 
 // Mesmo padrão de useAppShell (components/layout), adaptado pra uma conta
