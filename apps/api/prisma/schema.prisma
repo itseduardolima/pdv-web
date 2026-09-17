@@ -36,6 +36,24 @@ model PlatformAdmin {
   passwordHash String
   name         String
   createdAt    DateTime @default(now())
+
+  resetTokens PlatformAdminResetToken[]
+}
+
+// "Esqueci minha senha" do superadmin — mesma mecânica de PinToken
+// (token aleatório, só o hash SHA-256 salvo, uso único), mas fora do
+// isolamento por tenant/RLS: mesma exceção deliberada de PlatformAdmin.
+model PlatformAdminResetToken {
+  id              String    @id @default(cuid())
+  platformAdminId String
+  tokenHash       String    @unique
+  expiresAt       DateTime
+  usedAt          DateTime?
+  createdAt       DateTime  @default(now())
+
+  platformAdmin PlatformAdmin @relation(fields: [platformAdminId], references: [id], onDelete: Cascade)
+
+  @@index([platformAdminId])
 }
 
 model Tenant {

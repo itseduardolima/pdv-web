@@ -4,12 +4,14 @@ import argon2 from 'argon2'
 import type {
   ChangePlatformAdminPasswordInput,
   PlatformAdmin as PlatformAdminResponse,
+  PlatformForgotPasswordInput,
   PlatformLoginInput,
   UpdatePlatformAdminInput,
 } from '@pdv/shared'
 import { ConflictError, UnauthorizedError } from '../../common/errors/domain.error'
 import type { PlatformSession } from '../../common/types/platform-request'
 import { PlatformAdminRepository } from './platform-admin.repository'
+import { PlatformPasswordResetService } from './platform-password-reset.service'
 
 export interface PlatformLoginResult {
   token: string
@@ -40,6 +42,7 @@ export class PlatformAuthService implements OnModuleInit {
   constructor(
     private readonly admins: PlatformAdminRepository,
     private readonly jwt: JwtService,
+    private readonly resetTokens: PlatformPasswordResetService,
   ) {}
 
   async onModuleInit() {
@@ -92,6 +95,14 @@ export class PlatformAuthService implements OnModuleInit {
     const passwordHash = await argon2.hash(input.newPassword)
     const updated = await this.admins.update(admin.id, { passwordHash })
     return this.toPublic(updated)
+  }
+
+  // Sempre resolve, exista ou não a conta — mesma resposta genérica de
+  // AuthService.forgotPin (08-seguranca § 4), nunca revela se o e-mail existe.
+  async forgotPassword(input: PlatformForgotPasswordInput): Promise<void> {
+    const admin = await this.admins.findByEmail(input.email)
+    if (!admin) return
+    await this.resetTokens.sendResetLink(admin)
   }
 
   private toPublic(admin: PlatformAdminRow): PlatformAdminResponse {

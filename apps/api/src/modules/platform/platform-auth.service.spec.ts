@@ -3,6 +3,7 @@ import argon2 from 'argon2'
 import type { PlatformAdmin } from '@prisma/client'
 import { PlatformAdminRepository } from './platform-admin.repository'
 import { PlatformAuthService } from './platform-auth.service'
+import type { PlatformPasswordResetService } from './platform-password-reset.service'
 
 jest.mock('argon2', () => ({ hash: jest.fn(), verify: jest.fn() }))
 const argon = argon2 as jest.Mocked<typeof argon2>
@@ -23,10 +24,15 @@ async function makeService(overrides: Partial<Record<keyof PlatformAdminReposito
     ...overrides,
   }
   const jwt = { signAsync: jest.fn().mockResolvedValue('signed-platform-token') } as unknown as JwtService
-  const service = new PlatformAuthService(repository as unknown as PlatformAdminRepository, jwt)
+  const resetTokens = { sendResetLink: jest.fn() }
+  const service = new PlatformAuthService(
+    repository as unknown as PlatformAdminRepository,
+    jwt,
+    resetTokens as unknown as PlatformPasswordResetService,
+  )
   argon.hash.mockResolvedValue('dummy-hash')
   await service.onModuleInit()
-  return { service, repository, jwt }
+  return { service, repository, jwt, resetTokens }
 }
 
 describe('PlatformAuthService', () => {
@@ -163,6 +169,20 @@ describe('PlatformAuthService', () => {
       await expect(
         service.changePassword({ id: 'ghost' }, { currentPassword: 'senha-correta', newPassword: 'senha-nova-123' }),
       ).rejects.toMatchObject({ code: 'INVALID_SESSION', statusCode: 401 })
+    })
+  })
+
+  describe('forgotPassword', () => {
+    it('sends a reset link when the e-mail belongs to an admin', async () => {
+      const { service, resetTokens } = await makeService({ findByEmail: jest.fn().mockResolvedValue(admin) })
+      await service.forgotPassword({ email: 'dono@example.com' })
+      expect(resetTokens.sendResetLink).toHaveBeenCalledWith(admin)
+    })
+
+    it('resolves silently (no error, no link sent) when the e-mail does not exist', async () => {
+      const { service, resetTokens } = await makeService()
+      await expect(service.forgotPassword({ email: 'fantasma@example.com' })).resolves.toBeUndefined()
+      expect(resetTokens.sendResetLink).not.toHaveBeenCalled()
     })
   })
 })

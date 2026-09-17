@@ -1,6 +1,7 @@
-import { Body, Controller, Get, HttpCode, Patch, Post, Res, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, Param, Patch, Post, Res, UseGuards } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import {
+  ApiBadRequestResponse,
   ApiBody,
   ApiConflictResponse,
   ApiNoContentResponse,
@@ -14,9 +15,13 @@ import type { CookieOptions, Response } from 'express'
 import {
   changePlatformAdminPasswordSchema,
   platformAdminSchema,
+  platformForgotPasswordSchema,
   platformLoginSchema,
+  platformResetPasswordSchema,
+  platformResetTokenInfoSchema,
   updatePlatformAdminSchema,
   type PlatformAdmin,
+  type PlatformResetTokenInfo,
 } from '@pdv/shared'
 import { CurrentPlatformAdmin } from '../../common/decorators/current-platform-admin.decorator'
 import { Public } from '../../common/decorators/public.decorator'
@@ -24,9 +29,12 @@ import { PlatformAuthGuard } from '../../common/guards/platform-auth.guard'
 import { apiErrorOpenApi, openApi } from '../../common/openapi'
 import { PLATFORM_SESSION_COOKIE, type PlatformSession } from '../../common/types/platform-request'
 import { ChangePlatformAdminPasswordDto } from './dto/change-platform-admin-password.dto'
+import { PlatformForgotPasswordDto } from './dto/platform-forgot-password.dto'
 import { PlatformLoginDto } from './dto/platform-login.dto'
+import { PlatformResetPasswordDto } from './dto/platform-reset-password.dto'
 import { UpdatePlatformAdminDto } from './dto/update-platform-admin.dto'
 import { PlatformAuthService } from './platform-auth.service'
+import { PlatformPasswordResetService } from './platform-password-reset.service'
 
 // Toda rota é @Public() pra pular o AuthGuard de tenant (que exigiria o
 // cookie pdv_session/tenantId — não fazem sentido aqui, essa sessão não
@@ -39,6 +47,7 @@ export class PlatformAuthController {
 
   constructor(
     private readonly auth: PlatformAuthService,
+    private readonly passwordReset: PlatformPasswordResetService,
     config: ConfigService,
   ) {
     this.cookieOptions = {
@@ -119,5 +128,38 @@ export class PlatformAuthController {
     @Body() body: ChangePlatformAdminPasswordDto,
   ): Promise<void> {
     await this.auth.changePassword(session, body)
+  }
+
+  // As 3 rotas abaixo são anônimas por definição (token na URL é a
+  // autorização) — sem PlatformAuthGuard, só @Public() pra pular o
+  // AuthGuard de tenant.
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 900_000 } })
+  @Post('forgot-password')
+  @HttpCode(204)
+  @ApiBody({ schema: openApi(platformForgotPasswordSchema) })
+  @ApiNoContentResponse({ description: 'Sempre 204: se houver conta com esse e-mail, recebe o link' })
+  @ApiTooManyRequestsResponse({ schema: apiErrorOpenApi })
+  forgotPassword(@Body() body: PlatformForgotPasswordDto): Promise<void> {
+    return this.auth.forgotPassword(body)
+  }
+
+  @Public()
+  @Get('reset-token/:token')
+  @ApiOkResponse({ schema: openApi(platformResetTokenInfoSchema), description: 'Nome do admin dono do link' })
+  @ApiBadRequestResponse({ schema: apiErrorOpenApi, description: 'INVALID_TOKEN — inexistente, usado ou expirado' })
+  inspectResetToken(@Param('token') token: string): Promise<PlatformResetTokenInfo> {
+    return this.passwordReset.inspect(token)
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 10, ttl: 900_000 } })
+  @Post('reset-password')
+  @HttpCode(204)
+  @ApiBody({ schema: openApi(platformResetPasswordSchema) })
+  @ApiNoContentResponse({ description: 'Senha redefinida; o link deixa de valer' })
+  @ApiBadRequestResponse({ schema: apiErrorOpenApi, description: 'VALIDATION ou INVALID_TOKEN' })
+  async resetPassword(@Body() body: PlatformResetPasswordDto): Promise<void> {
+    await this.passwordReset.resetPassword(body.token, body.newPassword)
   }
 }

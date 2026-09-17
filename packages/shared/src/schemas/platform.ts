@@ -71,6 +71,30 @@ export const changePlatformAdminPasswordSchema = z.object({
 })
 export type ChangePlatformAdminPasswordInput = z.infer<typeof changePlatformAdminPasswordSchema>
 
+// "Esqueci minha senha" do superadmin — mesmo raciocínio de forgotPinInputSchema
+// (auth.ts): resposta sempre igual, exista ou não o e-mail.
+export const platformForgotPasswordSchema = z.object({ email: emailSchema })
+export type PlatformForgotPasswordInput = z.infer<typeof platformForgotPasswordSchema>
+
+// O que a tela "Redefinir senha" mostra antes do formulário.
+export const platformResetTokenInfoSchema = z.object({ adminName: z.string() })
+export type PlatformResetTokenInfo = z.infer<typeof platformResetTokenInfoSchema>
+
+export const platformResetPasswordSchema = z.object({
+  token: z.string({ required_error: 'Link inválido' }).min(1, 'Link inválido'),
+  newPassword: z
+    .string({ required_error: 'Informe a nova senha' })
+    .min(
+      PLATFORM_ADMIN_LIMITS.password.min,
+      `A senha precisa ter pelo menos ${PLATFORM_ADMIN_LIMITS.password.min} caracteres`,
+    )
+    .max(
+      PLATFORM_ADMIN_LIMITS.password.max,
+      `A senha pode ter no máximo ${PLATFORM_ADMIN_LIMITS.password.max} caracteres`,
+    ),
+})
+export type PlatformResetPasswordInput = z.infer<typeof platformResetPasswordSchema>
+
 // `adminEmail` é opcional (só serve pra recuperação de PIN depois, mesmo
 // campo de Operator) — mas `adminPin` é sempre obrigatório aqui: ao
 // contrário da criação normal de operador (createOperatorSchema, que aceita

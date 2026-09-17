@@ -6,6 +6,7 @@ import { TenantModule } from '../tenant/tenant.module'
 import { PlatformAdminRepository } from './platform-admin.repository'
 import { PlatformAuthController } from './platform-auth.controller'
 import { PlatformAuthService } from './platform-auth.service'
+import { PlatformPasswordResetService } from './platform-password-reset.service'
 import { PlatformTenantController } from './platform-tenant.controller'
 import { PlatformTenantService } from './platform-tenant.service'
 
@@ -28,6 +29,12 @@ import { PlatformTenantService } from './platform-tenant.service'
     TenantModule,
   ],
   controllers: [PlatformAuthController, PlatformTenantController],
-  providers: [PlatformAdminRepository, PlatformAuthService, PlatformTenantService, PlatformAuthGuard],
+  providers: [
+    PlatformAdminRepository,
+    PlatformAuthService,
+    PlatformPasswordResetService,
+    PlatformTenantService,
+    PlatformAuthGuard,
+  ],
 })
 export class PlatformModule {}
