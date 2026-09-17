@@ -209,6 +209,13 @@ detalhe do plano em `docs/scrum/SPRINTS.md`.
       valor de cada barra some no mobile denso e vira um chip fixo acima do
       gráfico com o maior valor do período ("Maior venda: ..."). `MonthChart`
       (12 colunas) não precisou de ajuste.
+- [x] Fix (2026-09-16): bottom-nav do celular apertada pra `ADMIN` (7
+      ícones sem rótulo lado a lado). `splitBottomNavItems()`
+      (`lib/navigation.ts`) mostra só Vender, Fechamento e Dashboard direto
+      e agrupa o resto (Produtos, Relatórios, Operadores, Configurações)
+      num item "Mais" (`MoreIcon` novo) que abre uma folha (Radix Dialog)
+      com a lista; operador comum (3 itens) não muda. Ver
+      `docs/specs/05-componentizacao.md` § shell de navegação.
 
 ## Backlog P2 (sem sprint fixa ainda)
 

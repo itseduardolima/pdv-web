@@ -50,11 +50,19 @@ lugar só.
 ## Exemplo do padrão de reuso: shell de navegação
 
 `AppShell` recebe a lista de itens de navegação (Vender, Produtos,
-Fechamento, Dashboard, Operadores) e o item ativo, e decide sozinho:
+Fechamento, Dashboard, Relatórios, Operadores, Configurações — os 4 últimos
+só pra `ADMIN`, ver `navItemsForRole` em `lib/navigation.ts`) e o item ativo,
+e decide sozinho:
 
-- Acima de `lg`: sidebar expandida com label (padrão "Desktop" do protótipo).
-- Entre `md` e `lg`: sidebar só com ícone (padrão "Tablet").
-- Abaixo de `md`: bottom-nav flutuante (padrão "Celular").
+- Acima de `xl`: sidebar expandida com label (padrão "Desktop" do
+  protótipo) — iPad deitado passa de 1024px mas ainda não é desktop
+  (decisão de 2026-09-13), por isso o corte é `xl` (1280px) e não `lg`.
+- Entre `md` e `xl`: sidebar só com ícone (padrão "Tablet").
+- Abaixo de `md`: bottom-nav flutuante (padrão "Celular"). `ADMIN` tem 7
+  itens — não cabem lado a lado sem apertar o alvo de toque, então
+  `splitBottomNavItems()` mostra só Vender, Fechamento e Dashboard direto e
+  agrupa o resto (Produtos, Relatórios, Operadores, Configurações) num item
+  "Mais" que abre uma folha com a lista (fix de 2026-09-16).
 
 Cada item de navegação (incluindo os ícones SVG) é definido **uma vez** numa
 lista de configuração (`lib/navigation.ts`), nunca duplicado em três lugares.

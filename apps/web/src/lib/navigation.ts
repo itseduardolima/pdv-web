@@ -37,4 +37,21 @@ export function isNavItemActive(item: NavItem, pathname: string): boolean {
   return pathname === item.href || pathname.startsWith(`${item.href}/`)
 }
 
+// Itens que ficam de fora da bottom-nav quando ela precisa colapsar (ADMIN,
+// 7 itens): Produtos, Relatórios, Operadores e Configurações são consultados
+// com menos frequência no dia a dia do caixa do que Vender/Fechamento/Dashboard.
+const BOTTOM_NAV_OVERFLOW_KEYS = new Set(['products', 'reports', 'operators', 'settings'])
+
+// Bottom-nav do celular não cabe mais que ~4 ícones sem apertar o alvo de
+// toque (ADMIN vê até 7 itens). Só junta o excedente num item "Mais" quando
+// isso realmente reduz a quantidade de botões — com poucos itens (operador
+// comum, 3) mostra todos direto, sem "Mais".
+export function splitBottomNavItems<T extends NavItem>(items: T[], maxPrimary = 4): { primary: T[]; overflow: T[] } {
+  if (items.length <= maxPrimary + 1) return { primary: items, overflow: [] }
+  return {
+    primary: items.filter((item) => !BOTTOM_NAV_OVERFLOW_KEYS.has(item.key)),
+    overflow: items.filter((item) => BOTTOM_NAV_OVERFLOW_KEYS.has(item.key)),
+  }
+}
+
 export const ROLE_LABEL = OPERATOR_ROLE_LABEL

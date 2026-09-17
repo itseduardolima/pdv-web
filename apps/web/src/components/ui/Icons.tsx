@@ -257,3 +257,13 @@ export function SettingsIcon(props: IconProps) {
     </svg>
   )
 }
+
+export function MoreIcon(props: IconProps) {
+  return (
+    <svg {...base} strokeWidth="2.2" width="20" height="20" {...props}>
+      <circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+      <circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
