@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 import { QueryProvider } from '@/components/providers/query-provider'
 import { TenantProvider } from '@/components/providers/tenant-provider'
+import { ServerErrorNotice } from '@/components/ui/ServerErrorNotice'
 import { isPlatformHost } from '@/lib/platform.server'
 import { getCurrentTenant } from '@/lib/tenant.server'
 import { tenantThemeVars } from '@/lib/tenant-theme'
@@ -48,12 +49,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     return (
       <html lang="pt-BR">
         <body>
-          <main className="flex min-h-screen items-center justify-center p-6">
-            <div className="max-w-md rounded-card bg-surface p-8 text-center">
-              <h1 className="font-heading text-2xl font-bold tracking-tight">PDV</h1>
-              <p className="mt-2 text-sm text-ink/60">{error.message}</p>
-            </div>
-          </main>
+          <ServerErrorNotice message={error.message} />
         </body>
       </html>
     )

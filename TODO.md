@@ -261,6 +261,16 @@ detalhe do plano em `docs/scrum/SPRINTS.md`.
       600ms — passava batido nas telas que navegam (`router.push`, o
       componente desmonta), mas travava nas que ficam na mesma página.
       Corrigido: `setSaved(false)` roda antes do `then()`.
+- [x] Feature (2026-09-17): estado genérico de erro (backend fora do ar
+      ou qualquer erro de render não tratado) ganhou ilustração + mensagem
+      em vez do cartão de texto simples de antes. `ServerErrorNotice`
+      (`components/ui/`, sem depender de tenant/tema) reaproveitado em dois
+      lugares: fallback de "tenant não resolvido" em `app/layout.tsx`
+      (mostra a mensagem real do erro) e `app/error.tsx` novo — boundary do
+      App Router que hoje não existia, cobre erro de render em qualquer
+      página (mensagem sempre genérica aqui, nunca o `error.message` bruto
+      na tela; ele só vai pro `console.error`). Ilustração fornecida pelo
+      usuário, salva em `public/server-error-illustration.svg`.
 
 ## Épico 13 — Painel Superadmin (decisão de 2026-09-16)
 
