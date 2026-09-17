@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Relatório de Auditoria de Segurança</title>
+<style>
+  @page { size: A4; margin: 20mm 16mm 18mm 16mm; }
+  * { box-sizing: border-box; }
+  :root {
+    --ink: #1a1a1a; --ink-soft: #6b6b6b; --bg: #ffffff; --line: #e3e3e3; --panel: #f7f7f8;
+    --crit: #B91C1C; --high: #EA580C; --med: #D97706;
+    --low: #2563EB; --strength: #059669;
+  }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; color: var(--ink); font-size: 10.5px; line-height: 1.5; margin: 0; }
+  h1, h2, h3 { font-family: Georgia, 'Times New Roman', serif; font-weight: 700; margin: 0 0 10px; }
+  .page { page-break-after: always; padding-top: 4px; }
+  .page:last-child { page-break-after: auto; }
+  .running-header { position: running(header); }
+  .cover { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 235mm; text-align: center; }
+  .cover .kicker { letter-spacing: 3px; text-transform: uppercase; color: var(--ink-soft); font-size: 11px; margin-bottom: 18px; }
+  .cover h1 { font-size: 30px; max-width: 480px; }
+  .cover .subtitle { color: var(--ink-soft); font-size: 13px; margin-top: 10px; max-width: 460px; }
+  .cover .meta-box { margin-top: 40px; border: 1px solid var(--line); border-radius: 10px; padding: 20px 26px; text-align: left; width: 420px; background: var(--panel); }
+  .cover .meta-box div { margin-bottom: 8px; font-size: 11px; }
+  .cover .meta-box strong { display: inline-block; width: 90px; color: var(--ink-soft); font-weight: 600; }
+  h2.section-title { font-size: 19px; border-bottom: 2px solid var(--ink); padding-bottom: 8px; margin-bottom: 16px; }
+  .summary-grid { display: flex; gap: 18px; margin-bottom: 22px; }
+  .stat-card { flex: 1; border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; background: var(--panel); }
+  .stat-card .num { font-size: 26px; font-weight: 700; font-family: Georgia, serif; }
+  .stat-card .label { font-size: 10px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px; }
+  .charts-row { display: flex; gap: 28px; align-items: flex-start; margin-bottom: 20px; }
+  .chart-box { flex: 1; border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  .chart-box h3 { font-size: 12px; margin-bottom: 12px; font-family: Arial, sans-serif; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-soft); }
+  .donut-wrap { display: flex; align-items: center; gap: 18px; }
+  .legend-row { font-size: 10.5px; margin-bottom: 6px; display: flex; align-items: center; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 7px; }
+  .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; }
+  .bar-label { width: 130px; font-size: 9.5px; color: var(--ink-soft); text-align: right; flex-shrink: 0; }
+  .bar-track { display: flex; align-items: center; gap: 8px; }
+  .bar-fill { height: 14px; background: var(--ink); border-radius: 3px; }
+  .bar-value { font-size: 10px; color: var(--ink-soft); }
+  ul.strengths { list-style: none; padding: 0; margin: 0; }
+  ul.strengths li { border-left: 3px solid var(--strength); background: var(--panel); padding: 10px 14px; border-radius: 0 8px 8px 0; margin-bottom: 10px; }
+  .evidence { font-size: 9.5px; color: var(--ink-soft); font-family: 'Courier New', monospace; }
+  table.meta-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  table.meta-table td { vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); font-size: 10px; }
+  table.findings { width: 100%; border-collapse: collapse; }
+  table.findings th { text-align: left; font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--ink-soft); border-bottom: 2px solid var(--ink); padding: 6px 8px; }
+  table.findings td { border-bottom: 1px solid var(--line); padding: 10px 8px; font-size: 10px; vertical-align: top; }
+  .mono { font-family: 'Courier New', monospace; font-size: 9px; white-space: nowrap; }
+  .chip { padding: 3px 8px; border-radius: 20px; font-size: 8.5px; font-weight: 700; white-space: nowrap; }
+  .finding-title { font-weight: 700; margin-bottom: 3px; }
+  .finding-cat { font-size: 8.5px; color: var(--ink-soft); text-transform: uppercase; margin-bottom: 6px; }
+  .finding-why { margin-top: 6px; }
+  .finding-cond { margin-top: 6px; font-size: 9.5px; color: var(--ink-soft); }
+  pre.snippet { background: #1e1e1e; color: #d4d4d4; padding: 8px 10px; border-radius: 6px; font-size: 8.5px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; margin: 4px 0; }
+  .rec { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
+  .rec-tag { flex-shrink: 0; background: var(--ink); color: white; font-size: 10px; font-weight: 700; padding: 4px 9px; border-radius: 6px; }
+  .rec-title { font-weight: 700; font-size: 11px; margin-bottom: 3px; }
+  .rec-detail { font-size: 9.5px; color: var(--ink-soft); }
+  .issues-pre { background: #f5f5f5; border: 1px solid var(--line); border-radius: 6px; padding: 14px; font-size: 8.5px; font-family: 'Courier New', monospace; white-space: pre-wrap; word-break: break-word; }
+</style>
+</head>
+<body>
+
+<div class="page cover">
+  <div class="kicker">Confidencial · Uso interno</div>
+  <h1>Relatório de Auditoria de Segurança<br>pdv-web</h1>
+  <p class="subtitle">Revisão adversarial de 5 categorias de falha comuns — isolamento de tenant, autorização, IDOR, segredos e XSS — adaptadas à stack real do projeto.</p>
+  <div class="meta-box">
+    <div><strong>Data</strong> 2026-09-17</div>
+    <div><strong>Escopo</strong> apps/api (NestJS + Prisma/PostgreSQL), apps/web (Next.js), packages/shared (Zod), infraestrutura (docker-compose, CI, scripts de deploy)</div>
+    <div><strong>Achados</strong> 4 (1 crítico, 1 alto)</div>
+    <div><strong>Metodologia</strong> stack detectada: NestJS + Prisma/PostgreSQL (RLS) no backend, Next.js/React no frontend, Zod para validação compartilhada, Docker Compose + GitHub Actions para deploy/CI. Ver tabela de mapeamento na próxima página.</div>
+  </div>
+</div>
+
+<div class="page">
+  <h2 class="section-title">Nota metodológica</h2>
+  <table class="meta-table"><tr><td><strong>Banco sem tranca (isolamento de tenant)</strong></td><td>Row-Level Security nativa do PostgreSQL (FORCE ROW LEVEL SECURITY) por tabela, ativada via `app.tenant_id` setado por uma extensão do Prisma Client (AsyncLocalStorage), somada a filtro explícito por tenantId em todo Repository.</td></tr><tr><td><strong>Permissão definida no navegador</strong></td><td>Guards do NestJS (`AuthGuard`, `RolesGuard`, `PlatformAuthGuard`) registrados globalmente ou por controller/rota; comparado com os `role === &#39;ADMIN&#39;` do frontend (React) que só escondem UI.</td></tr><tr><td><strong>IDOR</strong></td><td>Todo handler que recebe `:id` foi percorrido nos 8 controllers (`tenant`, `product`, `cash-session`, `sale`, `operator`, `storage`, `dashboard`, `reports`, `platform-*`), cruzando com o Repository correspondente.</td></tr><tr><td><strong>Chaves expostas</strong></td><td>`.env.example` (raiz, apps/api, apps/web), `docker-compose.yml`/`docker-compose.dev.yml`, `.github/workflows/ci.yml`, `scripts/deploy-check.sh`, histórico do git (`git grep`/`git log` por padrões de chave e por `.env` commitado).</td></tr><tr><td><strong>Inputs sem tratamento (XSS)</strong></td><td>Frontend Next.js/React: busca por `dangerouslySetInnerHTML`, `eval`, libs de markdown/HTML, e todo `href`/`src` dinâmico. Backend: template de e-mail (`MailService`) — texto puro, sem HTML.</td></tr></table>
+</div>
+
+<div class="page">
+  <h2 class="section-title">Resumo executivo</h2>
+  <div class="summary-grid">
+    <div class="stat-card"><div class="num" style="color:#B91C1C">1</div><div class="label">Crítica</div></div>
+    <div class="stat-card"><div class="num" style="color:#EA580C">1</div><div class="label">Alta</div></div>
+    <div class="stat-card"><div class="num" style="color:#D97706">0</div><div class="label">Média</div></div>
+    <div class="stat-card"><div class="num" style="color:#2563EB">1</div><div class="label">Baixa</div></div>
+    <div class="stat-card"><div class="num" style="color:#6B7280">1</div><div class="label">Informativa</div></div>
+  </div>
+  <div class="charts-row">
+    <div class="chart-box"><h3>Achados por severidade</h3>
+    <div class="donut-wrap">
+      <svg width="180" height="180" viewBox="0 0 180 180">
+        <path d="M 90.00 20.00 A 70 70 0 0 1 160.00 90.00" stroke="#B91C1C" stroke-width="34" fill="none" />
+<path d="M 160.00 90.00 A 70 70 0 0 1 90.00 160.00" stroke="#EA580C" stroke-width="34" fill="none" />
+<path d="M 90.00 160.00 A 70 70 0 0 1 20.00 90.00" stroke="#2563EB" stroke-width="34" fill="none" />
+<path d="M 20.00 90.00 A 70 70 0 0 1 90.00 20.00" stroke="#6B7280" stroke-width="34" fill="none" />
+        <circle cx="90" cy="90" r="52" fill="var(--bg)" />
+        <text x="90" y="86" text-anchor="middle" font-size="30" font-weight="700" fill="var(--ink)">4</text>
+        <text x="90" y="106" text-anchor="middle" font-size="11" fill="var(--ink-soft)">achados</text>
+      </svg>
+      <div class="legend"><div class="legend-row"><span class="dot" style="background:#B91C1C"></span>crítica — 1</div><div class="legend-row"><span class="dot" style="background:#EA580C"></span>alta — 1</div><div class="legend-row"><span class="dot" style="background:#2563EB"></span>baixa — 1</div><div class="legend-row"><span class="dot" style="background:#6B7280"></span>informativa — 1</div></div>
+    </div></div>
+    <div class="chart-box"><h3>Achados por categoria</h3><div class="bar-chart">
+      <div class="bar-row">
+        <div class="bar-label">Chaves expostas</div>
+        <div class="bar-track"><div class="bar-fill" style="width:320px"></div><span class="bar-value">2</span></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Inputs sem tratamento (XSS)</div>
+        <div class="bar-track"><div class="bar-fill" style="width:160px"></div><span class="bar-value">1</span></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label">Banco sem tranca / IDOR</div>
+        <div class="bar-track"><div class="bar-fill" style="width:160px"></div><span class="bar-value">1</span></div>
+      </div></div></div>
+  </div>
+  <p style="color:var(--ink-soft); font-size:9.5px;">O código auditado demonstrou disciplina consistente de isolamento multi-tenant (RLS forçada + filtro explícito em todo Repository) e de autorização (guards de servidor, nunca só o frontend) — os achados desta auditoria estão concentrados na camada de configuração/deploy (segredos e defaults), não na lógica de negócio ou nas queries.</p>
+</div>
+
+<div class="page">
+  <h2 class="section-title">Pontos fortes</h2>
+  <ul class="strengths"><li><strong>Row-Level Security forçada em todas as tabelas de domínio, com defesa em profundidade no Repository</strong><br><span class="evidence">apps/api/prisma/migrations/20260912180000_row_level_security/migration.sql (ENABLE + FORCE ROW LEVEL SECURITY em Operator, Product, CashSession, Sale, SaleItem, PinToken); todo método de apps/api/src/modules/*/*.repository.ts que busca por id também filtra por tenantId explicitamente (ex.: operator.repository.ts:47, product.repository.ts:24, cash-session.repository.ts:51) — mesmo se a extensão RLS falhasse, o filtro explícito ainda barra o cross-tenant.</span></li><li><strong>SaleItem sem tenantId próprio, isolado transitivamente por EXISTS na Sale (que já tem RLS)</strong><br><span class="evidence">migration.sql: `CREATE POLICY tenant_isolation ON &quot;SaleItem&quot; USING (EXISTS (SELECT 1 FROM &quot;Sale&quot; s WHERE s.id = &quot;SaleItem&quot;.&quot;saleId&quot;))` — o subselect em Sale herda a política de Sale, então só enxerga itens de vendas do tenant atual.</span></li><li><strong>Guards de autorização aplicados de forma consistente e cruzados corretamente com o frontend</strong><br><span class="evidence">apps/api/src/app.module.ts:64-66 registra AuthGuard e RolesGuard globalmente; todo endpoint de escrita sensível (product.controller.ts:54/65/77, operator.controller.ts:38, storage.controller.ts:29, dashboard.controller.ts:13, reports.controller.ts:14, tenant.controller.ts:42) tem `@Roles(&#39;ADMIN&#39;)` no backend, não confiando só no isAdmin do React.</span></li><li><strong>Upload de imagem via URL assinada com validação real do objeto (não confia no Content-Type declarado)</strong><br><span class="evidence">apps/api/src/modules/storage/storage.service.ts:31-42 confere prefixo `tenants/&lt;tenantId&gt;/`, HEAD do objeto, magic bytes (JPEG/PNG/WebP) e tamanho máximo — apaga e rejeita se algo não bater.</span></li><li><strong>CORS com regex de subdomínio corretamente escapado</strong><br><span class="evidence">apps/api/src/common/cors.ts escapa todos os metacaracteres antes de trocar `*` por `[^.]+` — não há brecha de regex-injection na lista de origens permitidas.</span></li><li><strong>Sessão de superadmin isolada da sessão de loja (segredo JWT e cookie próprios, guard próprio, não-global)</strong><br><span class="evidence">apps/api/src/modules/platform/platform.module.ts:15-27 usa PLATFORM_SESSION_SECRET dedicado num JwtModule não-global; PlatformAuthGuard nunca chama getTenantId().</span></li><li><strong>Sem HTML em e-mail transacional — nenhuma superfície de injeção de template</strong><br><span class="evidence">apps/api/src/modules/mail/mail.service.ts envia só `text`, nunca `html`; nenhum ponto do código monta HTML para e-mail.</span></li><li><strong>Segredos e .env corretamente fora do controle de versão, sem vazamento no histórico</strong><br><span class="evidence">.gitignore:5,7 ignora apps/api/.env e apps/web/.env.local; `git log --all` para esses arquivos não retorna nenhum commit; `git grep` por padrões de chave (AWS AKIA, sk-, AIza) não encontrou nada no código rastreado.</span></li><li><strong>Respostas de autenticação genéricas contra enumeração de conta (timing e mensagem)</strong><br><span class="evidence">platform-auth.service.ts:52-56 roda argon2.verify contra um dummyHash mesmo quando o e-mail não existe (mesmo padrão em auth.service.ts) — mesma mensagem/tempo de resposta para senha errada e e-mail inexistente, em ambos os logins (operador e superadmin).</span></li></ul>
+</div>
+
+<div class="page">
+  <h2 class="section-title">Achados detalhados</h2>
+  <table class="findings">
+    <thead><tr><th style="width:60px">Severidade</th><th style="width:150px">Arquivo:linha</th><th>Descrição</th></tr></thead>
+    <tbody>
+    <tr>
+      <td><span class="chip" style="background:#B91C1C22;color:#B91C1C;border:1px solid #B91C1C55">CRÍTICA</span></td>
+      <td class="mono">scripts/deploy-check.sh:7</td>
+      <td>
+        <div class="finding-title">PLATFORM_SESSION_SECRET fica fora da validação do deploy-check.sh — pode ir para produção com o valor placeholder do .env.example</div>
+        <div class="finding-cat">Chaves expostas</div>
+        <pre class="snippet">required=&quot;APP_DOMAIN API_DOMAIN MEDIA_DOMAIN ACME_EMAIL POSTGRES_PASSWORD APP_DB_PASSWORD STORAGE_SECRET_KEY SESSION_SECRET&quot;</pre>
+        <div class="finding-why">O script que barra `docker compose up` com placeholder no .env (comentário do próprio docker-compose.yml: &quot;rode ./scripts/deploy-check.sh antes de docker compose up&quot;) lista SESSION_SECRET mas esquece PLATFORM_SESSION_SECRET — o segredo que assina o JWT da sessão de Superadmin (apps/api/src/modules/platform/platform.module.ts:24, `config.getOrThrow(&#39;PLATFORM_SESSION_SECRET&#39;)`). Não existe nenhuma outra validação de startup que rejeite o valor `change-me-to-a-different-long-random-secret` do apps/api/.env.example:39 — getOrThrow só verifica presença, não força. Se quem faz o deploy copiar o .env.example e esquecer essa linha (fácil, já que o script &#39;passa&#39; mesmo assim), qualquer pessoa com o texto do .env.example público neste repositório pode forjar um cookie pdv_platform_session válido para QUALQUER PlatformAdmin (`{ sub: &lt;id&gt; }`, sem verificação de senha) — controle total do painel Superadmin: criar/suspender lojas, ver todas as lojas cadastradas.</div>
+        <div class="finding-cond"><strong>Condição de exploração:</strong> Só se explora se o operador do deploy não sobrescrever PLATFORM_SESSION_SECRET no .env de produção — mas nada no processo de deploy documentado (deploy-check.sh) obriga isso, ao contrário do que já é feito para SESSION_SECRET.</div>
+      </td>
+    </tr>
+    <tr>
+      <td><span class="chip" style="background:#EA580C22;color:#EA580C;border:1px solid #EA580C55">ALTA</span></td>
+      <td class="mono">docker-compose.yml:49, 68, 71, 88</td>
+      <td>
+        <div class="finding-title">Defaults de senha fracos e públicos para Postgres e MinIO embutidos direto no docker-compose.yml de produção</div>
+        <div class="finding-cat">Chaves expostas</div>
+        <pre class="snippet">DATABASE_URL: postgresql://${APP_DB_USER:-pdv}:${APP_DB_PASSWORD:-pdv}@postgres:5432/...
+POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+APP_DB_PASSWORD: ${APP_DB_PASSWORD:-pdv}
+MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY:-pdvpdvpdv}</pre>
+        <div class="finding-why">Esses três defaults (`postgres`, `pdv`, `pdvpdvpdv`) SÃO cobertos pelo deploy-check.sh (achado positivo, ver seção de pontos fortes) — mas o deploy-check.sh só é chamado se o operador lembrar de rodá-lo manualmente antes do `docker compose up -d --build` (não há hook automático, nem o próprio compose recusa subir sem ele). Um `docker compose up` direto, sem passar pelo script, sobe com Postgres e MinIO usando essas senhas triviais, expostas neste repositório público — se a porta do Postgres/MinIO acabar acessível na rede (erro comum de firewall em VPS), é acesso direto ao banco todo (bypassa até a RLS, que só vale para o usuário da aplicação, não para POSTGRES_PASSWORD que é superusuário).</div>
+        <div class="finding-cond"><strong>Condição de exploração:</strong> Precisa de um deploy que pule scripts/deploy-check.sh E que a porta 5432/9000 fique acessível externamente (não expostas por padrão neste docker-compose.yml, mas comum em setups customizados de VPS).</div>
+      </td>
+    </tr>
+    <tr>
+      <td><span class="chip" style="background:#2563EB22;color:#2563EB;border:1px solid #2563EB55">BAIXA</span></td>
+      <td class="mono">packages/shared/src/schemas/tenant.ts:16, 31</td>
+      <td>
+        <div class="finding-title">logoUrl/photoUrl aceitam esquema javascript: na validação (z.string().url() não restringe protocolo)</div>
+        <div class="finding-cat">Inputs sem tratamento (XSS)</div>
+        <pre class="snippet">logoUrl: z.string().url().nullable(),
+logoUrl: z.string().url(&#39;URL de logo inválida.&#39;).nullable(),</pre>
+        <div class="finding-why">O validador `.url()` do Zod aceita qualquer URL sintaticamente válida, incluindo o esquema `javascript:` (ex.: `javascript:alert(1)` passa). O mesmo padrão se repete em product.ts, operator.ts, auth.ts, report.ts, dashboard.ts para `photoUrl`. Na prática, hoje isso NÃO é explorável: todo valor chega por upload real (packages PhotoUploadBox -&gt; POST /uploads/confirm, que devolve uma publicUrl do próprio bucket) e o único consumo no frontend é `&lt;img src&gt;` (Avatar.tsx:22, TenantMark.tsx:8, ProductCard.tsx:22 etc.), `manifest.ts` (campo JSON `src` do Web App Manifest) e `layout.tsx` (metadata de `&lt;link rel=icon&gt;`) — nenhum desses é um sink que executa `javascript:`. O risco é teórico/defesa-em-profundidade: um PATCH direto na API (fora da UI) por um Administrador da própria loja poderia gravar `javascript:...` no campo, e se um consumidor futuro (ex.: um `&lt;a href={logoUrl}&gt;`&quot;ver foto em tamanho real&quot;) for adicionado sem essa restrição, a XSS se tornaria real.</div>
+        <div class="finding-cond"><strong>Condição de exploração:</strong> Não é explorável nos sinks atuais (`&lt;img src&gt;`, manifest, metadata de ícone). Vira explorável apenas se um `&lt;a href&gt;`/`window.open`/redirect for adicionado usando esses campos sem sanitização adicional.</div>
+      </td>
+    </tr>
+    <tr>
+      <td><span class="chip" style="background:#6B728022;color:#6B7280;border:1px solid #6B728055">INFORMATIVA</span></td>
+      <td class="mono">apps/api/src/modules/platform/platform-tenant.service.ts:128-137</td>
+      <td>
+        <div class="finding-title">Checagem de e-mail de administrador único entre lojas (isAdminEmailInUse) tem race condition TOCTOU — já mapeada pelo time, sem fix aplicado</div>
+        <div class="finding-cat">Banco sem tranca / IDOR</div>
+        <pre class="snippet">private async isAdminEmailInUse(email: string): Promise&lt;boolean&gt; {
+    const tenants = await this.prisma.tenant.findMany({ select: { id: true } })
+    for (const tenant of tenants) {
+      const found = await tenantStorage.run({ tenantId: tenant.id }, async () =&gt; {
+        return this.prisma.operator.findFirst({ where: { tenantId: tenant.id, email, deletedAt: null } })
+      })
+      if (found) return true
+    }
+    return false
+  }</pre>
+        <div class="finding-why">Diferente do achado já corrigido nesta mesma sessão para PlatformAdmin.email (que tem @unique no banco e agora vira 409 tratado), Operator.email só é único por tenant (`@@unique([tenantId, email])`) — não há constraint global no banco para pegar a corrida entre o check (findFirst) e a criação da loja/operador. Duas chamadas concorrentes de POST /platform/tenants com o mesmo adminEmail em lojas diferentes podem, em teoria, passar as duas pela checagem antes de qualquer uma criar o operador, resultando no mesmo e-mail administrando duas lojas — quebra de uma regra de negócio (não de isolamento de dado entre tenants, e não path de dado sensível cross-tenant), não uma falha de segurança direta. Severidade rebaixada a informativa: já era um item conhecido e aceito nesta sessão (surface de uso é só o Superadmin, ator único e de confiança), citado aqui só para constar na cobertura completa da auditoria.</div>
+        <div class="finding-cond"><strong>Condição de exploração:</strong> Exige que o próprio Superadmin (único ator com acesso a esta rota) dispare duas criações de loja simultâneas com o mesmo e-mail — não é um vetor de ataque externo.</div>
+      </td>
+    </tr></tbody>
+  </table>
+</div>
+
+<div class="page">
+  <h2 class="section-title">Recomendações priorizadas</h2>
+  <div class="rec"><span class="rec-tag">P1</span><div><div class="rec-title">Adicionar PLATFORM_SESSION_SECRET à validação obrigatória do deploy-check.sh</div><div class="rec-detail">Uma linha em scripts/deploy-check.sh (achado F1) — mesma lista `required` que já cobre SESSION_SECRET. Sem custo de implementação, fecha o maior risco da auditoria.</div></div></div><div class="rec"><span class="rec-tag">P1</span><div><div class="rec-title">Adicionar validação de startup que rejeite qualquer segredo com valor de placeholder</div><div class="rec-detail">Complementar ao P1 acima: um `if` no bootstrap (main.ts) que recusa subir se SESSION_SECRET/PLATFORM_SESSION_SECRET baterem em `change-me-to-*` — defesa mesmo se alguém rodar docker compose sem passar pelo deploy-check.sh (achado F1/F2).</div></div></div><div class="rec"><span class="rec-tag">P2</span><div><div class="rec-title">Remover (ou documentar explicitamente como &quot;só localhost&quot;) os defaults de senha do docker-compose.yml</div><div class="rec-detail">POSTGRES_PASSWORD, APP_DB_PASSWORD, STORAGE_SECRET_KEY (achado F2) — hoje o comentário no topo do arquivo já avisa, mas o fallback funcional ainda existe; considerar falhar o container se a env vier vazia em vez de usar `postgres`/`pdv`/`pdvpdvpdv`.</div></div></div><div class="rec"><span class="rec-tag">P3</span><div><div class="rec-title">Restringir o schema de logoUrl/photoUrl a protocolo http(s)</div><div class="rec-detail">Trocar `z.string().url()` por um refine que rejeite qualquer esquema fora de http/https em packages/shared/src/schemas/*.ts (achado F3) — defesa em profundidade, sem sink explorável hoje.</div></div></div><div class="rec"><span class="rec-tag">P3</span><div><div class="rec-title">Avaliar lock/transação para isAdminEmailInUse em PlatformTenantService.create()</div><div class="rec-detail">Baixo risco (ator único, superadmin) — considerar uma constraint auxiliar (ex.: tabela global de e-mails de admin) só se o produto crescer para múltiplos operadores de plataforma (achado F4).</div></div></div>
+</div>
+
+<div class="page">
+  <h2 class="section-title">Issues para o GitHub</h2>
+  <p style="color:var(--ink-soft); font-size:9.5px; margin-bottom:12px;">Texto pronto para copiar e colar na criação de issues — um bloco por achado acionável (achados informativos, sem ação de código necessária, ficam de fora).</p>
+  <div class="issues-pre">--- ISSUE 1 ---
+## [Segurança] PLATFORM_SESSION_SECRET fica fora da validação do deploy-check.sh — pode ir para produção com o valor placeholder do .env.example
+
+**Labels sugeridas:** security, crítica
+
+### Descrição do problema
+O script que barra `docker compose up` com placeholder no .env (comentário do próprio docker-compose.yml: &quot;rode ./scripts/deploy-check.sh antes de docker compose up&quot;) lista SESSION_SECRET mas esquece PLATFORM_SESSION_SECRET — o segredo que assina o JWT da sessão de Superadmin (apps/api/src/modules/platform/platform.module.ts:24, `config.getOrThrow(&#39;PLATFORM_SESSION_SECRET&#39;)`). Não existe nenhuma outra validação de startup que rejeite o valor `change-me-to-a-different-long-random-secret` do apps/api/.env.example:39 — getOrThrow só verifica presença, não força. Se quem faz o deploy copiar o .env.example e esquecer essa linha (fácil, já que o script &#39;passa&#39; mesmo assim), qualquer pessoa com o texto do .env.example público neste repositório pode forjar um cookie pdv_platform_session válido para QUALQUER PlatformAdmin (`{ sub: &lt;id&gt; }`, sem verificação de senha) — controle total do painel Superadmin: criar/suspender lojas, ver todas as lojas cadastradas.
+
+### Evidência
+`scripts/deploy-check.sh:7`
+```
+required=&quot;APP_DOMAIN API_DOMAIN MEDIA_DOMAIN ACME_EMAIL POSTGRES_PASSWORD APP_DB_PASSWORD STORAGE_SECRET_KEY SESSION_SECRET&quot;
+```
+
+### Impacto
+Severidade: **CRÍTICA**. Só se explora se o operador do deploy não sobrescrever PLATFORM_SESSION_SECRET no .env de produção — mas nada no processo de deploy documentado (deploy-check.sh) obriga isso, ao contrário do que já é feito para SESSION_SECRET.
+
+### Sugestão de correção
+Uma linha em scripts/deploy-check.sh (achado F1) — mesma lista `required` que já cobre SESSION_SECRET. Sem custo de implementação, fecha o maior risco da auditoria.
+
+### Critérios de aceite
+- [ ] Causa raiz corrigida no arquivo/linha indicado
+- [ ] Teste (unitário ou de integração) cobrindo o caso, quando aplicável
+- [ ] Revisão confirma que a condição de exploração deixou de existir
+--- FIM ISSUE 1 ---
+
+--- ISSUE 2 ---
+## [Segurança] Defaults de senha fracos e públicos para Postgres e MinIO embutidos direto no docker-compose.yml de produção
+
+**Labels sugeridas:** security, alta
+
+### Descrição do problema
+Esses três defaults (`postgres`, `pdv`, `pdvpdvpdv`) SÃO cobertos pelo deploy-check.sh (achado positivo, ver seção de pontos fortes) — mas o deploy-check.sh só é chamado se o operador lembrar de rodá-lo manualmente antes do `docker compose up -d --build` (não há hook automático, nem o próprio compose recusa subir sem ele). Um `docker compose up` direto, sem passar pelo script, sobe com Postgres e MinIO usando essas senhas triviais, expostas neste repositório público — se a porta do Postgres/MinIO acabar acessível na rede (erro comum de firewall em VPS), é acesso direto ao banco todo (bypassa até a RLS, que só vale para o usuário da aplicação, não para POSTGRES_PASSWORD que é superusuário).
+
+### Evidência
+`docker-compose.yml:49, 68, 71, 88`
+```
+DATABASE_URL: postgresql://${APP_DB_USER:-pdv}:${APP_DB_PASSWORD:-pdv}@postgres:5432/...
+POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+APP_DB_PASSWORD: ${APP_DB_PASSWORD:-pdv}
+MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY:-pdvpdvpdv}
+```
+
+### Impacto
+Severidade: **ALTA**. Precisa de um deploy que pule scripts/deploy-check.sh E que a porta 5432/9000 fique acessível externamente (não expostas por padrão neste docker-compose.yml, mas comum em setups customizados de VPS).
+
+### Sugestão de correção
+Complementar ao P1 acima: um `if` no bootstrap (main.ts) que recusa subir se SESSION_SECRET/PLATFORM_SESSION_SECRET baterem em `change-me-to-*` — defesa mesmo se alguém rodar docker compose sem passar pelo deploy-check.sh (achado F1/F2).
+
+### Critérios de aceite
+- [ ] Causa raiz corrigida no arquivo/linha indicado
+- [ ] Teste (unitário ou de integração) cobrindo o caso, quando aplicável
+- [ ] Revisão confirma que a condição de exploração deixou de existir
+--- FIM ISSUE 2 ---
+
+--- ISSUE 3 ---
+## [Segurança] logoUrl/photoUrl aceitam esquema javascript: na validação (z.string().url() não restringe protocolo)
+
+**Labels sugeridas:** security, baixa
+
+### Descrição do problema
+O validador `.url()` do Zod aceita qualquer URL sintaticamente válida, incluindo o esquema `javascript:` (ex.: `javascript:alert(1)` passa). O mesmo padrão se repete em product.ts, operator.ts, auth.ts, report.ts, dashboard.ts para `photoUrl`. Na prática, hoje isso NÃO é explorável: todo valor chega por upload real (packages PhotoUploadBox -&gt; POST /uploads/confirm, que devolve uma publicUrl do próprio bucket) e o único consumo no frontend é `&lt;img src&gt;` (Avatar.tsx:22, TenantMark.tsx:8, ProductCard.tsx:22 etc.), `manifest.ts` (campo JSON `src` do Web App Manifest) e `layout.tsx` (metadata de `&lt;link rel=icon&gt;`) — nenhum desses é um sink que executa `javascript:`. O risco é teórico/defesa-em-profundidade: um PATCH direto na API (fora da UI) por um Administrador da própria loja poderia gravar `javascript:...` no campo, e se um consumidor futuro (ex.: um `&lt;a href={logoUrl}&gt;`&quot;ver foto em tamanho real&quot;) for adicionado sem essa restrição, a XSS se tornaria real.
+
+### Evidência
+`packages/shared/src/schemas/tenant.ts:16, 31`
+```
+logoUrl: z.string().url().nullable(),
+logoUrl: z.string().url(&#39;URL de logo inválida.&#39;).nullable(),
+```
+
+### Impacto
+Severidade: **BAIXA**. Não é explorável nos sinks atuais (`&lt;img src&gt;`, manifest, metadata de ícone). Vira explorável apenas se um `&lt;a href&gt;`/`window.open`/redirect for adicionado usando esses campos sem sanitização adicional.
+
+### Sugestão de correção
+Trocar `z.string().url()` por um refine que rejeite qualquer esquema fora de http/https em packages/shared/src/schemas/*.ts (achado F3) — defesa em profundidade, sem sink explorável hoje.
+
+### Critérios de aceite
+- [ ] Causa raiz corrigida no arquivo/linha indicado
+- [ ] Teste (unitário ou de integração) cobrindo o caso, quando aplicável
+- [ ] Revisão confirma que a condição de exploração deixou de existir
+--- FIM ISSUE 3 ---</div>
+</div>
+
+</body>
+</html>

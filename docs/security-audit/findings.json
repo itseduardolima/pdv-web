@@ -1,0 +1,111 @@
+{
+  "project": "pdv-web",
+  "date": "2026-09-17",
+  "scope": "apps/api (NestJS + Prisma/PostgreSQL), apps/web (Next.js), packages/shared (Zod), infraestrutura (docker-compose, CI, scripts de deploy)",
+  "methodology": [
+    {
+      "category": "Banco sem tranca (isolamento de tenant)",
+      "mapping": "Row-Level Security nativa do PostgreSQL (FORCE ROW LEVEL SECURITY) por tabela, ativada via `app.tenant_id` setado por uma extensão do Prisma Client (AsyncLocalStorage), somada a filtro explícito por tenantId em todo Repository."
+    },
+    {
+      "category": "Permissão definida no navegador",
+      "mapping": "Guards do NestJS (`AuthGuard`, `RolesGuard`, `PlatformAuthGuard`) registrados globalmente ou por controller/rota; comparado com os `role === 'ADMIN'` do frontend (React) que só escondem UI."
+    },
+    {
+      "category": "IDOR",
+      "mapping": "Todo handler que recebe `:id` foi percorrido nos 8 controllers (`tenant`, `product`, `cash-session`, `sale`, `operator`, `storage`, `dashboard`, `reports`, `platform-*`), cruzando com o Repository correspondente."
+    },
+    {
+      "category": "Chaves expostas",
+      "mapping": "`.env.example` (raiz, apps/api, apps/web), `docker-compose.yml`/`docker-compose.dev.yml`, `.github/workflows/ci.yml`, `scripts/deploy-check.sh`, histórico do git (`git grep`/`git log` por padrões de chave e por `.env` commitado)."
+    },
+    {
+      "category": "Inputs sem tratamento (XSS)",
+      "mapping": "Frontend Next.js/React: busca por `dangerouslySetInnerHTML`, `eval`, libs de markdown/HTML, e todo `href`/`src` dinâmico. Backend: template de e-mail (`MailService`) — texto puro, sem HTML."
+    }
+  ],
+  "strengths": [
+    {
+      "title": "Row-Level Security forçada em todas as tabelas de domínio, com defesa em profundidade no Repository",
+      "evidence": "apps/api/prisma/migrations/20260912180000_row_level_security/migration.sql (ENABLE + FORCE ROW LEVEL SECURITY em Operator, Product, CashSession, Sale, SaleItem, PinToken); todo método de apps/api/src/modules/*/*.repository.ts que busca por id também filtra por tenantId explicitamente (ex.: operator.repository.ts:47, product.repository.ts:24, cash-session.repository.ts:51) — mesmo se a extensão RLS falhasse, o filtro explícito ainda barra o cross-tenant."
+    },
+    {
+      "title": "SaleItem sem tenantId próprio, isolado transitivamente por EXISTS na Sale (que já tem RLS)",
+      "evidence": "migration.sql: `CREATE POLICY tenant_isolation ON \"SaleItem\" USING (EXISTS (SELECT 1 FROM \"Sale\" s WHERE s.id = \"SaleItem\".\"saleId\"))` — o subselect em Sale herda a política de Sale, então só enxerga itens de vendas do tenant atual."
+    },
+    {
+      "title": "Guards de autorização aplicados de forma consistente e cruzados corretamente com o frontend",
+      "evidence": "apps/api/src/app.module.ts:64-66 registra AuthGuard e RolesGuard globalmente; todo endpoint de escrita sensível (product.controller.ts:54/65/77, operator.controller.ts:38, storage.controller.ts:29, dashboard.controller.ts:13, reports.controller.ts:14, tenant.controller.ts:42) tem `@Roles('ADMIN')` no backend, não confiando só no isAdmin do React."
+    },
+    {
+      "title": "Upload de imagem via URL assinada com validação real do objeto (não confia no Content-Type declarado)",
+      "evidence": "apps/api/src/modules/storage/storage.service.ts:31-42 confere prefixo `tenants/<tenantId>/`, HEAD do objeto, magic bytes (JPEG/PNG/WebP) e tamanho máximo — apaga e rejeita se algo não bater."
+    },
+    {
+      "title": "CORS com regex de subdomínio corretamente escapado",
+      "evidence": "apps/api/src/common/cors.ts escapa todos os metacaracteres antes de trocar `*` por `[^.]+` — não há brecha de regex-injection na lista de origens permitidas."
+    },
+    {
+      "title": "Sessão de superadmin isolada da sessão de loja (segredo JWT e cookie próprios, guard próprio, não-global)",
+      "evidence": "apps/api/src/modules/platform/platform.module.ts:15-27 usa PLATFORM_SESSION_SECRET dedicado num JwtModule não-global; PlatformAuthGuard nunca chama getTenantId()."
+    },
+    {
+      "title": "Sem HTML em e-mail transacional — nenhuma superfície de injeção de template",
+      "evidence": "apps/api/src/modules/mail/mail.service.ts envia só `text`, nunca `html`; nenhum ponto do código monta HTML para e-mail."
+    },
+    {
+      "title": "Segredos e .env corretamente fora do controle de versão, sem vazamento no histórico",
+      "evidence": ".gitignore:5,7 ignora apps/api/.env e apps/web/.env.local; `git log --all` para esses arquivos não retorna nenhum commit; `git grep` por padrões de chave (AWS AKIA, sk-, AIza) não encontrou nada no código rastreado."
+    },
+    {
+      "title": "Respostas de autenticação genéricas contra enumeração de conta (timing e mensagem)",
+      "evidence": "platform-auth.service.ts:52-56 roda argon2.verify contra um dummyHash mesmo quando o e-mail não existe (mesmo padrão em auth.service.ts) — mesma mensagem/tempo de resposta para senha errada e e-mail inexistente, em ambos os logins (operador e superadmin)."
+    }
+  ],
+  "findings": [
+    {
+      "id": "F1",
+      "category": "Chaves expostas",
+      "severity": "crítica",
+      "title": "PLATFORM_SESSION_SECRET fica fora da validação do deploy-check.sh — pode ir para produção com o valor placeholder do .env.example",
+      "file": "scripts/deploy-check.sh",
+      "lines": "7",
+      "snippet": "required=\"APP_DOMAIN API_DOMAIN MEDIA_DOMAIN ACME_EMAIL POSTGRES_PASSWORD APP_DB_PASSWORD STORAGE_SECRET_KEY SESSION_SECRET\"",
+      "why": "O script que barra `docker compose up` com placeholder no .env (comentário do próprio docker-compose.yml: \"rode ./scripts/deploy-check.sh antes de docker compose up\") lista SESSION_SECRET mas esquece PLATFORM_SESSION_SECRET — o segredo que assina o JWT da sessão de Superadmin (apps/api/src/modules/platform/platform.module.ts:24, `config.getOrThrow('PLATFORM_SESSION_SECRET')`). Não existe nenhuma outra validação de startup que rejeite o valor `change-me-to-a-different-long-random-secret` do apps/api/.env.example:39 — getOrThrow só verifica presença, não força. Se quem faz o deploy copiar o .env.example e esquecer essa linha (fácil, já que o script 'passa' mesmo assim), qualquer pessoa com o texto do .env.example público neste repositório pode forjar um cookie pdv_platform_session válido para QUALQUER PlatformAdmin (`{ sub: <id> }`, sem verificação de senha) — controle total do painel Superadmin: criar/suspender lojas, ver todas as lojas cadastradas.",
+      "exploit_conditions": "Só se explora se o operador do deploy não sobrescrever PLATFORM_SESSION_SECRET no .env de produção — mas nada no processo de deploy documentado (deploy-check.sh) obriga isso, ao contrário do que já é feito para SESSION_SECRET."
+    },
+    {
+      "id": "F2",
+      "category": "Chaves expostas",
+      "severity": "alta",
+      "title": "Defaults de senha fracos e públicos para Postgres e MinIO embutidos direto no docker-compose.yml de produção",
+      "file": "docker-compose.yml",
+      "lines": "49, 68, 71, 88",
+      "snippet": "DATABASE_URL: postgresql://${APP_DB_USER:-pdv}:${APP_DB_PASSWORD:-pdv}@postgres:5432/...\nPOSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}\nAPP_DB_PASSWORD: ${APP_DB_PASSWORD:-pdv}\nMINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY:-pdvpdvpdv}",
+      "why": "Esses três defaults (`postgres`, `pdv`, `pdvpdvpdv`) SÃO cobertos pelo deploy-check.sh (achado positivo, ver seção de pontos fortes) — mas o deploy-check.sh só é chamado se o operador lembrar de rodá-lo manualmente antes do `docker compose up -d --build` (não há hook automático, nem o próprio compose recusa subir sem ele). Um `docker compose up` direto, sem passar pelo script, sobe com Postgres e MinIO usando essas senhas triviais, expostas neste repositório público — se a porta do Postgres/MinIO acabar acessível na rede (erro comum de firewall em VPS), é acesso direto ao banco todo (bypassa até a RLS, que só vale para o usuário da aplicação, não para POSTGRES_PASSWORD que é superusuário).",
+      "exploit_conditions": "Precisa de um deploy que pule scripts/deploy-check.sh E que a porta 5432/9000 fique acessível externamente (não expostas por padrão neste docker-compose.yml, mas comum em setups customizados de VPS)."
+    },
+    {
+      "id": "F3",
+      "category": "Inputs sem tratamento (XSS)",
+      "severity": "baixa",
+      "title": "logoUrl/photoUrl aceitam esquema javascript: na validação (z.string().url() não restringe protocolo)",
+      "file": "packages/shared/src/schemas/tenant.ts",
+      "lines": "16, 31",
+      "snippet": "logoUrl: z.string().url().nullable(),\nlogoUrl: z.string().url('URL de logo inválida.').nullable(),",
+      "why": "O validador `.url()` do Zod aceita qualquer URL sintaticamente válida, incluindo o esquema `javascript:` (ex.: `javascript:alert(1)` passa). O mesmo padrão se repete em product.ts, operator.ts, auth.ts, report.ts, dashboard.ts para `photoUrl`. Na prática, hoje isso NÃO é explorável: todo valor chega por upload real (packages PhotoUploadBox -> POST /uploads/confirm, que devolve uma publicUrl do próprio bucket) e o único consumo no frontend é `<img src>` (Avatar.tsx:22, TenantMark.tsx:8, ProductCard.tsx:22 etc.), `manifest.ts` (campo JSON `src` do Web App Manifest) e `layout.tsx` (metadata de `<link rel=icon>`) — nenhum desses é um sink que executa `javascript:`. O risco é teórico/defesa-em-profundidade: um PATCH direto na API (fora da UI) por um Administrador da própria loja poderia gravar `javascript:...` no campo, e se um consumidor futuro (ex.: um `<a href={logoUrl}>`\"ver foto em tamanho real\") for adicionado sem essa restrição, a XSS se tornaria real.",
+      "exploit_conditions": "Não é explorável nos sinks atuais (`<img src>`, manifest, metadata de ícone). Vira explorável apenas se um `<a href>`/`window.open`/redirect for adicionado usando esses campos sem sanitização adicional."
+    },
+    {
+      "id": "F4",
+      "category": "Banco sem tranca / IDOR",
+      "severity": "informativa",
+      "title": "Checagem de e-mail de administrador único entre lojas (isAdminEmailInUse) tem race condition TOCTOU — já mapeada pelo time, sem fix aplicado",
+      "file": "apps/api/src/modules/platform/platform-tenant.service.ts",
+      "lines": "128-137",
+      "snippet": "private async isAdminEmailInUse(email: string): Promise<boolean> {\n    const tenants = await this.prisma.tenant.findMany({ select: { id: true } })\n    for (const tenant of tenants) {\n      const found = await tenantStorage.run({ tenantId: tenant.id }, async () => {\n        return this.prisma.operator.findFirst({ where: { tenantId: tenant.id, email, deletedAt: null } })\n      })\n      if (found) return true\n    }\n    return false\n  }",
+      "why": "Diferente do achado já corrigido nesta mesma sessão para PlatformAdmin.email (que tem @unique no banco e agora vira 409 tratado), Operator.email só é único por tenant (`@@unique([tenantId, email])`) — não há constraint global no banco para pegar a corrida entre o check (findFirst) e a criação da loja/operador. Duas chamadas concorrentes de POST /platform/tenants com o mesmo adminEmail em lojas diferentes podem, em teoria, passar as duas pela checagem antes de qualquer uma criar o operador, resultando no mesmo e-mail administrando duas lojas — quebra de uma regra de negócio (não de isolamento de dado entre tenants, e não path de dado sensível cross-tenant), não uma falha de segurança direta. Severidade rebaixada a informativa: já era um item conhecido e aceito nesta sessão (surface de uso é só o Superadmin, ator único e de confiança), citado aqui só para constar na cobertura completa da auditoria.",
+      "exploit_conditions": "Exige que o próprio Superadmin (único ator com acesso a esta rota) dispare duas criações de loja simultâneas com o mesmo e-mail — não é um vetor de ataque externo."
+    }
+  ]
+}
