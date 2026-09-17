@@ -12,6 +12,7 @@ services:
       ACME_EMAIL: ${ACME_EMAIL:-internal@localhost}
       API_DOMAIN: ${API_DOMAIN:-api.localhost}
       MEDIA_DOMAIN: ${MEDIA_DOMAIN:-media.localhost}
+      PLATFORM_HOST: ${PLATFORM_HOST:-admin.app.localhost}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

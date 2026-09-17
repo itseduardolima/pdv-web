@@ -25,3 +25,10 @@ https:// {
 {$MEDIA_DOMAIN} {
 	reverse_proxy minio:9000
 }
+
+# Painel Superadmin (Épico 13): host fixo conhecido de antemão (env), nunca
+# passa pelo tenant/tls-check — cai no bloco genérico acima e nunca teria
+# certificado, já que resolveByHost só reconhece tenant.
+{$PLATFORM_HOST} {
+	reverse_proxy web:3000
+}
