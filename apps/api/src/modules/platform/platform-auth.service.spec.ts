@@ -1,7 +1,7 @@
 import { JwtService } from '@nestjs/jwt'
 import argon2 from 'argon2'
 import type { PlatformAdmin } from '@prisma/client'
-import { PlatformAdminRepository } from './platform-admin.repository'
+import { EmailAlreadyInUseError, PlatformAdminRepository } from './platform-admin.repository'
 import { PlatformAuthService } from './platform-auth.service'
 import type { PlatformPasswordResetService } from './platform-password-reset.service'
 
@@ -135,6 +135,21 @@ describe('PlatformAuthService', () => {
       expect(repository.update).not.toHaveBeenCalled()
     })
 
+    it('rejects with 409 EMAIL_IN_USE when a concurrent request wins the race on the same free e-mail', async () => {
+      // O check (findByEmail) e o write (update) não são atômicos — duas
+      // requisições podem passar as duas pelo check antes de qualquer
+      // escrever. O índice único do banco pega a segunda: update() traduz
+      // isso em EmailAlreadyInUseError, o service converte em 409 normal
+      // em vez de deixar o PrismaClientKnownRequestError (P2002) virar 500.
+      const { service } = await makeService({
+        findById: jest.fn().mockResolvedValue(admin),
+        update: jest.fn().mockRejectedValue(new EmailAlreadyInUseError()),
+      })
+      await expect(
+        service.updateProfile({ id: 'pa1' }, { name: 'Dono', email: 'ganhou-a-corrida@example.com' }),
+      ).rejects.toMatchObject({ code: 'EMAIL_IN_USE', statusCode: 409 })
+    })
+
     it('rejects with 401 INVALID_SESSION when the admin no longer exists', async () => {
       const { service } = await makeService()
       await expect(
@@ -154,6 +169,12 @@ describe('PlatformAuthService', () => {
       expect(argon.verify).toHaveBeenCalledWith('hash-pa1', 'senha-correta')
       expect(argon.hash).toHaveBeenCalledWith('senha-nova-123')
       expect(repository.update).toHaveBeenCalledWith('pa1', { passwordHash: 'new-hash' })
+      // Ordem importa: nunca hashear a senha nova antes de confirmar a atual.
+      // argon.hash já foi chamado uma vez por onModuleInit (dummyHash, dentro
+      // de makeService) — [1] é a chamada real de changePassword.
+      const verifyOrder = argon.verify.mock.invocationCallOrder[0]
+      const hashOrder = argon.hash.mock.invocationCallOrder[1]
+      expect(verifyOrder).toBeLessThan(hashOrder as number)
     })
 
     it('rejects the wrong current password with 401 INVALID_CURRENT_PASSWORD', async () => {

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common'
-import type { PlatformAdmin, PlatformAdminResetToken } from '@prisma/client'
+import { Prisma, type PlatformAdmin, type PlatformAdminResetToken } from '@prisma/client'
 import { PRISMA, type PrismaService } from '../../prisma/prisma.client'
 
 export type ResetTokenRow = PlatformAdminResetToken & { platformAdmin: Pick<PlatformAdmin, 'id' | 'name' | 'email'> }
@@ -9,6 +9,14 @@ export interface NewResetToken {
   tokenHash: string
   expiresAt: Date
 }
+
+// Corrida entre o findByEmail de updateProfile() e este update(): dois
+// PATCH /platform/auth/me concorrentes disputando o mesmo e-mail livre
+// passam os dois pela checagem antes de qualquer um gravar — o índice
+// único do banco pega o segundo. Vira 409 normal (via o service), não um
+// 500 genérico. Mesmo padrão de RegisterAlreadyOpenError em
+// cash-session.repository.ts.
+export class EmailAlreadyInUseError extends Error {}
 
 // Sem filtro de tenantId, de propósito — mesma exceção documentada em
 // TenantRepository (tenant.repository.ts): PlatformAdmin fica fora do
@@ -25,8 +33,15 @@ export class PlatformAdminRepository {
     return this.prisma.platformAdmin.findUnique({ where: { id } })
   }
 
-  update(id: string, data: { name?: string; email?: string; passwordHash?: string }): Promise<PlatformAdmin> {
-    return this.prisma.platformAdmin.update({ where: { id }, data })
+  async update(id: string, data: { name?: string; email?: string; passwordHash?: string }): Promise<PlatformAdmin> {
+    try {
+      return await this.prisma.platformAdmin.update({ where: { id }, data })
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new EmailAlreadyInUseError()
+      }
+      throw error
+    }
   }
 
   // Emitir um link novo invalida qualquer token não usado do mesmo admin —

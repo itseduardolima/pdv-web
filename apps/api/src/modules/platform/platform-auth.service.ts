@@ -10,7 +10,7 @@ import type {
 } from '@pdv/shared'
 import { ConflictError, UnauthorizedError } from '../../common/errors/domain.error'
 import type { PlatformSession } from '../../common/types/platform-request'
-import { PlatformAdminRepository } from './platform-admin.repository'
+import { EmailAlreadyInUseError, PlatformAdminRepository } from './platform-admin.repository'
 import { PlatformPasswordResetService } from './platform-password-reset.service'
 
 export interface PlatformLoginResult {
@@ -78,8 +78,16 @@ export class PlatformAuthService implements OnModuleInit {
       if (existing && existing.id !== admin.id) throw emailInUse()
     }
 
-    const updated = await this.admins.update(admin.id, { name: input.name, email: input.email })
-    return this.toPublic(updated)
+    try {
+      const updated = await this.admins.update(admin.id, { name: input.name, email: input.email })
+      return this.toPublic(updated)
+    } catch (error) {
+      // Duas trocas de e-mail disputando o mesmo e-mail livre passaram pelo
+      // check acima ao mesmo tempo — o índice único do banco pegou a
+      // segunda; vira 409 normal, não um 500 genérico.
+      if (error instanceof EmailAlreadyInUseError) throw emailInUse()
+      throw error
+    }
   }
 
   async changePassword(
