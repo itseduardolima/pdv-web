@@ -381,6 +381,27 @@ implementação no plano aprovado desta sessão. Esta fatia é só o backend
       insert do token era recusado pelo Postgres (42501). `seed.ts`
       continua passando PIN direto sem mudança (bootstrap local/CI não
       depende de e-mail chegando de verdade).
+- [x] Code review (2026-09-17) do backend do Épico 13 inteiro, em 4 etapas
+      (uma por commit) — 2 achados corrigidos: - **Corrida de e-mail duplicado em `PlatformAuthService.updateProfile()`**:
+      o check (`findByEmail`) e a escrita (`update`) não eram atômicos —
+      duas trocas de e-mail concorrentes disputando o mesmo e-mail livre
+      podiam ambas passar pela checagem antes de qualquer uma gravar, e a
+      perdedora recebia um `500` genérico (o índice único do banco
+      rejeitava, mas nada traduzia o `PrismaClientKnownRequestError`
+      P2002 em `409 EMAIL_IN_USE`). Corrigido com o mesmo padrão de
+      `RegisterAlreadyOpenError` (`cash-session.repository.ts`):
+      `PlatformAdminRepository.update()` agora captura P2002 e lança
+      `EmailAlreadyInUseError`, que o service traduz. - **Nenhum teste provava o `tenantStorage.run(...)` de verdade**: todo
+      spec mocka o Prisma, então uma regressão que removesse o wrap de
+      RLS (a pegadinha documentada em `08-seguranca.md` § 1) só seria
+      pega de novo por smoke test manual, como aconteceu na etapa
+      anterior. Novo teste de integração (bate no Postgres de dev de
+      verdade) em
+      `apps/api/src/modules/platform/platform-tenant-rls.integration.spec.ts`:
+      prova os 2 lados — sem o wrap, RLS bloqueia (`count` zerado); com
+      `await` dentro do callback, funciona. Fora do `pnpm test`/CI padrão
+      (nenhum Postgres disponível lá) — roda com
+      `pnpm --filter api test:integration`, banco de dev no ar.
 
 ## Backlog P2 (sem sprint fixa ainda)
 

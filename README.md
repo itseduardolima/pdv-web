@@ -68,7 +68,8 @@ pnpm dev                        # turbo run dev — web + api em paralelo
 pnpm build                      # build de tudo
 pnpm lint                       # lint de tudo
 pnpm typecheck                  # typecheck de tudo — rodar antes de todo commit
-pnpm test                       # Jest — testes unitários do apps/api
+pnpm test                       # Jest — testes unitários do apps/api (Prisma sempre mockado)
+pnpm --filter api test:integration  # Jest contra Postgres de verdade (RLS) — precisa do banco de dev no ar
 pnpm --filter web cy:run        # Cypress component tests
 pnpm --filter web cy:run:e2e    # Cypress E2E (precisa da API rodando)
 pnpm --filter api db:studio     # Prisma Studio (inspecionar o banco local)

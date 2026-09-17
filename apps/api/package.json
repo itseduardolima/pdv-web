@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:integration": "jest --config jest.integration.config.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
@@ -59,6 +60,10 @@
     "testEnvironment": "node",
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "\\.integration\\.spec\\.ts$"
+    ],
     "moduleFileExtensions": [
       "js",
       "json",
