@@ -11,3 +11,6 @@ apps/web/next-env.d.ts
 # Prettier não tem parser para dotenv — sem isso `format:check` falha nesses arquivos
 .env
 .env.*
+# Gerado por docs/security-audit/generate-report.mjs — regenerar sobrescreve
+# qualquer formatação manual de qualquer forma.
+docs/security-audit/report.html
