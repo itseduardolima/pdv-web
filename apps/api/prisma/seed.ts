@@ -129,6 +129,18 @@ async function seedDemoData(tx: Tx, tenantId: string) {
       minStock: 8,
       barcode: '7896006700029',
     },
+    // Preço exato (R$ 2,49) usado pelos E2E de troco/dashboard
+    // (cypress/e2e/critical-flow.cy.ts, dashboard.cy.ts, sell-offline-sync.cy.ts)
+    // — nunca mudar sem atualizar os três juntos.
+    {
+      name: 'Sal Refinado 1kg',
+      category: 'Estiva',
+      salePriceCents: 249,
+      costPriceCents: 160,
+      stockQuantity: 50,
+      minStock: 10,
+      barcode: '7896006700036',
+    },
   ]
   for (const product of products) {
     await tx.product.upsert({
