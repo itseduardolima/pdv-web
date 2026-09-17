@@ -26,11 +26,16 @@ export const hexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Cor deve es
 // <img src>, nunca <a href>/window.open), mas toda URL que vem de upload
 // (logoUrl, photoUrl, uploadUrl/publicUrl de storage) só faz sentido como
 // http(s); barrar aqui é defesa em profundidade para qualquer sink futuro.
+// Regex (não startsWith cru): esquema é case-insensitive por spec (RFC 3986)
+// — "HTTP://..." é uma URL http válida, e startsWith('http://') sozinho a
+// rejeitaria incorretamente.
+const HTTP_SCHEME = /^https?:\/\//i
+
 export const httpUrlSchema = (message = 'Informe uma URL http(s) válida') =>
   z
     .string()
     .url(message)
-    .refine((value) => value.startsWith('http://') || value.startsWith('https://'), message)
+    .refine((value) => HTTP_SCHEME.test(value), message)
 
 export const apiErrorSchema = z.object({
   statusCode: z.number(),
