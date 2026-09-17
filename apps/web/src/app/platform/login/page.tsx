@@ -1,13 +1,16 @@
 'use client'
 
+import { useState } from 'react'
 import { SplitAuthLayout } from '@/components/layout/SplitAuthLayout'
 import { Button } from '@/components/ui/Button'
 import { InlineAlert } from '@/components/ui/InlineAlert'
 import { Input } from '@/components/ui/Input'
+import { PasswordVisibilityToggle } from '@/components/ui/PasswordVisibilityToggle'
 import { usePlatformLoginPage } from './use-platform-login-page'
 
 export default function PlatformLoginPage() {
   const page = usePlatformLoginPage()
+  const [showPassword, setShowPassword] = useState(false)
 
   return (
     <SplitAuthLayout illustrationSrc="/cash-counter-illustration.png">
@@ -25,11 +28,14 @@ export default function PlatformLoginPage() {
         />
         <Input
           label="Senha"
-          type="password"
+          type={showPassword ? 'text' : 'password'}
           autoComplete="current-password"
           required
           value={page.password}
           onChange={(event) => page.setPassword(event.target.value)}
+          trailing={
+            <PasswordVisibilityToggle visible={showPassword} onToggle={() => setShowPassword((current) => !current)} />
+          }
         />
 
         {page.errorMessage && <InlineAlert onDismiss={page.dismissError}>{page.errorMessage}</InlineAlert>}
