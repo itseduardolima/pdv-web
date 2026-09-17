@@ -5,7 +5,9 @@ const compat = new FlatCompat({ baseDirectory: import.meta.dirname })
 
 export default [
   {
-    ignores: ['.next/**', 'cypress/videos/**', 'cypress/screenshots/**', 'next-env.d.ts'],
+    // public/sw.js é gerado pelo serwist (build ou dev) — arquivo minificado,
+    // não faz sentido lint nele, e ele reaparece a cada build/dev local.
+    ignores: ['.next/**', 'cypress/videos/**', 'cypress/screenshots/**', 'next-env.d.ts', 'public/sw.js'],
   },
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   prettier,
