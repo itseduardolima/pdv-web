@@ -71,4 +71,26 @@ describe('StructuredLogger', () => {
     const [entry] = captureWrites(() => logger.log({ some: 'object' }))
     expect(entry?.message).toBe('{"some":"object"}')
   })
+
+  it('extracts message/stack from an Error passed to error() (never JSON.stringify({}))', () => {
+    const logger = new StructuredLogger(false)
+    const error = new Error('boom')
+    const [entry] = captureWrites(() => logger.error(error))
+    expect(entry).toMatchObject({ level: 'error', message: 'boom' })
+    expect(typeof entry?.trace).toBe('string')
+    expect(entry?.trace).toContain('Error: boom')
+  })
+
+  it('prefers the explicit trace argument over the Error stack when both are given', () => {
+    const logger = new StructuredLogger(false)
+    const [entry] = captureWrites(() => logger.error(new Error('boom'), 'explicit-trace'))
+    expect(entry?.trace).toBe('explicit-trace')
+  })
+
+  it('never omits the message key, even for undefined', () => {
+    const logger = new StructuredLogger(false)
+    const [entry] = captureWrites(() => logger.log(undefined))
+    expect(entry).toHaveProperty('message')
+    expect(entry?.message).toBe('undefined')
+  })
 })

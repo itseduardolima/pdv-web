@@ -9,11 +9,13 @@ import { StructuredLogger } from './common/logger/structured-logger'
 import { SESSION_COOKIE } from './common/types/request'
 
 async function bootstrap() {
-  // bufferLogs: nenhum log do bootstrap (antes do useLogger abaixo) se
-  // perde — fica em buffer e é escoado pro StructuredLogger assim que ele
-  // é setado.
-  const app = await NestFactory.create(AppModule, { bufferLogs: true })
-  app.useLogger(new StructuredLogger())
+  // `logger` direto aqui (não app.useLogger() depois): se algum provider
+  // falhar no construtor durante o create() abaixo (erro de config em
+  // produção, por exemplo), o Nest já loga e derruba o processo ANTES de
+  // qualquer linha depois deste `create()` rodar — com app.useLogger()
+  // chamado só depois, esse log fatal (o mais importante de sair
+  // estruturado) ainda sairia no formato antigo do Nest.
+  const app = await NestFactory.create(AppModule, { logger: new StructuredLogger() })
   const config = app.get(ConfigService)
   assertProductionSecrets(config)
 

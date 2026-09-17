@@ -57,22 +57,39 @@ export class StructuredLogger implements LoggerService {
 
     const requestId = getRequestId()
     const tenantId = tenantStorage.getStore()?.tenantId
+    const { text, derivedTrace } = normalizeMessage(message)
+    const finalTrace = trace ?? derivedTrace
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level,
-      message: typeof message === 'string' ? message : safeStringify(message),
+      message: text,
       ...(context ? { context } : {}),
       ...(requestId ? { requestId } : {}),
       ...(tenantId ? { tenantId } : {}),
-      ...(trace ? { trace } : {}),
+      ...(finalTrace ? { trace: finalTrace } : {}),
     }
     process.stdout.write(`${JSON.stringify(entry)}\n`)
   }
 }
 
+// `catch (err) { logger.error(err) }` é o padrão mais comum de chamar isto
+// com um Error — as props de Error (message/stack) não são enumeráveis,
+// então JSON.stringify(new Error(...)) devolve '{}' e perde tudo. Extrai
+// message/stack manualmente antes de cair no caso genérico.
+function normalizeMessage(value: unknown): { text: string; derivedTrace?: string } {
+  if (typeof value === 'string') return { text: value }
+  if (value instanceof Error) return { text: value.message, derivedTrace: value.stack }
+  return { text: safeStringify(value) }
+}
+
+// JSON.stringify(undefined) (e o de função/Symbol) devolve o valor
+// `undefined`, não a string "undefined" — se não tratado, a chave
+// `message` inteira some da linha final (JSON.stringify(entry) omite
+// chaves com valor undefined), violando o tipo declarado em runtime.
 function safeStringify(value: unknown): string {
   try {
-    return JSON.stringify(value)
+    const json = JSON.stringify(value)
+    return json === undefined ? String(value) : json
   } catch {
     return String(value)
   }
