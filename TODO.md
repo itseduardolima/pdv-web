@@ -253,6 +253,14 @@ detalhe do plano em `docs/scrum/SPRINTS.md`.
       como sempre foi. O campo hex validado (`ColorInput`) não muda de
       lugar — só o trio visual/exploratório é reposicionado, uma única
       instância renderizada por vez (sem duplicar estado/DOM).
+- [x] Fix (2026-09-17): botão de salvar ficava travado em "Salvo" pra
+      sempre depois do 1º save, em qualquer tela que não navega pra outra
+      página (Configurações — `router.refresh()`; "Enviar link" e reset de
+      PIN na edição de Operador). Bug em `useSaveState` (`hooks/`):
+      `markSaved()` nunca voltava `saved` pra `false` depois do timeout de
+      600ms — passava batido nas telas que navegam (`router.push`, o
+      componente desmonta), mas travava nas que ficam na mesma página.
+      Corrigido: `setSaved(false)` roda antes do `then()`.
 
 ## Épico 13 — Painel Superadmin (decisão de 2026-09-16)
 

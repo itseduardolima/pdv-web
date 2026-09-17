@@ -18,7 +18,10 @@ export function useSaveState(isPending: boolean) {
 
   const markSaved = useCallback((then: () => void) => {
     setSaved(true)
-    timer.current = setTimeout(then, SUCCESS_MS)
+    timer.current = setTimeout(() => {
+      setSaved(false)
+      then()
+    }, SUCCESS_MS)
   }, [])
 
   const state: SaveState = saved ? 'success' : isPending ? 'loading' : 'idle'
