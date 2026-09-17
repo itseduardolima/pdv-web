@@ -35,7 +35,7 @@ export default function SellPage() {
         }
         actions={
           page.cashSession && (
-            <>
+            <div className="flex w-full items-center justify-end gap-2 md:contents">
               <button
                 type="button"
                 onClick={page.openCalculator}
@@ -49,7 +49,7 @@ export default function SellPage() {
               <span className="rounded-pill bg-ink px-4 py-1.5 font-body text-[13px] font-medium text-surface">
                 {cashSessionBadgeLabel(tenant, page.cashSession)}
               </span>
-            </>
+            </div>
           )
         }
       />
