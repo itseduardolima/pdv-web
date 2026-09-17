@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { SplitAuthLayout } from '@/components/layout/SplitAuthLayout'
 import { Button } from '@/components/ui/Button'
@@ -44,6 +45,12 @@ export default function PlatformLoginPage() {
           Entrar
         </Button>
       </form>
+      <Link
+        href="/platform/forgot-password"
+        className="font-body text-sm font-medium text-ink/60 underline-offset-4 hover:underline"
+      >
+        Esqueci minha senha
+      </Link>
     </SplitAuthLayout>
   )
 }
