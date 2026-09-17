@@ -24,4 +24,4 @@ COPY --from=build /out ./
 COPY --from=build /repo/apps/api/dist ./dist
 COPY --from=build /repo/apps/api/prisma ./prisma
 EXPOSE 3001
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+CMD ["sh", "-c", "npx --no-install prisma migrate deploy && node dist/main.js"]
