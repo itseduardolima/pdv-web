@@ -39,21 +39,35 @@ endpoint_args=""
 
 timestamp=$(date -u +%Y-%m-%dT%H-%M-%SZ)
 weekday=$(date -u +%u) # 1=segunda ... 7=domingo
+raw_dump="$(mktemp)"
 dump_file="$(mktemp)"
-trap 'rm -f "$dump_file"' EXIT
+trap 'rm -f "$raw_dump" "$dump_file"' EXIT
 
 echo "Gerando dump de '${APP_DB_NAME}'..."
 # -U postgres: só o superusuário de administração bypassa a Row-Level
 # Security — um dump como APP_DB_USER (não-superusuário, RLS) devolveria
 # as tabelas de domínio vazias, o que tornaria o backup inútil sem avisar
 # ninguém (08-seguranca § 1).
-docker compose exec -T postgres pg_dump -U postgres -d "$APP_DB_NAME" \
-  | gzip \
-  | openssl enc -aes-256-cbc -pbkdf2 -salt -pass "pass:${BACKUP_ENCRYPTION_PASSPHRASE}" \
-  >"$dump_file"
+#
+# Dump primeiro pra um arquivo isolado, SEM pipe com gzip/openssl: em sh
+# POSIX (sem pipefail, que é extensão bash/ksh) `set -e` só olha o exit
+# code do ÚLTIMO comando de um pipeline — um `pg_dump | gzip | openssl`
+# com o pg_dump falhando no meio passaria despercebido, porque gzip/openssl
+# produzem um arquivo pequeno mas com headers válidos mesmo com stdin
+# vazio (não fica vazio, então nem o teste de `-s` abaixo pegaria).
+# Isolado assim, o `set -e` do topo do script já mata o script se o
+# `pg_dump` falhar, antes de qualquer coisa ser comprimida/enviada.
+docker compose exec -T postgres pg_dump -U postgres -d "$APP_DB_NAME" >"$raw_dump"
+
+if [ ! -s "$raw_dump" ]; then
+  echo "ERRO: dump veio vazio — o container 'postgres' está no ar? (docker compose ps)" >&2
+  exit 1
+fi
+
+gzip -c "$raw_dump" | openssl enc -aes-256-cbc -pbkdf2 -salt -pass "pass:${BACKUP_ENCRYPTION_PASSPHRASE}" >"$dump_file"
 
 if [ ! -s "$dump_file" ]; then
-  echo "ERRO: dump veio vazio — o container 'postgres' está no ar? (docker compose ps)" >&2
+  echo "ERRO: falha ao comprimir/criptografar o dump." >&2
   exit 1
 fi
 
