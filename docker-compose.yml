@@ -34,6 +34,9 @@ services:
     restart: unless-stopped
     environment:
       API_INTERNAL_URL: http://api:3001
+      # Lido em runtime (lib/env.ts, server-side) pra reconhecer o host do
+      # painel Superadmin — precisa bater com o PLATFORM_HOST da api.
+      PLATFORM_HOST: ${PLATFORM_HOST:-admin.app.localhost}
     depends_on:
       - api
 
