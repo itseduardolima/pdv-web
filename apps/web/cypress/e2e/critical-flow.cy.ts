@@ -43,7 +43,12 @@ describe('Fluxo crítico: login, abrir caixa, vender, fechar caixa', () => {
     cy.location('pathname').should('eq', '/sell')
 
     // fechar caixa: a venda está no histórico e nos totais
-    cy.contains('a', 'Fechamento').click()
+    // aria-label (não texto visível): a Sidebar em viewport de tablet
+    // começa recolhida (só ícone, ver decisão de 2026-09-12), o rótulo
+    // "Fechamento" fica oculto nesse estado. :visible porque o mesmo
+    // aria-label existe duas vezes no DOM (Sidebar + BottomNav — um dos
+    // dois sempre oculto via CSS, nunca os dois ao mesmo tempo).
+    cy.get('a[aria-label="Fechamento"]:visible').click()
     cy.location('pathname').should('eq', '/closing')
     cy.contains('Histórico de Vendas')
     cy.contains('2 itens · Administrador · Pix')

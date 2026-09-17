@@ -31,6 +31,13 @@ describe('Dashboard', () => {
   })
 
   it('is not reachable by an Operador', () => {
+    // A loja demo tem 1 caixa físico só (registerCount: 1) — o teste
+    // anterior deixou o caixa do Administrador aberto; só ele mesmo (ou
+    // outro admin) pode fechar o caixa de outra pessoa (403
+    // NOT_CASH_SESSION_OWNER pra um Operador comum).
+    cy.loginAs('Administrador', '1234')
+    cy.ensureRegisterClosed()
+
     cy.loginAs('Rafael', '2222')
     cy.ensureRegisterOpen()
     cy.visit('/dashboard')

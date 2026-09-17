@@ -7,7 +7,14 @@ const headers = () => ({ 'x-tenant-host': tenantHost() })
 describe('Configurações da Loja', () => {
   afterEach(() => {
     // Deixa o tenant como o seed espera, pros outros specs não quebrarem.
+    // ensureAllRegistersClosed antes de abrir: a loja demo tem 1 caixa
+    // físico só — se "is not reachable by an Operador" rodou antes, o
+    // caixa do Rafael ainda está aberto e nem o Admin conseguiria abrir o
+    // dele. ensureRegisterOpen: sem caixa aberto, o route group (operating)
+    // redireciona pra /open-register antes mesmo de chegar em /settings.
+    cy.ensureAllRegistersClosed()
     cy.loginAs('Administrador', '1234')
+    cy.ensureRegisterOpen()
     cy.visit('/settings')
     cy.get('input[name=name]').clear().type('Mercadinho Demo')
     cy.get('input[name=primaryColor]').clear().type('#e6e51e')
@@ -19,6 +26,7 @@ describe('Configurações da Loja', () => {
 
   it('edits the store name', () => {
     cy.loginAs('Administrador', '1234')
+    cy.ensureRegisterOpen()
     cy.visit('/settings')
     cy.contains('h1', 'Configurações')
 
@@ -33,6 +41,7 @@ describe('Configurações da Loja', () => {
 
   it('edits the primary color and the timezone, and previews the color live', () => {
     cy.loginAs('Administrador', '1234')
+    cy.ensureRegisterOpen()
     cy.visit('/settings')
 
     cy.get('input[name=primaryColor]').clear().type('#112233')
@@ -71,6 +80,9 @@ describe('Configurações da Loja', () => {
 
   it('is not reachable by an Operador', () => {
     cy.loginAs('Rafael', '2222')
+    // Sem caixa aberto, o route group (operating) redireciona pra
+    // /open-register antes mesmo de chegar em /settings.
+    cy.ensureRegisterOpen()
     cy.visit('/settings')
     cy.contains('nav a', 'Configurações').should('not.exist')
 
