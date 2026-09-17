@@ -184,8 +184,13 @@ não ter garantida.
 | 8.3 | PWA instalável com identidade do tenant            | 3   |
 | 9.3 | Backup diário do banco                             | 2   |
 | 9.4 | Deploy automático via CI                           | 3   |
+| 9.5 | Health check (`GET /health`)                       | 2   |
+| 9.6 | Monitor de uptime externo                          | 1   |
+| 9.7 | Logs estruturados com `requestId`                  | 3   |
+| 9.8 | Alerta de espaço em disco da VPS                   | 1   |
 
-**Total: 21 pts.**
+**Total: 28 pts.** 9.5/9.6 são P0 (bloqueiam produção — ver auditoria de
+segurança de 2026-09-17 em `docs/security-audit/`); 9.3/9.4/9.7/9.8 são P1.
 
 ## Sprint 9 — Múltiplos Caixas
 

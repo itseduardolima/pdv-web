@@ -142,6 +142,10 @@ frontend) — não quando o código só "existe".
   - [x] Favicon: `~/Downloads/favicon.ico` copiado pra `apps/web/src/app/favicon.ico` (convenção do Next — vira o default da plataforma); com logo, o `<link rel="icon">` passa a ser o do tenant (white-label, spec 06/07)
 - [ ] 9.3 — Backup diário do banco
 - [ ] 9.4 — Deploy automático via CI
+- [ ] 9.5 — Health check (`GET /health`) — **P0, bloqueia produção**: hoje não existe (achado da conversa de 2026-09-17 sobre o que falta para ir a produção); sem isso não dá para ligar monitor de uptime nem saber se a API fala com o Postgres
+- [ ] 9.6 — Monitor de uptime externo (UptimeRobot ou equivalente) — **P0, bloqueia produção**: depende de 9.5 existir primeiro
+- [ ] 9.7 — Logs estruturados (JSON) com `requestId`/`tenantId` correlacionáveis — hoje é só o logger padrão do Nest, sem `requestId`
+- [ ] 9.8 — Alerta de espaço em disco da VPS (`df` + cron) — não existe ainda
 
 ## Sprint 9 — Múltiplos Caixas (concluída — decisão de 2026-09-13/14)
 
