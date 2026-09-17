@@ -21,6 +21,17 @@ export const pinSchema = z.string().regex(/^\d{4}$/, 'O PIN deve ter exatamente 
 
 export const hexColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Cor deve estar no formato #RRGGBB')
 
+// z.string().url() sozinho aceita qualquer esquema sintaticamente válido,
+// incluindo `javascript:` — nunca explorável nos sinks atuais (sempre
+// <img src>, nunca <a href>/window.open), mas toda URL que vem de upload
+// (logoUrl, photoUrl, uploadUrl/publicUrl de storage) só faz sentido como
+// http(s); barrar aqui é defesa em profundidade para qualquer sink futuro.
+export const httpUrlSchema = (message = 'Informe uma URL http(s) válida') =>
+  z
+    .string()
+    .url(message)
+    .refine((value) => value.startsWith('http://') || value.startsWith('https://'), message)
+
 export const apiErrorSchema = z.object({
   statusCode: z.number(),
   code: z.string(),

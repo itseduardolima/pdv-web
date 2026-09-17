@@ -1,10 +1,10 @@
 import { z } from 'zod'
-import { emailSchema, idSchema, operatorRoleSchema, pinSchema } from './common'
+import { emailSchema, httpUrlSchema, idSchema, operatorRoleSchema, pinSchema } from './common'
 
 export const loginOperatorSchema = z.object({
   id: idSchema,
   name: z.string(),
-  photoUrl: z.string().url().nullable(),
+  photoUrl: httpUrlSchema().nullable(),
 })
 export type LoginOperator = z.infer<typeof loginOperatorSchema>
 
@@ -19,7 +19,7 @@ export const currentSessionSchema = z.object({
     id: idSchema,
     name: z.string(),
     role: operatorRoleSchema,
-    photoUrl: z.string().url().nullable(),
+    photoUrl: httpUrlSchema().nullable(),
   }),
   tenantId: idSchema,
 })

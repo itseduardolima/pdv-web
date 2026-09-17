@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { paymentMethodSchema } from './common'
+import { httpUrlSchema, paymentMethodSchema } from './common'
 
 const cents = z.number().int().nonnegative()
 // Dia no fuso da loja, "YYYY-MM-DD" — não é um instante, é um rótulo de dia.
@@ -16,7 +16,7 @@ export const dashboardTopProductSchema = z.object({
   productId: z.string(),
   name: z.string(),
   // Foto atual do produto (null se sem foto ou excluído).
-  photoUrl: z.string().url().nullable(),
+  photoUrl: httpUrlSchema().nullable(),
   quantity: z.number().int().positive(),
   totalCents: cents,
 })

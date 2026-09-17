@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { httpUrlSchema } from './common'
 
 export const UPLOAD_MAX_BYTES = 5 * 1024 * 1024
 
@@ -24,14 +25,14 @@ export type CreateUploadInput = z.infer<typeof createUploadSchema>
 // Presigned POST: o browser envia `fields` + o arquivo como multipart para `uploadUrl`.
 export const uploadTicketSchema = z.object({
   key: z.string(),
-  uploadUrl: z.string().url(),
+  uploadUrl: httpUrlSchema(),
   fields: z.record(z.string()),
-  publicUrl: z.string().url(),
+  publicUrl: httpUrlSchema(),
 })
 export type UploadTicket = z.infer<typeof uploadTicketSchema>
 
 export const confirmUploadSchema = z.object({ key: z.string().min(1) })
 export type ConfirmUploadInput = z.infer<typeof confirmUploadSchema>
 
-export const confirmedUploadSchema = z.object({ url: z.string().url() })
+export const confirmedUploadSchema = z.object({ url: httpUrlSchema() })
 export type ConfirmedUpload = z.infer<typeof confirmedUploadSchema>

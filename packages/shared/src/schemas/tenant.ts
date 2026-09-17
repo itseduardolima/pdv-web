@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { hexColorSchema, idSchema } from './common'
+import { hexColorSchema, httpUrlSchema, idSchema } from './common'
 
 // Fonte única dos limites: o schema valida com eles e o formulário só os
 // exibe como texto de apoio (nunca valida no cliente).
@@ -13,7 +13,7 @@ export const publicTenantSchema = z.object({
   id: idSchema,
   slug: z.string(),
   name: z.string(),
-  logoUrl: z.string().url().nullable(),
+  logoUrl: httpUrlSchema().nullable(),
   primaryColor: hexColorSchema,
   primaryInkColor: hexColorSchema,
   accentColor: hexColorSchema,
@@ -28,7 +28,7 @@ export const updateTenantSchema = z.object({
     .string()
     .min(TENANT_LIMITS.name.min, 'Nome da loja é obrigatório.')
     .max(TENANT_LIMITS.name.max, `Nome da loja não pode ter mais de ${TENANT_LIMITS.name.max} caracteres.`),
-  logoUrl: z.string().url('URL de logo inválida.').nullable(),
+  logoUrl: httpUrlSchema('URL de logo inválida.').nullable(),
   primaryColor: hexColorSchema,
   accentColor: hexColorSchema,
   timezone: z

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { idSchema } from './common'
+import { httpUrlSchema, idSchema } from './common'
 
 export const productUnitSchema = z.enum(['UN', 'KG', 'L', 'PCT', 'CX'])
 export type ProductUnit = z.infer<typeof productUnitSchema>
@@ -62,7 +62,7 @@ export const productSchema = z.object({
   costPriceCents: cents,
   stockQuantity: z.number().int().nonnegative(),
   minStock: z.number().int().nonnegative(),
-  photoUrl: z.string().url().nullable(),
+  photoUrl: httpUrlSchema().nullable(),
 })
 export type Product = z.infer<typeof productSchema>
 
@@ -92,7 +92,7 @@ export const createProductSchema = z.object({
   stockQuantity: quantity,
   // Estoque mínimo não é campo do formulário: 5 por padrão em toda loja.
   minStock: quantity.optional().default(PRODUCT_LIMITS.defaultMinStock),
-  photoUrl: z.string().url().nullable().optional(),
+  photoUrl: httpUrlSchema().nullable().optional(),
 })
 export type CreateProductInput = z.infer<typeof createProductSchema>
 // O que o cliente envia (custo e estoque mínimo são opcionais; a API preenche).

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { emailSchema, idSchema, operatorRoleSchema, pinSchema } from './common'
+import { emailSchema, httpUrlSchema, idSchema, operatorRoleSchema, pinSchema } from './common'
 
 // Limites de campo: o schema valida com eles, o formulário só os mostra.
 export const OPERATOR_LIMITS = {
@@ -21,7 +21,7 @@ export const operatorSchema = z.object({
   // false = primeiro acesso pendente (ainda não definiu o PIN pelo link).
   hasPin: z.boolean(),
   active: z.boolean(),
-  photoUrl: z.string().url().nullable(),
+  photoUrl: httpUrlSchema().nullable(),
   createdAt: z.string().datetime(),
 })
 export type Operator = z.infer<typeof operatorSchema>
@@ -57,7 +57,7 @@ export const createOperatorSchema = z
     role: operatorRoleSchema,
     email: optionalEmailSchema,
     pin: z.preprocess((value) => (value === '' ? undefined : value), pinSchema.optional()),
-    photoUrl: z.string().url().nullable().optional(),
+    photoUrl: httpUrlSchema().nullable().optional(),
   })
   .superRefine((input, ctx) => {
     if (input.role === 'ADMIN' && !input.email) {
@@ -74,7 +74,7 @@ export const updateOperatorSchema = z.object({
   name: nameSchema.optional(),
   role: operatorRoleSchema.optional(),
   email: optionalEmailSchema,
-  photoUrl: z.string().url().nullable().optional(),
+  photoUrl: httpUrlSchema().nullable().optional(),
 })
 export type UpdateOperatorInput = z.infer<typeof updateOperatorSchema>
 export type UpdateOperatorRequest = z.input<typeof updateOperatorSchema>
