@@ -116,3 +116,44 @@ jobs:
       - name: Logs on failure
         if: failure()
         run: tail -n 100 /tmp/api.log /tmp/web.log
+
+  # HU 9.4: só em push na main (nunca em pull_request), depois que ci + e2e
+  # passaram — sem passo manual fora do CI (09-operacao § 5). Precisa dos
+  # secrets DEPLOY_HOST/DEPLOY_USER/DEPLOY_SSH_KEY (e opcionalmente
+  # DEPLOY_PATH, default abaixo) configurados no repositório — ver
+  # 09-operacao.md § 5 para o que cada um significa e como gerar a chave.
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [ci, e2e]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false # nunca cancelar um deploy em andamento pra começar outro
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            set -e
+            cd "${{ secrets.DEPLOY_PATH || '/opt/pdv-web' }}"
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
+            ./scripts/deploy-check.sh
+            docker compose up -d --build
+      - name: Wait for the API to answer /health
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            for i in $(seq 1 30); do
+              curl -sf http://localhost:3001/health && exit 0
+              sleep 2
+            done
+            echo "ERRO: /health não respondeu 200 depois do deploy" >&2
+            exit 1

@@ -107,11 +107,25 @@ Backup que nunca foi restaurado com sucesso não é backup, é uma esperança.
   `DATABASE_URL` da API para o superusuário "para resolver rápido" — isso
   desliga o isolamento entre lojas no banco.
 
-- **Deploy normal**: merge na branch principal → CI builda e testa → deploy
-  via SSH (`docker compose pull && docker compose up -d` ou build remoto,
-  ver `01-arquitetura.md`) — sem passo manual fora do CI uma vez que a HU
-  9.4 (`docs/scrum/BACKLOG.md`) estiver feita; até lá, é manual e deve ser
-  feito com o operador do mercado avisado se for em horário comercial.
+- **Deploy normal**: merge na branch principal → CI builda e testa (job
+  `ci` + `e2e`) → job `deploy` do `.github/workflows/ci.yml` faz o resto
+  via SSH (`git fetch/reset --hard origin/main`, `deploy-check.sh`,
+  `docker compose up -d --build`, espera `/health` responder 200) — sem
+  passo manual, só em `push` na `main` (nunca em pull request), só depois
+  de `ci`+`e2e` passarem. Precisa de 3-4 secrets no repositório do GitHub
+  (Settings → Secrets and variables → Actions):
+  - `DEPLOY_HOST` — IP ou domínio da VPS.
+  - `DEPLOY_USER` — usuário SSH com permissão de rodar `docker compose` na
+    pasta do projeto (nunca `root` se puder evitar).
+  - `DEPLOY_SSH_KEY` — chave privada SSH dedicada ao deploy (gerar com
+    `ssh-keygen -t ed25519 -f deploy_key -N ""`, autorizar a pública em
+    `~/.ssh/authorized_keys` do `DEPLOY_USER` na VPS, colar a privada
+    inteira aqui — nunca reusar uma chave pessoal).
+  - `DEPLOY_PATH` (opcional) — caminho do clone na VPS; default
+    `/opt/pdv-web` se não setado.
+    Enquanto esses secrets não existirem o job falha alto (sem SSH pra
+    conectar) sem afetar `ci`/`e2e` — deploy continua manual até serem
+    configurados, avisando o operador do mercado se for em horário comercial.
 - **Antes de aplicar uma migration em produção**: backup manual extra
   (além do cron diário) imediatamente antes — migrations do Prisma não têm
   rollback automático; a única forma segura de desfazer uma migration
