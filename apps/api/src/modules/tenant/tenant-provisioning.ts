@@ -17,14 +17,30 @@ export interface ProvisionTenantInput {
 export interface ProvisionAdminInput {
   name: string
   email?: string | null
-  pin: string
+  // Opcional: sem PIN, o operador nasce com pinHash null (mesmo
+  // comportamento de OperatorService.create sem PIN) — quem chama decide
+  // se manda o link de primeiro acesso (PinTokenService.sendPinLink),
+  // já que essa função não tem acesso a MailService.
+  pin?: string
+}
+
+export interface CreatedAdmin {
+  id: string
+  name: string
+  email: string | null
+  pinHash: string | null
 }
 
 export interface ProvisionTenantResult {
   tenant: Tenant
-  // PIN em texto puro só quando um admin novo foi de fato criado agora —
-  // pra poder ser mostrado/logado uma única vez (nunca fica guardado).
+  // PIN em texto puro só quando um admin novo foi de fato criado agora E um
+  // PIN foi passado — pra poder ser mostrado/logado uma única vez (nunca
+  // fica guardado).
   createdAdminPin: string | null
+  // O operador recém-criado, ou null quando já existia um admin ativo
+  // (upsert idempotente). Quem chama usa isso pra decidir se manda o link
+  // de primeiro acesso.
+  createdAdmin: CreatedAdmin | null
 }
 
 // Upsert idempotente por slug + garante 1 Administrador ativo. Miolo
@@ -66,26 +82,30 @@ export async function provisionTenant(
     },
   })
 
-  const createdAdminPin = await prisma.$transaction(async (tx) => {
+  const { createdAdminPin, createdAdmin } = await prisma.$transaction(async (tx) => {
     await tx.$executeRaw`SELECT set_config('app.tenant_id', ${tenant.id}, true)`
 
     // Nunca deixa um tenant sem Administrador ativo; nunca troca PIN de um admin existente.
     const admin = await tx.operator.findFirst({
       where: { tenantId: tenant.id, role: 'ADMIN', active: true, deletedAt: null },
     })
-    if (!admin) {
-      await tx.operator.create({
-        data: {
-          tenantId: tenant.id,
-          name: adminInput.name,
-          role: 'ADMIN',
-          email: adminInput.email ?? null,
-          pinHash: await argon2.hash(adminInput.pin),
-        },
-      })
+    if (admin) return { createdAdminPin: null, createdAdmin: null }
+
+    const pinHash = adminInput.pin ? await argon2.hash(adminInput.pin) : null
+    const created = await tx.operator.create({
+      data: {
+        tenantId: tenant.id,
+        name: adminInput.name,
+        role: 'ADMIN',
+        email: adminInput.email ?? null,
+        pinHash,
+      },
+    })
+    return {
+      createdAdminPin: adminInput.pin ?? null,
+      createdAdmin: { id: created.id, name: created.name, email: created.email, pinHash: created.pinHash },
     }
-    return admin ? null : adminInput.pin
   })
 
-  return { tenant, createdAdminPin }
+  return { tenant, createdAdminPin, createdAdmin }
 }

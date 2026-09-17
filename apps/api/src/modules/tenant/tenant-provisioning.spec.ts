@@ -7,7 +7,11 @@ const argon = argon2 as jest.Mocked<typeof argon2>
 function makePrisma(overrides: { existingAdmin?: unknown } = {}) {
   const executeRaw = jest.fn()
   const findFirst = jest.fn().mockResolvedValue(overrides.existingAdmin ?? null)
-  const create = jest.fn()
+  const create = jest
+    .fn()
+    .mockImplementation((args: { data: { name: string; email: string | null; pinHash: string | null } }) =>
+      Promise.resolve({ id: 'op_new', ...args.data }),
+    )
   const tx = { $executeRaw: executeRaw, operator: { findFirst, create } }
   const prisma = {
     tenant: { upsert: jest.fn().mockResolvedValue({ id: 't1', slug: 'nova-loja', name: 'Nova Loja' }) },
@@ -51,6 +55,27 @@ describe('provisionTenant', () => {
       data: { tenantId: 't1', name: 'Admin', role: 'ADMIN', email: 'admin@nova-loja.com', pinHash: 'hashed-pin' },
     })
     expect(result.createdAdminPin).toBe('9876')
+    expect(result.createdAdmin).toEqual({
+      id: 'op_new',
+      name: 'Admin',
+      email: 'admin@nova-loja.com',
+      pinHash: 'hashed-pin',
+    })
+  })
+
+  it('creates the admin without a pin (pinHash null) when none is given — admin sets it via first-access link', async () => {
+    const { prisma, create } = makePrisma()
+    const result = await provisionTenant(
+      prisma as never,
+      { slug: 'nova-loja', name: 'Nova Loja' },
+      { name: 'Admin', email: 'admin@nova-loja.com' },
+    )
+    expect(argon.hash).not.toHaveBeenCalled()
+    expect(create).toHaveBeenCalledWith({
+      data: { tenantId: 't1', name: 'Admin', role: 'ADMIN', email: 'admin@nova-loja.com', pinHash: null },
+    })
+    expect(result.createdAdminPin).toBeNull()
+    expect(result.createdAdmin).toEqual({ id: 'op_new', name: 'Admin', email: 'admin@nova-loja.com', pinHash: null })
   })
 
   it('never creates a second admin or returns a pin when one already exists (idempotente)', async () => {
@@ -62,5 +87,6 @@ describe('provisionTenant', () => {
     )
     expect(create).not.toHaveBeenCalled()
     expect(result.createdAdminPin).toBeNull()
+    expect(result.createdAdmin).toBeNull()
   })
 })

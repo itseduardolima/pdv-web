@@ -10,6 +10,7 @@ import type { Prisma } from '@prisma/client'
 import { ConflictError, DomainError, NotFoundError } from '../../common/errors/domain.error'
 import { tenantStorage } from '../../common/tenant-context'
 import { PRISMA, type PrismaService } from '../../prisma/prisma.client'
+import { PinTokenService } from '../auth/pin-token.service'
 import { TenantService } from '../tenant/tenant.service'
 import { provisionTenant } from '../tenant/tenant-provisioning'
 
@@ -43,6 +44,7 @@ export class PlatformTenantService {
   constructor(
     @Inject(PRISMA) private readonly prisma: PrismaService,
     private readonly tenants: TenantService,
+    private readonly pinTokens: PinTokenService,
   ) {}
 
   async create(input: CreatePlatformTenantInput): Promise<PlatformTenant> {
@@ -51,16 +53,33 @@ export class PlatformTenantService {
     const existing = await this.prisma.tenant.findUnique({ where: { slug: input.slug } })
     if (existing) throw slugInUse()
 
-    if (input.adminEmail && (await this.isAdminEmailInUse(input.adminEmail))) throw adminEmailInUse()
+    if (await this.isAdminEmailInUse(input.adminEmail)) throw adminEmailInUse()
 
     // provisionTenant recebe o PrismaClient "puro" (mesma função usada pelo
     // seed.ts, fora de contexto de request) — o client estendido por RLS
     // (PrismaService) é estruturalmente compatível para as chamadas usadas.
-    const { tenant } = await provisionTenant(
+    // Sem `pin`: o admin nasce sem PIN, e o link de primeiro acesso abaixo
+    // é quem deixa ele definir o próprio.
+    const { tenant, createdAdmin } = await provisionTenant(
       this.prisma as unknown as Parameters<typeof provisionTenant>[0],
       { slug: input.slug, name: input.name, primaryColor: input.primaryColor ?? undefined },
-      { name: input.adminName, email: input.adminEmail ?? null, pin: input.adminPin },
+      { name: input.adminName, email: input.adminEmail },
     )
+
+    // Só quando um admin novo foi de fato criado agora (nunca reenvia link
+    // pra um admin que já existia — mesma idempotência do upsert de tenant).
+    // PinToken tem RLS (FORCE ROW LEVEL SECURITY) — sem tenantStorage.run
+    // aqui, o insert do token é recusado pelo Postgres (42501): a requisição
+    // do painel não passa pelo TenantMiddleware, então não há app.tenant_id
+    // setado por padrão (mesmo achado de countActiveOperators). O await
+    // precisa estar DENTRO do callback, senão o contexto se perde antes da
+    // query rodar de verdade.
+    if (createdAdmin) {
+      await tenantStorage.run({ tenantId: tenant.id }, async () => {
+        await this.pinTokens.sendPinLink(tenant.id, { ...createdAdmin, active: true, deletedAt: null })
+      })
+    }
+
     const activeOperatorCount = await this.countActiveOperators(tenant.id)
     return this.toPublic(tenant, activeOperatorCount)
   }

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { emailSchema, hexColorSchema, idSchema, pinSchema } from './common'
+import { emailSchema, hexColorSchema, idSchema } from './common'
 
 // Limites de campo: o schema valida com eles, o formulário só os mostra
 // (mesma convenção de OPERATOR_LIMITS/TENANT_LIMITS).
@@ -95,12 +95,10 @@ export const platformResetPasswordSchema = z.object({
 })
 export type PlatformResetPasswordInput = z.infer<typeof platformResetPasswordSchema>
 
-// `adminEmail` é opcional (só serve pra recuperação de PIN depois, mesmo
-// campo de Operator) — mas `adminPin` é sempre obrigatório aqui: ao
-// contrário da criação normal de operador (createOperatorSchema, que aceita
-// só e-mail e manda link de primeiro acesso), provisionar uma loja nova
-// pelo painel sempre define um PIN de partida na hora, sem depender de
-// e-mail configurado (mesmo comportamento que `seed.ts` sempre teve).
+// `adminEmail` é obrigatório: o administrador da loja nova sempre define o
+// próprio PIN pelo link de primeiro acesso (mesmo mecanismo de
+// PinTokenService/FIRST_ACCESS já usado pra criar operador comum sem PIN)
+// — o painel nunca digita PIN por ele.
 export const createPlatformTenantSchema = z.object({
   name: z
     .string({ required_error: 'Informe o nome da loja' })
@@ -125,8 +123,7 @@ export const createPlatformTenantSchema = z.object({
     .string({ required_error: 'Informe o nome do administrador' })
     .trim()
     .min(2, 'Informe o nome do administrador'),
-  adminEmail: z.preprocess((value) => (value === '' ? undefined : value), emailSchema.optional()),
-  adminPin: pinSchema,
+  adminEmail: emailSchema,
 })
 export type CreatePlatformTenantInput = z.infer<typeof createPlatformTenantSchema>
 

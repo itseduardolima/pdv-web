@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import { PlatformAuthGuard } from '../../common/guards/platform-auth.guard'
+import { AuthModule } from '../auth/auth.module'
 import { TenantModule } from '../tenant/tenant.module'
 import { PlatformAdminRepository } from './platform-admin.repository'
 import { PlatformAuthController } from './platform-auth.controller'
@@ -27,6 +28,9 @@ import { PlatformTenantService } from './platform-tenant.service'
     // Só pra chamar tenants.clearHostCache() ao suspender/reativar uma loja
     // (HU 13.7) — sem isso "reativar restaura o acesso na hora" não valeria.
     TenantModule,
+    // Exporta PinTokenService — o admin de uma loja nova define o próprio
+    // PIN pelo mesmo link de primeiro acesso que operador comum já usa.
+    AuthModule,
   ],
   controllers: [PlatformAuthController, PlatformTenantController],
   providers: [

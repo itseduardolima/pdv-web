@@ -24,8 +24,10 @@ const validInput = {
   name: 'Mercadinho da Maria',
   slug: 'mercadinho-da-maria',
   adminName: 'Maria',
-  adminPin: '1234',
+  adminEmail: 'maria@example.com',
 }
+
+const createdAdmin = { id: 'op_new', name: 'Maria', email: 'maria@example.com', pinHash: null }
 
 function makeService(
   overrides: {
@@ -48,8 +50,9 @@ function makeService(
     },
   }
   const tenantService = { clearHostCache: jest.fn() }
-  const service = new PlatformTenantService(prisma as never, tenantService as never)
-  return { service, prisma, tenantService }
+  const pinTokens = { sendPinLink: jest.fn().mockResolvedValue(undefined) }
+  const service = new PlatformTenantService(prisma as never, tenantService as never, pinTokens as never)
+  return { service, prisma, tenantService, pinTokens }
 }
 
 describe('PlatformTenantService', () => {
@@ -57,7 +60,7 @@ describe('PlatformTenantService', () => {
 
   describe('create', () => {
     it('creates a tenant via provisionTenant and returns it with the active operator count', async () => {
-      provisionTenantMock.mockResolvedValue({ tenant, createdAdminPin: '1234' })
+      provisionTenantMock.mockResolvedValue({ tenant, createdAdminPin: null, createdAdmin })
       const { service, prisma } = makeService({ count: jest.fn().mockResolvedValue(1) })
       const result = await service.create(validInput)
       expect(result).toEqual({
@@ -73,8 +76,22 @@ describe('PlatformTenantService', () => {
       expect(provisionTenantMock).toHaveBeenCalledWith(
         prisma,
         { slug: 'mercadinho-da-maria', name: 'Mercadinho da Maria', primaryColor: undefined },
-        { name: 'Maria', email: null, pin: '1234' },
+        { name: 'Maria', email: 'maria@example.com' },
       )
+    })
+
+    it('sends a first-access link to the admin created now (no PIN — the admin sets it themselves)', async () => {
+      provisionTenantMock.mockResolvedValue({ tenant, createdAdminPin: null, createdAdmin })
+      const { service, pinTokens } = makeService({ count: jest.fn().mockResolvedValue(1) })
+      await service.create(validInput)
+      expect(pinTokens.sendPinLink).toHaveBeenCalledWith('t_new', { ...createdAdmin, active: true, deletedAt: null })
+    })
+
+    it('does not send a link when the tenant already had an active admin', async () => {
+      provisionTenantMock.mockResolvedValue({ tenant, createdAdminPin: null, createdAdmin: null })
+      const { service, pinTokens } = makeService({ count: jest.fn().mockResolvedValue(1) })
+      await service.create(validInput)
+      expect(pinTokens.sendPinLink).not.toHaveBeenCalled()
     })
 
     it.each(['admin', 'api', 'www', 'platform'])('rejects the reserved slug "%s" with 400 VALIDATION', async (slug) => {
@@ -109,7 +126,7 @@ describe('PlatformTenantService', () => {
     })
 
     it('allows creating when adminEmail is not used by any other loja', async () => {
-      provisionTenantMock.mockResolvedValue({ tenant, createdAdminPin: '1234' })
+      provisionTenantMock.mockResolvedValue({ tenant, createdAdminPin: null, createdAdmin })
       const { service } = makeService({
         findMany: jest.fn().mockResolvedValue([{ id: 't_other' }]),
         findFirst: jest.fn().mockResolvedValue(null),
