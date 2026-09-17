@@ -469,8 +469,11 @@ de tablet deitado mostrarem sidebar expandida com rótulo e a ilustração da
 `SplitAuthLayout` — exatamente o que devem evitar. As duas usam `xl:`
 (1280px) como o corte real de desktop:
 
-- `Sidebar`: ícone só até `xl` (tablet, retrato ou paisagem); ícone +
-  rótulo só a partir de `xl`.
+- `Sidebar`: `xl` só decide o estado **inicial** (recolhida — só ícone —
+  até `xl`; expandida — ícone + rótulo — a partir de `xl`). Um botão no
+  topo (`useSidebarCollapse`, decisão de 2026-09-17) deixa o operador
+  alternar manualmente dos dois lados; a escolha persiste em
+  `localStorage` e passa a valer em qualquer largura de tela.
 - `SplitAuthLayout`: ilustração escondida até `xl`; o painel fica largura
   cheia até lá (sem a faixa lateral fixa de 540px) — sem ilustração do
   lado, a largura cheia aproveita melhor o tablet do que ficar com metade

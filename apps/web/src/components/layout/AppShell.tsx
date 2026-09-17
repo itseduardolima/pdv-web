@@ -18,6 +18,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         operatorPhotoUrl={shell.operator.photoUrl}
         roleLabel={shell.roleLabel}
         onLogout={shell.handleLogout}
+        collapsed={shell.sidebarCollapsed}
+        onToggleCollapsed={shell.toggleSidebarCollapsed}
       />
       <main className="flex min-w-0 flex-1 flex-col gap-4 md:gap-[18px] md:overflow-y-auto">{children}</main>
       <BottomNav items={shell.items} />

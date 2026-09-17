@@ -237,6 +237,13 @@ detalhe do plano em `docs/scrum/SPRINTS.md`.
       ganhou `illustrationSrc` por prop nessas duas telas (o padrão
       `store-illustration.svg` continua em Esqueci meu PIN e Definir PIN —
       não pedido pro usuário mudar).
+- [x] Feature (2026-09-17): `Sidebar` (desktop/tablet) ganha
+      expandir/recolher manual — `useSidebarCollapse` (`hooks/`) decide o
+      estado inicial pelo breakpoint `xl` (desktop começa expandida, tablet
+      começa recolhida) e depois persiste a escolha do operador em
+      `localStorage`, valendo em qualquer largura de tela. Botão novo no
+      topo da sidebar (chevron reaproveitado, rotacionado). `BottomNav`
+      (mobile) não muda.
 
 ## Épico 13 — Painel Superadmin (decisão de 2026-09-16)
 
