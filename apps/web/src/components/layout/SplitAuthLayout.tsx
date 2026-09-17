@@ -9,7 +9,7 @@ interface SplitAuthLayoutProps {
 }
 
 // Ilustração neutra (sem marca) usada em todas as telas de split-screen.
-const DEFAULT_ILLUSTRATION = '/store-illustration.svg'
+const DEFAULT_ILLUSTRATION = '/cash-counter-illustration.png'
 
 // Tela dividida (Login, Abertura de Caixa, Venda Confirmada): ilustração
 // sobre dot-grid só em telas bem largas (`xl:`, 1280px+) — tablet deitado
