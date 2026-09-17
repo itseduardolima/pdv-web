@@ -225,6 +225,11 @@ detalhe do plano em `docs/scrum/SPRINTS.md`.
       anima um pontinho voando até o badge do carrinho (`useFlyToCart` em
       `hooks/`, `FlyToCartLayer` em `components/pos/`) — sem lib de animação,
       só CSS + `getBoundingClientRect`.
+- [x] Fix (2026-09-16): página 404 (`app/not-found.tsx`) — não existia
+      ainda. Fora dos route groups `(pos)`/`(public)` (sem `AppShell`, sem
+      sessão), só usa o `TenantProvider` do layout raiz pra manter marca do
+      tenant; reaproveita `EmptyState` (ilustração "box") + `Button`. "Voltar
+      ao início" manda pra `/`, que já decide Vender ou Login pela sessão.
 
 ## Backlog P2 (sem sprint fixa ainda)
 
