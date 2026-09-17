@@ -366,6 +366,21 @@ implementação no plano aprovado desta sessão. Esta fatia é só o backend
       (direto, sem confirmação — é o caminho de desfazer). Jest cobre
       `TenantMiddleware`, `TenantService.resolveByHost` e
       `PlatformTenantService.setActive` (212 testes na suíte da API).
+- [x] Mudança (2026-09-17): admin inicial da loja não recebe mais PIN
+      digitado pelo Superadmin no formulário — `adminEmail` vira
+      obrigatório, `adminPin` sai do schema/tela. `provisionTenant` ganha
+      `pin` opcional (sem ele, `pinHash: null`) e devolve `createdAdmin`;
+      `PlatformTenantService.create()` chama
+      `PinTokenService.sendPinLink` (reaproveitado de Operador,
+      `purpose: 'FIRST_ACCESS'`) pra mandar o link de primeiro acesso —
+      zero tela nova, é o mesmo `/set-pin?token=` que operador comum sem
+      PIN já usa. **Achado real**: `PinToken` tem RLS
+      (`FORCE ROW LEVEL SECURITY`) e a requisição do painel não passa pelo
+      `TenantMiddleware` (não seta `app.tenant_id`) — sem envolver a
+      chamada em `tenantStorage.run({ tenantId }, async () => {...})`, o
+      insert do token era recusado pelo Postgres (42501). `seed.ts`
+      continua passando PIN direto sem mudança (bootstrap local/CI não
+      depende de e-mail chegando de verdade).
 
 ## Backlog P2 (sem sprint fixa ainda)
 

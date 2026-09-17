@@ -71,10 +71,13 @@ Conta separada de qualquer tenant (`PlatformAdmin`, e-mail+senha, ver
 
 - `POST /platform/auth/login` — sessão própria (`pdv_platform_session`).
 - `POST /platform/tenants` — cria a loja + o admin inicial (nome, e-mail
-  opcional, PIN obrigatório) numa chamada só; reaproveita a mesma lógica do
-  seed (`provisionTenant`, `apps/api/src/modules/tenant/tenant-provisioning.ts`),
-  não duplica a regra. Slug único, com lista de slugs reservados
-  (`admin`, `api`, `www`, `platform`) que nunca podem virar loja.
+  obrigatório) numa chamada só; reaproveita a mesma lógica do seed
+  (`provisionTenant`, `apps/api/src/modules/tenant/tenant-provisioning.ts`),
+  não duplica a regra. O painel nunca define o PIN — o admin recebe o
+  mesmo link de primeiro acesso que um operador comum sem PIN já recebe
+  (`PinTokenService.sendPinLink`, `purpose: 'FIRST_ACCESS'`, válido 72h) e
+  escolhe o próprio pelo `/set-pin?token=`. Slug único, com lista de slugs
+  reservados (`admin`, `api`, `www`, `platform`) que nunca podem virar loja.
 - `GET /platform/tenants` — lista lojas com contagem de operadores ativos;
   nunca dado operacional (venda, produto) de nenhuma loja.
 - `PATCH /platform/tenants/:id/active` — suspende/reativa uma loja sem
