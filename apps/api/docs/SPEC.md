@@ -167,6 +167,8 @@ nunca vai na URL — é resolvido pelo host (`TenantMiddleware`).
 | PATCH  | `/operators/:id/pin`           | Define novo PIN (para quem não tem e-mail)                                                                                                                        | admin |
 | PATCH  | `/operators/:id/active`        | Ativa/inativa                                                                                                                                                     | admin |
 | DELETE | `/operators/:id`               | Soft-delete                                                                                                                                                       | admin |
+| GET    | `/operators/deleted`           | Lista quem já foi soft-deleted (LGPD — a lista principal nunca traz)                                                                                              | admin |
+| POST   | `/operators/:id/anonymize`     | Remove nome/foto/PIN de vez (LGPD, 08-seguranca § 13); exige já estar soft-deleted; 409 `OPERATOR_NOT_DELETED` / `ALREADY_ANONYMIZED`                             | admin |
 
 Todas as mutações validam no `OperatorService` a regra "sempre deve existir
 ao menos 1 admin ativo" (409 `LAST_ADMIN`, só quando a ação tira um admin

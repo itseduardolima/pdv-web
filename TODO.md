@@ -413,6 +413,6 @@ implementação no plano aprovado desta sessão. Esta fatia é só o backend
 - [ ] Carregar Poppins/Inter via `next/font` (hoje `--font-heading`/`--font-body` caem no fallback do sistema)
 
 - [ ] Storybook para `components/ui` e `components/pos`
-- [ ] Hard-delete de dado pessoal sob pedido (LGPD) — ver `docs/specs/08-seguranca.md` § 11
+- [x] Anonimização de dado pessoal de operador sob pedido (LGPD) — `POST /operators/:id/anonymize` (zera name/photoUrl/pinHash, apaga a foto de verdade do MinIO via `StorageService.deletePhotoByUrl`, nunca apaga a linha — `Sale`/`CashSession` continuam íntegras); só depois de já soft-deleted, idempotente (409 `ALREADY_ANONYMIZED`). `GET /operators/deleted` lista quem já saiu (a lista principal nunca traz). Migration `anonymizedAt` em `Operator`. Tela `/operators`: toggle "Ver operadores excluídos" + `DeletedOperatorCard` + `ConfirmDialog` reaproveitado. Sem tabela de auditoria dedicada — rastro fica só no log estruturado (`StructuredLogger`). Validado: 259 testes Jest (+11 novos), smoke test real via curl contra Postgres de dev cobrindo os 6 cenários (sucesso, listagem antes/depois, `ALREADY_ANONYMIZED`, `OPERATOR_NOT_DELETED`, `OPERATOR_NOT_FOUND`), conferido no banco que os campos sumiram de fato. Ver `docs/specs/08-seguranca.md` § 13
 - [ ] WAF/CDN na frente da VPS — reavaliar se o tráfego crescer
 - [ ] 2FA para Administrador — reavaliar se o perfil de cliente mudar

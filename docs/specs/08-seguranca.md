@@ -322,9 +322,20 @@ Nest):
 - Soft-delete (já é o padrão do projeto para `Product`/`Operator`) preserva
   histórico para auditoria contábil do mercado, mas isso significa que um
   pedido de exclusão definitiva de dado pessoal (ex.: um ex-operador pedindo
-  remoção) exige um processo de hard-delete documentado à parte — não
-  existe ainda, registrar como item de backlog quando for necessário
-  (fora do MVP, mas não esquecer).
+  remoção) exige um processo à parte. **Implementado**: `POST
+/operators/:id/anonymize` (ADMIN, só após soft-delete via `DELETE
+/operators/:id`) — anonimiza em vez de apagar a linha (`Sale.operatorId`/
+  `CashSession.openedById` referenciam `Operator` sem cascade, um DELETE de
+  verdade quebraria o histórico financeiro): zera `name` (vira "Operador
+  removido"), `photoUrl` (apaga o objeto do MinIO de verdade, não só a
+  URL) e `pinHash`; marca `anonymizedAt`. Irreversível, idempotente (409
+  `ALREADY_ANONYMIZED` numa segunda chamada). `GET /operators/deleted`
+  lista quem já foi soft-deleted, já que a lista principal nunca traz
+  quem saiu — é como o Administrador acha o operador depois, mesmo que o
+  pedido de exclusão chegue muito depois do desligamento. Sem tabela de
+  auditoria dedicada: o rastro (quem/quando) fica só no log estruturado
+  (`StructuredLogger`) — aceito como limitação por ora, reavaliar se o
+  produto crescer.
 - Sem coleta de dado desnecessário: o sistema não pede CPF, endereço ou
   qualquer dado pessoal do cliente final do mercado (quem compra) — não há
   motivo de produto para isso, e cada campo novo de dado pessoal é

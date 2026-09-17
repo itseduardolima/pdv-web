@@ -143,6 +143,10 @@ a mesma pessoa administrando duas contas do sistema, o que o painel recusa
   tela de seleção de operador do Login), mas seu histórico de vendas passadas
   permanece intacto.
 - Excluir operador também é soft-delete pelo mesmo motivo de produtos.
+- LGPD: um operador já excluído pode ter o dado pessoal removido de vez a
+  pedido (nome, foto e PIN — nunca a linha, o histórico de venda continua
+  íntegro). Só depois de já estar soft-deleted; irreversível; ver
+  `08-seguranca.md` § 13.
 - Sempre deve existir pelo menos 1 Administrador ativo no tenant — bloquear a
   ação (inativar/excluir/rebaixar) que deixaria o tenant sem nenhum admin
   (409 `LAST_ADMIN`). Ninguém inativa, rebaixa ou exclui a própria conta,
