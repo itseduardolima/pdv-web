@@ -113,13 +113,21 @@ subida), condição para a Row-Level Security valer; migrations rodam no
 `CMD` da API antes de subir. Monitoramento, backup/restore e rollback: ver
 [`docs/specs/09-operacao.md`](./docs/specs/09-operacao.md).
 
-Alerta de espaço em disco (09-operacao § 2) — registrar no crontab da VPS
-(o comportamento padrão do cron já envia por e-mail qualquer saída de um
-job, se o sistema tiver MTA/MAILTO configurado):
+Alerta de espaço em disco (09-operacao § 2) e backup diário do banco
+(09-operacao § 4) — registrar no crontab da VPS (o comportamento padrão do
+cron já envia por e-mail qualquer saída de um job, se o sistema tiver
+MTA/MAILTO configurado):
 
 ```cron
-0 * * * * /caminho/para/pdv-web/scripts/disk-space-check.sh
+0 * * * *  /caminho/para/pdv-web/scripts/disk-space-check.sh
+0 3 * * *  BACKUP_ENCRYPTION_PASSPHRASE=... BACKUP_S3_BUCKET=... /caminho/para/pdv-web/scripts/backup-db.sh
 ```
+
+`backup-db.sh` requer `aws`-cli instalado na VPS (`apt install awscli`) e
+um destino **fora** desta VPS (bucket S3 de verdade, ou qualquer serviço
+S3-compatível via `BACKUP_S3_ENDPOINT_URL`). Sem `BACKUP_ENCRYPTION_PASSPHRASE`
+ou `BACKUP_S3_BUCKET` o script recusa rodar — nunca sobe um backup sem
+criptografia, nem grava só no disco local. Restaurar: ver `09-operacao.md` § 4.
 
 Atualizar uma versão: `git pull && ./scripts/deploy-check.sh && docker compose up -d --build`.
 Ambiente local continua em `docker-compose.dev.yml` (defaults `*.localhost`

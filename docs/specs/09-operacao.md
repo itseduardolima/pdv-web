@@ -66,15 +66,26 @@ o mínimo que não pode faltar:
 Backup que nunca foi restaurado com sucesso não é backup, é uma esperança.
 
 - **O quê**: `pg_dump` completo do banco (todos os tenants — não é um dump
-  por tenant em v1).
+  por tenant em v1). Implementado em `scripts/backup-db.sh`: dump como
+  superusuário (bypassa RLS — um dump como `APP_DB_USER` viria com as
+  tabelas de domínio vazias e ninguém perceberia), comprimido (`gzip`) e
+  criptografado (`openssl enc -aes-256-cbc -pbkdf2`) antes de sair da VPS.
 - **Quando**: diário, via cron na própria VPS (ou um container sidecar
-  dedicado), horário de menor movimento do(s) tenant(s).
+  dedicado), horário de menor movimento do(s) tenant(s). Exemplo de
+  crontab no `README.md` § Deploy na VPS.
 - **Onde**: destino **fora da VPS** (ex.: bucket S3 barato separado, ou
   outra máquina) — um backup que só existe no mesmo disco que pode falhar
-  não protege contra a falha que importa (disco/VPS inteira).
+  não protege contra a falha que importa (disco/VPS inteira). O script
+  envia via `aws s3 cp` (funciona com S3 de verdade ou qualquer destino
+  S3-compatível via `BACKUP_S3_ENDPOINT_URL` — Backblaze B2, outro MinIO
+  fora desta VPS, etc.); requer `aws`-cli instalado na VPS.
 - **Retenção**: últimos 7 diários + últimos 4 semanais — ajustar conforme o
-  custo de storage justificar mais.
-- **Criptografado em repouso no destino** (ver `08-seguranca.md` § 10).
+  custo de storage justificar mais. O script já aplica essa poda a cada
+  execução (`BACKUP_DAILY_RETENTION`/`BACKUP_WEEKLY_RETENTION` pra mudar).
+- **Criptografado em repouso no destino** (ver `08-seguranca.md` § 10). Pra
+  restaurar: baixar o objeto do bucket e reverter o pipeline —
+  `openssl enc -aes-256-cbc -pbkdf2 -d -pass "pass:$BACKUP_ENCRYPTION_PASSPHRASE" -in arquivo.sql.gz.enc | gunzip > dump.sql`,
+  depois `psql` normal contra o ambiente de restore.
 - **Drill de restore — obrigatório, não opcional**: a cada mudança de
   schema relevante (nova migration grande) ou, na ausência disso, uma vez
   por mês, restaurar o backup mais recente num ambiente separado (nunca na
