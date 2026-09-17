@@ -2,11 +2,16 @@ import type { Metadata, Viewport } from 'next'
 import type { ReactNode } from 'react'
 import { QueryProvider } from '@/components/providers/query-provider'
 import { TenantProvider } from '@/components/providers/tenant-provider'
+import { isPlatformHost } from '@/lib/platform.server'
 import { getCurrentTenant } from '@/lib/tenant.server'
 import { tenantThemeVars } from '@/lib/tenant-theme'
 import '@/styles/globals.css'
 
 export async function generateMetadata(): Promise<Metadata> {
+  // Host do painel Superadmin (Épico 13): não tem tenant nenhum, não chama
+  // GET /tenant/current (cairia em TENANT_NOT_FOUND à toa).
+  if (await isPlatformHost()) return { title: 'Painel Superadmin' }
+
   const { tenant } = await getCurrentTenant()
   return {
     title: tenant?.name ?? 'PDV',
@@ -18,11 +23,25 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export async function generateViewport(): Promise<Viewport> {
+  if (await isPlatformHost()) return {}
   const { tenant } = await getCurrentTenant()
   return { themeColor: tenant?.primaryColor ?? '#e6e51e' }
 }
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
+  // Host do painel Superadmin: sem tema de tenant, sem TenantProvider — não
+  // existe "a loja atual" aqui (ver docs/specs/01-arquitetura.md § Autenticação
+  // de plataforma). Paleta cai no default de styles/theme.css.
+  if (await isPlatformHost()) {
+    return (
+      <html lang="pt-BR">
+        <body>
+          <QueryProvider>{children}</QueryProvider>
+        </body>
+      </html>
+    )
+  }
+
   const { tenant, error } = await getCurrentTenant()
 
   if (!tenant) {
