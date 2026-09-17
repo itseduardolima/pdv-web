@@ -19,6 +19,7 @@ async function makeService(overrides: Partial<Record<keyof PlatformAdminReposito
   const repository = {
     findByEmail: jest.fn().mockResolvedValue(null),
     findById: jest.fn().mockResolvedValue(null),
+    update: jest.fn(),
     ...overrides,
   }
   const jwt = { signAsync: jest.fn().mockResolvedValue('signed-platform-token') } as unknown as JwtService
@@ -87,6 +88,81 @@ describe('PlatformAuthService', () => {
     it('rejects with 401 INVALID_SESSION when the admin no longer exists', async () => {
       const { service } = await makeService()
       await expect(service.me({ id: 'ghost' })).rejects.toMatchObject({ code: 'INVALID_SESSION', statusCode: 401 })
+    })
+  })
+
+  describe('updateProfile', () => {
+    it('updates name and email when the email is free', async () => {
+      const updated = { ...admin, name: 'Novo Nome', email: 'novo@example.com' }
+      const { service, repository } = await makeService({
+        findById: jest.fn().mockResolvedValue(admin),
+        update: jest.fn().mockResolvedValue(updated),
+      })
+      const result = await service.updateProfile({ id: 'pa1' }, { name: 'Novo Nome', email: 'novo@example.com' })
+      expect(repository.update).toHaveBeenCalledWith('pa1', { name: 'Novo Nome', email: 'novo@example.com' })
+      expect(result).toEqual({
+        id: 'pa1',
+        email: 'novo@example.com',
+        name: 'Novo Nome',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      })
+    })
+
+    it('does not check email uniqueness when the email is unchanged', async () => {
+      const { service, repository } = await makeService({
+        findById: jest.fn().mockResolvedValue(admin),
+        update: jest.fn().mockResolvedValue(admin),
+      })
+      await service.updateProfile({ id: 'pa1' }, { name: 'Dono', email: admin.email })
+      expect(repository.findByEmail).not.toHaveBeenCalled()
+    })
+
+    it('rejects an email already used by another admin with 409 EMAIL_IN_USE', async () => {
+      const otherAdmin = { ...admin, id: 'pa2' }
+      const { service, repository } = await makeService({
+        findById: jest.fn().mockResolvedValue(admin),
+        findByEmail: jest.fn().mockResolvedValue(otherAdmin),
+      })
+      await expect(
+        service.updateProfile({ id: 'pa1' }, { name: 'Dono', email: 'outro@example.com' }),
+      ).rejects.toMatchObject({ code: 'EMAIL_IN_USE', statusCode: 409 })
+      expect(repository.update).not.toHaveBeenCalled()
+    })
+
+    it('rejects with 401 INVALID_SESSION when the admin no longer exists', async () => {
+      const { service } = await makeService()
+      await expect(
+        service.updateProfile({ id: 'ghost' }, { name: 'Dono', email: 'dono@example.com' }),
+      ).rejects.toMatchObject({ code: 'INVALID_SESSION', statusCode: 401 })
+    })
+  })
+
+  describe('changePassword', () => {
+    it('changes the password when the current password matches', async () => {
+      const { service, repository } = await makeService({
+        findById: jest.fn().mockResolvedValue(admin),
+        update: jest.fn().mockResolvedValue(admin),
+      })
+      argon.hash.mockResolvedValue('new-hash')
+      await service.changePassword({ id: 'pa1' }, { currentPassword: 'senha-correta', newPassword: 'senha-nova-123' })
+      expect(argon.verify).toHaveBeenCalledWith('hash-pa1', 'senha-correta')
+      expect(argon.hash).toHaveBeenCalledWith('senha-nova-123')
+      expect(repository.update).toHaveBeenCalledWith('pa1', { passwordHash: 'new-hash' })
+    })
+
+    it('rejects the wrong current password with 401 INVALID_CURRENT_PASSWORD', async () => {
+      const { service, repository } = await makeService({ findById: jest.fn().mockResolvedValue(admin) })
+      await expect(
+        service.changePassword({ id: 'pa1' }, { currentPassword: 'senha-errada', newPassword: 'senha-nova-123' }),
+      ).rejects.toMatchObject({ code: 'INVALID_CURRENT_PASSWORD', statusCode: 401 })
+      expect(repository.update).not.toHaveBeenCalled()
+    })
+
+    it('rejects with 401 INVALID_SESSION when the admin no longer exists', async () => {
+      const { service } = await makeService()
+      await expect(
+        service.changePassword({ id: 'ghost' }, { currentPassword: 'senha-correta', newPassword: 'senha-nova-123' }),
+      ).rejects.toMatchObject({ code: 'INVALID_SESSION', statusCode: 401 })
     })
   })
 })

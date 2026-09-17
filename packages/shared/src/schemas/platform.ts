@@ -36,6 +36,41 @@ export const platformLoginSchema = z.object({
 })
 export type PlatformLoginInput = z.infer<typeof platformLoginSchema>
 
+export const PLATFORM_ADMIN_LIMITS = {
+  name: { min: 2, max: 100 },
+  password: { min: 8, max: 100 },
+} as const
+
+// Nome + e-mail do próprio superadmin — troca de senha é um schema/endpoint
+// separado (regra de segurança diferente, exige a senha atual).
+export const updatePlatformAdminSchema = z.object({
+  name: z
+    .string({ required_error: 'Informe o nome' })
+    .trim()
+    .min(PLATFORM_ADMIN_LIMITS.name.min, 'Informe o nome')
+    .max(PLATFORM_ADMIN_LIMITS.name.max, `O nome pode ter no máximo ${PLATFORM_ADMIN_LIMITS.name.max} caracteres`),
+  email: emailSchema,
+})
+export type UpdatePlatformAdminInput = z.infer<typeof updatePlatformAdminSchema>
+
+// Primeira regra de senha do projeto (PlatformAdmin é a única conta com
+// senha — Operator usa PIN). Sem confirmação de senha nova: nenhum form do
+// projeto pede "repita o valor", nem o PIN.
+export const changePlatformAdminPasswordSchema = z.object({
+  currentPassword: z.string({ required_error: 'Informe a senha atual' }).min(1, 'Informe a senha atual'),
+  newPassword: z
+    .string({ required_error: 'Informe a nova senha' })
+    .min(
+      PLATFORM_ADMIN_LIMITS.password.min,
+      `A senha precisa ter pelo menos ${PLATFORM_ADMIN_LIMITS.password.min} caracteres`,
+    )
+    .max(
+      PLATFORM_ADMIN_LIMITS.password.max,
+      `A senha pode ter no máximo ${PLATFORM_ADMIN_LIMITS.password.max} caracteres`,
+    ),
+})
+export type ChangePlatformAdminPasswordInput = z.infer<typeof changePlatformAdminPasswordSchema>
+
 // `adminEmail` é opcional (só serve pra recuperação de PIN depois, mesmo
 // campo de Operator) — mas `adminPin` é sempre obrigatório aqui: ao
 // contrário da criação normal de operador (createOperatorSchema, que aceita

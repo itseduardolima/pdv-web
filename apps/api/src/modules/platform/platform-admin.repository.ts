@@ -16,4 +16,8 @@ export class PlatformAdminRepository {
   findById(id: string): Promise<PlatformAdmin | null> {
     return this.prisma.platformAdmin.findUnique({ where: { id } })
   }
+
+  update(id: string, data: { name?: string; email?: string; passwordHash?: string }): Promise<PlatformAdmin> {
+    return this.prisma.platformAdmin.update({ where: { id }, data })
+  }
 }

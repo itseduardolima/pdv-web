@@ -1,7 +1,8 @@
-import { Body, Controller, Get, HttpCode, Post, Res, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, Patch, Post, Res, UseGuards } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import {
   ApiBody,
+  ApiConflictResponse,
   ApiNoContentResponse,
   ApiOkResponse,
   ApiTags,
@@ -10,13 +11,21 @@ import {
 } from '@nestjs/swagger'
 import { Throttle } from '@nestjs/throttler'
 import type { CookieOptions, Response } from 'express'
-import { platformAdminSchema, platformLoginSchema, type PlatformAdmin } from '@pdv/shared'
+import {
+  changePlatformAdminPasswordSchema,
+  platformAdminSchema,
+  platformLoginSchema,
+  updatePlatformAdminSchema,
+  type PlatformAdmin,
+} from '@pdv/shared'
 import { CurrentPlatformAdmin } from '../../common/decorators/current-platform-admin.decorator'
 import { Public } from '../../common/decorators/public.decorator'
 import { PlatformAuthGuard } from '../../common/guards/platform-auth.guard'
 import { apiErrorOpenApi, openApi } from '../../common/openapi'
 import { PLATFORM_SESSION_COOKIE, type PlatformSession } from '../../common/types/platform-request'
+import { ChangePlatformAdminPasswordDto } from './dto/change-platform-admin-password.dto'
 import { PlatformLoginDto } from './dto/platform-login.dto'
+import { UpdatePlatformAdminDto } from './dto/update-platform-admin.dto'
 import { PlatformAuthService } from './platform-auth.service'
 
 // Toda rota é @Public() pra pular o AuthGuard de tenant (que exigiria o
@@ -79,5 +88,36 @@ export class PlatformAuthController {
   @ApiUnauthorizedResponse({ schema: apiErrorOpenApi })
   me(@CurrentPlatformAdmin() session: PlatformSession): Promise<PlatformAdmin> {
     return this.auth.me(session)
+  }
+
+  @Public()
+  @UseGuards(PlatformAuthGuard)
+  @Patch('me')
+  @ApiBody({ schema: openApi(updatePlatformAdminSchema) })
+  @ApiOkResponse({ schema: openApi(platformAdminSchema) })
+  @ApiConflictResponse({ schema: apiErrorOpenApi, description: 'EMAIL_IN_USE' })
+  updateProfile(
+    @CurrentPlatformAdmin() session: PlatformSession,
+    @Body() body: UpdatePlatformAdminDto,
+  ): Promise<PlatformAdmin> {
+    return this.auth.updateProfile(session, body)
+  }
+
+  @Public()
+  @UseGuards(PlatformAuthGuard)
+  // Mesmo throttle do login: a sessão já está autenticada, mas ainda assim
+  // limita quantas vezes alguém pode tentar adivinhar a senha atual.
+  @Throttle({ default: { limit: 5, ttl: 900_000 } })
+  @Patch('password')
+  @HttpCode(204)
+  @ApiBody({ schema: openApi(changePlatformAdminPasswordSchema) })
+  @ApiNoContentResponse({ description: 'Senha alterada' })
+  @ApiUnauthorizedResponse({ schema: apiErrorOpenApi, description: 'INVALID_CURRENT_PASSWORD' })
+  @ApiTooManyRequestsResponse({ schema: apiErrorOpenApi })
+  async changePassword(
+    @CurrentPlatformAdmin() session: PlatformSession,
+    @Body() body: ChangePlatformAdminPasswordDto,
+  ): Promise<void> {
+    await this.auth.changePassword(session, body)
   }
 }

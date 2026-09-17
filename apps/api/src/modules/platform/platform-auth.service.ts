@@ -1,8 +1,13 @@
 import { Injectable, OnModuleInit } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import argon2 from 'argon2'
-import type { PlatformAdmin as PlatformAdminResponse, PlatformLoginInput } from '@pdv/shared'
-import { UnauthorizedError } from '../../common/errors/domain.error'
+import type {
+  ChangePlatformAdminPasswordInput,
+  PlatformAdmin as PlatformAdminResponse,
+  PlatformLoginInput,
+  UpdatePlatformAdminInput,
+} from '@pdv/shared'
+import { ConflictError, UnauthorizedError } from '../../common/errors/domain.error'
 import type { PlatformSession } from '../../common/types/platform-request'
 import { PlatformAdminRepository } from './platform-admin.repository'
 
@@ -15,6 +20,7 @@ interface PlatformAdminRow {
   id: string
   email: string
   name: string
+  passwordHash: string
   createdAt: Date
 }
 
@@ -22,6 +28,10 @@ interface PlatformAdminRow {
 // ou senha errada) — nunca revela se a conta existe (mesmo raciocínio do
 // login de operador, auth.service.ts).
 const INVALID_CREDENTIALS = () => new UnauthorizedError('INVALID_CREDENTIALS', 'E-mail ou senha incorretos.')
+const emailInUse = () => new ConflictError('EMAIL_IN_USE', 'Já existe uma conta com este e-mail.')
+// Diferente de INVALID_CREDENTIALS (login): aqui a sessão já está
+// autenticada, só a senha atual informada no formulário está errada.
+const invalidCurrentPassword = () => new UnauthorizedError('INVALID_CURRENT_PASSWORD', 'Senha atual incorreta.')
 
 @Injectable()
 export class PlatformAuthService implements OnModuleInit {
@@ -52,6 +62,36 @@ export class PlatformAuthService implements OnModuleInit {
     const admin = await this.admins.findById(session.id)
     if (!admin) throw new UnauthorizedError('INVALID_SESSION', 'Sessão inválida. Faça login novamente.')
     return this.toPublic(admin)
+  }
+
+  // Nome/e-mail — troca de senha é changePassword(), regra de segurança
+  // diferente (exige a senha atual).
+  async updateProfile(session: PlatformSession, input: UpdatePlatformAdminInput): Promise<PlatformAdminResponse> {
+    const admin = await this.admins.findById(session.id)
+    if (!admin) throw new UnauthorizedError('INVALID_SESSION', 'Sessão inválida. Faça login novamente.')
+
+    if (input.email !== admin.email) {
+      const existing = await this.admins.findByEmail(input.email)
+      if (existing && existing.id !== admin.id) throw emailInUse()
+    }
+
+    const updated = await this.admins.update(admin.id, { name: input.name, email: input.email })
+    return this.toPublic(updated)
+  }
+
+  async changePassword(
+    session: PlatformSession,
+    input: ChangePlatformAdminPasswordInput,
+  ): Promise<PlatformAdminResponse> {
+    const admin = await this.admins.findById(session.id)
+    if (!admin) throw new UnauthorizedError('INVALID_SESSION', 'Sessão inválida. Faça login novamente.')
+
+    const currentPasswordMatches = await argon2.verify(admin.passwordHash, input.currentPassword)
+    if (!currentPasswordMatches) throw invalidCurrentPassword()
+
+    const passwordHash = await argon2.hash(input.newPassword)
+    const updated = await this.admins.update(admin.id, { passwordHash })
+    return this.toPublic(updated)
   }
 
   private toPublic(admin: PlatformAdminRow): PlatformAdminResponse {
