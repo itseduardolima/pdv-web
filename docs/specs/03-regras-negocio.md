@@ -24,6 +24,23 @@ operador, ou excluir a própria conta. Toda mutação sensível (criar operador,
 resetar PIN, excluir) exige o usuário logado ter papel `admin` — validado no
 servidor (`src/server/domain`), nunca só escondendo botão na UI.
 
+### Superadmin de plataforma (fora do par Operador/Administrador)
+
+O par acima é sobre papéis **dentro de um tenant** — continua valendo
+"exatamente dois papéis" nesse escopo. O painel de superadmin (Épico 13)
+introduz um **terceiro tipo de conta**, deliberadamente fora desse par: o
+`PlatformAdmin` (dono do sistema/revendedor) não pertence a nenhuma loja, não
+é Operador nem Administrador, e só existe para criar/listar tenants — nunca
+vê dado operacional (venda, produto, caixa) de nenhuma loja. Ver
+`01-arquitetura.md` § Autenticação de plataforma.
+
+Ao criar uma loja pelo painel, o e-mail do administrador inicial (quando
+informado) precisa ser único **entre todas as lojas**, não só dentro da
+loja nova — diferente da regra normal de `Operator.email` (única só por
+tenant, ver § Autenticação abaixo). O mesmo e-mail em duas lojas indicaria
+a mesma pessoa administrando duas contas do sistema, o que o painel recusa
+(`400 VALIDATION` no campo `adminEmail`).
+
 ## Autenticação (login por PIN)
 
 - Login é: selecionar o operador (avatar) → digitar PIN de 4 dígitos.

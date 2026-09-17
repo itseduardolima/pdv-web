@@ -35,6 +35,19 @@ Um mercado nunca pode ver dado de outro. Duas camadas, nunca só uma (ver
 - **Teste obrigatório**: para todo módulo novo, um teste que cria dado em
   dois tenants e prova que a query de um nunca retorna o do outro — não é
   opcional, é Definition of Done (ver `docs/scrum/SPRINTS.md`).
+- **Exceção deliberada e documentada — painel Superadmin**: o único ponto do
+  sistema que legitimamente lê metadado (não dado operacional) de mais de
+  um tenant na mesma requisição é `GET /platform/tenants` (contagem de
+  operadores ativos por loja). Ele declara o tenant explicitamente por
+  chamada (`tenantStorage.run({tenantId}, ...)`), uma loja de cada vez —
+  nunca lê duas de uma vez sem tenant setado, nunca acessa `Product`/`Sale`
+  de nenhum tenant. Pegadinha real encontrada na implementação: **o
+  `await` da chamada ao Prisma precisa acontecer DENTRO do callback do
+  `tenantStorage.run(...)`** — devolver a `PrismaPromise` sem awaitar
+  (`() => prisma.operator.count(...)`) perde o contexto do
+  `AsyncLocalStorage` antes da query rodar de verdade (a extensão de RLS vê
+  `tenantId` `undefined`), mesmo com o `.run()` sintaticamente "por fora"
+  da chamada — ver `platform-tenant.service.ts`.
 
 ## 2. XSS (Cross-Site Scripting)
 
@@ -114,6 +127,25 @@ obrigatórios juntos, não é "escolher um":
   um cookie que valha para domínios que não são o `apps/web`.
 - Sem dado sensível dentro do JWT do cookie além do necessário
   (`sub`, `tenantId`, `role`) — nunca PIN, nunca hash, nunca e-mail.
+
+### Sessão de plataforma (painel Superadmin, Épico 13) — segredo separado
+
+A conta do dono do sistema (`PlatformAdmin`) não é um `Operator` e não
+pertence a tenant nenhum — a sessão dela é deliberadamente isolada da de
+operador, não uma variação dela:
+
+- Cookie próprio (`pdv_platform_session`, não `pdv_session`) e segredo de
+  JWT próprio (`PLATFORM_SESSION_SECRET`, não `SESSION_SECRET`) — um
+  vazamento de um segredo não pode forjar sessão do outro tipo.
+- Payload do JWT sem `tenantId` (não existe) e sem `role` (não há papéis
+  aqui, é uma conta só) — só `sub`.
+- Login por e-mail+senha, não PIN — é uma conta só, de alto privilégio
+  (cria lojas inteiras), não um funcionário numa tela compartilhada.
+- `@Throttle` mais restrito que o login de operador (5 tentativas / 15min,
+  contra 5/60s do operador) — o custo de um bloqueio incorreto é menor do
+  que o de facilitar força bruta contra a conta mais privilegiada do
+  sistema.
+- Mesmos flags de cookie da seção acima (`HttpOnly`/`Secure`/`SameSite=Lax`).
 
 ## 5. Negação de serviço (DDoS / abuso de endpoint) e bots
 

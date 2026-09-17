@@ -53,21 +53,48 @@ Duas camadas de proteção, não uma só:
 
 ## Onboarding de um novo tenant (fluxo operacional)
 
-1. Criar registro `Tenant` (nome, slug, cor primária, logo) — via um painel
-   interno simples (não precisa ser bonito, é uso interno de quem revende) ou
-   via script/seed no início, antes de existir um painel de onboarding.
-2. Criar o primeiro `Operador` com papel `admin` para esse tenant (não existe
-   tenant sem pelo menos um admin — mesma regra do
-   [03-regras-negocio](./03-regras-negocio.md)).
-3. Pronto — nenhum passo de build/deploy por cliente. O tema já é aplicado em
+1. Criar registro `Tenant` (nome, slug, cor primária) + o primeiro
+   `Operador` com papel `admin` para esse tenant (não existe tenant sem
+   pelo menos um admin — mesma regra do
+   [03-regras-negocio](./03-regras-negocio.md)) — **via o painel Superadmin**
+   (`POST /platform/tenants`, Épico 13, ver abaixo) ou via script/seed
+   (bootstrap inicial do ambiente, sem depender de já ter um superadmin
+   logado).
+2. Pronto — nenhum passo de build/deploy por cliente. O tema já é aplicado em
    runtime (ver [06](./06-design-system-temas.md)).
 
-### Como fazer hoje: seed parametrizado (`apps/api/prisma/seed.ts`)
+### Painel Superadmin (Épico 13) — caminho principal hoje
+
+Conta separada de qualquer tenant (`PlatformAdmin`, e-mail+senha, ver
+`01-arquitetura.md` § Autenticação de plataforma), num host reservado
+(`PLATFORM_HOST`, fora do `TenantMiddleware`):
+
+- `POST /platform/auth/login` — sessão própria (`pdv_platform_session`).
+- `POST /platform/tenants` — cria a loja + o admin inicial (nome, e-mail
+  opcional, PIN obrigatório) numa chamada só; reaproveita a mesma lógica do
+  seed (`provisionTenant`, `apps/api/src/modules/tenant/tenant-provisioning.ts`),
+  não duplica a regra. Slug único, com lista de slugs reservados
+  (`admin`, `api`, `www`, `platform`) que nunca podem virar loja.
+- `GET /platform/tenants` — lista lojas com contagem de operadores ativos;
+  nunca dado operacional (venda, produto) de nenhuma loja.
+- `PATCH /platform/tenants/:id/active` — suspende/reativa uma loja sem
+  apagar nenhum dado (HU 13.7, `Tenant.active`). Loja suspensa responde
+  403 `TENANT_SUSPENDED` (não 404) em qualquer request pro host dela —
+  diferencia "suspensa" de "não existe" pra quem é dono da loja bloqueada.
+
+### Bootstrap por script/seed (`apps/api/prisma/seed.ts`) — ainda necessário
+
+O script continua existindo, agora reaproveitando a mesma função
+(`provisionTenant`) do painel — é o caminho para bootstrapar o **primeiro**
+superadmin (`SEED_PLATFORM_ADMIN_EMAIL`/`SEED_PLATFORM_ADMIN_PASSWORD`, sem
+eles o seed não mexe em `PlatformAdmin`) e para ambientes novos do zero
+(dev/CI/E2E), onde ainda não existe ninguém logado no painel para criar a
+primeira loja.
 
 O seed é idempotente e lê variáveis de ambiente. Rodar de novo com o mesmo
 slug atualiza nome/cores e **nunca** duplica nem troca o PIN de um
 Administrador já existente. Na VPS ele já vem compilado na imagem da API
-(`dist/seed/seed.js`):
+(`dist/seed/prisma/seed.js`):
 
 ```bash
 # local
@@ -81,7 +108,7 @@ pnpm --filter api db:seed
 docker compose exec \
   -e SEED_TENANT_SLUG=karol -e SEED_TENANT_NAME='Mercadinho da Karol' \
   -e SEED_PRIMARY_COLOR='#1a237e' -e SEED_ADMIN_NAME='Karol' -e SEED_ADMIN_PIN=4321 \
-  api node dist/seed/seed.js
+  api node dist/seed/prisma/seed.js
 ```
 
 | Variável                                   | Quando                              | Default                  | Uso                                 |
@@ -111,6 +138,8 @@ recebe operadores e produtos de exemplo.
 
 ## Fora de escopo (mas vale registrar a intenção)
 
-- Painel de self-service para o próprio revendedor criar tenants sem tocar
-  código/banco é desejável a médio prazo, mas não bloqueia o lançamento do
-  primeiro cliente — o fluxo manual acima (passos 1–2) é aceitável em v1.
+- ~~Painel de self-service para o próprio revendedor criar tenants sem
+  tocar código/banco~~ — feito no Épico 13 (`docs/scrum/BACKLOG.md`),
+  ver § Painel Superadmin acima. ~~Suspender/reativar uma loja pelo
+  painel~~ — feito (HU 13.7, `Tenant.active`). Ainda fora de escopo: log de
+  auditoria das ações do superadmin (HU 13.8) — P2, sem sprint definida.

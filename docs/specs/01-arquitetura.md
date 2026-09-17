@@ -89,6 +89,33 @@ cache entre apps). Ver estrutura interna de `apps/api` em
 
 Ver detalhamento em [07-multitenant-whitelabel](./07-multitenant-whitelabel.md).
 
+## Autenticação de plataforma (painel Superadmin, Épico 13)
+
+Existe uma segunda linha de autenticação, deliberadamente fora do fluxo
+acima: a conta do dono do sistema/revendedor (`PlatformAdmin`), que cria e
+lista lojas pelo painel em vez de rodar o script de seed manualmente. Ela
+**não pertence a tenant nenhum** — nem é um `Operator` (não é Administrador
+nem Operador de loja, ver `03-regras-negocio.md` § Papéis).
+
+- Host reservado (`PLATFORM_HOST`, ex. `admin.app.localhost` em dev) fica
+  fora do `TenantMiddleware` (rotas `platform/*` excluídas) — não tenta
+  resolver tenant nenhum, e esse valor nunca pode ser usado como slug de
+  loja.
+- Login por e-mail+senha (não PIN de 4 dígitos — é uma conta única e mais
+  privilegiada, não um funcionário numa tela compartilhada), cookie
+  (`pdv_platform_session`) e segredo de JWT (`PLATFORM_SESSION_SECRET`)
+  **separados** da sessão de operador — um vazamento de um não deve
+  conseguir forjar sessão do outro.
+- `PlatformAuthGuard` (paralelo ao `AuthGuard` de tenant) nunca chama
+  `getTenantId()` — não há tenant no contexto de uma rota de plataforma.
+- `PlatformAdmin` é uma tabela sem `tenantId` e sem Row-Level Security — o
+  mesmo tratamento que `Tenant` já recebe (está acima do escopo de
+  isolamento por loja, não dentro dele).
+- Quando o painel precisa agregar dado por loja (ex.: quantos operadores
+  ativos cada tenant tem), a leitura declara o tenant explicitamente por
+  chamada (`tenantStorage.run({tenantId}, ...)`) — nunca acessa dado
+  operacional (venda, produto) de nenhum tenant, só metadado de cadastro.
+
 ## Como o Next fala com a API
 
 - O browser sempre acessa o Next (é ele que resolve o host/subdomínio do

@@ -207,6 +207,43 @@ do primeiro form real, não depois.
 | 10.2 | Como Operador, quero ver um erro de regra de negócio (ex.: "caixa já aberto") num aviso dentro do próprio card da ação, não numa notificação que some sozinha. | Componente `InlineAlert` (ver DESIGN_SYSTEM.md); mensagem exibida é exatamente o `message` que a API retornou, sem reescrita no cliente.               | 3   | P0         |
 | 10.3 | Como Operador, quero que o botão de salvar mostre visualmente que a ação deu certo, sem precisar de uma notificação separada.                                  | `Button` com `state="loading"/"success"`; usado em Produto/Operador/Abertura de Caixa.                                                                 | 2   | P1         |
 
+## Épico 13 — Painel Superadmin (provisionar lojas por UI)
+
+Hoje criar um tenant novo é 100% manual/script (`apps/api/prisma/seed.ts`
+rodado à mão, ver HU 1.3 e `07-multitenant-whitelabel.md` § Onboarding) —
+`07-multitenant-whitelabel.md` já registra isso como aceitável só "em v1",
+com painel self-service como intenção futura (§ Fora de escopo). Esta
+épica traz essa intenção para dentro do escopo: uma conta de dono do
+sistema (revendedor), separada de qualquer tenant, com uma tela para criar
+e listar lojas sem terminal.
+
+Decisão de arquitetura que atravessa toda a épica: essa conta **não é** um
+`Operator` (não é nem Administrador nem Operador de loja — `03-regras-negocio.md`
+§ Papéis continua valendo "exatamente dois papéis" _dentro_ de um tenant;
+superadmin é um terceiro tipo de conta, fora desse par, sem `tenantId`).
+Hoje toda autenticação e toda resolução de rota depende de um tenant
+resolvido pelo host (`01-arquitetura.md` § Multi-tenant) — o painel
+precisa de um host reservado que escape dessa resolução. Specs a
+atualizar junto da implementação: `01-arquitetura.md` (novo trecho sobre
+autenticação de plataforma), `03-regras-negocio.md` § Papéis (nota
+explícita de que superadmin é externo ao par Operador/Administrador),
+`07-multitenant-whitelabel.md` § Onboarding e § Fora de escopo (o fluxo
+manual vira o fallback/script de bootstrap, não mais o único caminho),
+`08-seguranca.md` (sessão sem `tenantId`, rate-limit próprio — não existe
+hoje um padrão de log de auditoria no projeto; se a HU 13.8 entrar, é
+território novo, não extensão de convenção existente).
+
+| #    | HU                                                                                                                                                                         | Critérios de aceite                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Pts | Prioridade |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ---------- |
+| 13.1 | Como dono do sistema, quero uma conta de superadmin separada de qualquer loja, para gerenciar tenants sem pertencer a nenhum tenant.                                       | Tabela nova `PlatformAdmin` (id, email único, `passwordHash` argon2, name, `createdAt`), sem `tenantId`, fora do modelo `Operator`. Sem auto-cadastro: criada só via script/seed dedicado (`SEED_PLATFORM_ADMIN_EMAIL`/`SEED_PLATFORM_ADMIN_PASSWORD`, mesmo padrão do `seed.ts` atual). `03-regras-negocio.md` § Papéis ganha nota explícita: superadmin é um terceiro tipo de conta, fora do par Operador/Administrador.                                                          | 3   | P1         |
+| 13.2 | Como sistema, quero reconhecer um host reservado (ex. `admin.<APP_BASE_DOMAIN>`) que nunca tenta resolver tenant, para o painel funcionar sem cair em `TENANT_NOT_FOUND`.  | `TenantMiddleware` ganha exceção explícita para esse host (constante `PLATFORM_HOST`, via env); esse valor passa a ser reservado — criar/seedar um tenant com esse `slug` é rejeitado (400). Rotas sob esse host não passam pelo `AuthGuard`/`RolesGuard` de operador.                                                                                                                                                                                                              | 3   | P1         |
+| 13.3 | Como Superadmin, quero logar com e-mail e senha (não PIN de 4 dígitos), para um nível de segurança compatível com o poder da conta.                                        | `POST /platform/auth/login` (só aceito no host reservado), valida com argon2, seta cookie de sessão dedicado (nome diferente de `pdv_session`, sem claim `tenantId`). `PlatformAuthGuard` novo, não depende de `getTenantId()`. Throttle mais restritivo que o login de operador (ex. 5 tentativas/15min por IP+e-mail) — é a conta mais privilegiada do sistema, ver `08-seguranca.md` § Autenticação.                                                                             | 5   | P1         |
+| 13.4 | Como Superadmin, quero criar uma loja nova preenchendo um formulário (nome, slug, cor primária, nome/e-mail/PIN do admin inicial), para onboardar um cliente sem terminal. | `POST /platform/tenants`, só `PlatformAuthGuard`. Regra de criação extraída para um serviço compartilhado (`TenantProvisioningService`) usado tanto por este endpoint quanto pelo script de seed, para não duplicar validação. `slug` único, minúsculo, sem espaço, e não pode ser uma palavra reservada (`admin`, `api`, `www`, o próprio `PLATFORM_HOST`). Resposta nunca expõe `passwordHash`/`pinHash`. Loja criada fica imediatamente acessível em `<slug>.<APP_BASE_DOMAIN>`. | 5   | P1         |
+| 13.5 | Como Superadmin, quero ver a lista de lojas já criadas, para acompanhar quantos clientes já uso o sistema.                                                                 | `GET /platform/tenants`, só `PlatformAuthGuard`. Retorna nome, slug, domínio customizado (se houver), `createdAt`, contagem de operadores ativos. Não expõe dado operacional de nenhuma loja (venda, produto) — superadmin só enxerga cadastro, não o negócio de cada cliente.                                                                                                                                                                                                      | 2   | P1         |
+| 13.6 | Como Superadmin, quero uma tela de login e uma tela de criar/listar lojas, para não depender do terminal no dia a dia.                                                     | Área nova em `apps/web`, fora do shell de tenant normal (sem `tenantThemeCss`/`AppShell` de operador — não existe "loja atual" aqui, layout neutro). Só responde no host reservado; reusa componentes de formulário/`InlineAlert` do design system onde fizer sentido, mas não reusa hooks de tenant (`useCart` etc.).                                                                                                                                                              | 5   | P1         |
+| 13.7 | Como Superadmin, quero suspender uma loja sem apagar os dados, para bloquear o acesso de um cliente inadimplente sem perder o cadastro.                                    | Campo novo `active` (boolean, default `true`) em `Tenant` (não existe hoje). `TenantMiddleware` responde 403 `TENANT_SUSPENDED` (não 404 — precisa diferenciar de "não existe") quando `active === false`. `PATCH /platform/tenants/:id/active`; reativar restaura o acesso na hora, nenhum dado é apagado.                                                                                                                                                                         | 3   | P2         |
+| 13.8 | Como Superadmin, quero um registro de quem criou/suspendeu uma loja e quando, para auditoria básica.                                                                       | Log mínimo (tabela ou coluna `createdBy`/ação registrada) nas ações de criar/suspender/reativar tenant. **Território novo**: não existe hoje nenhuma convenção de log de auditoria no projeto — esta HU define o primeiro padrão, não estende um já existente.                                                                                                                                                                                                                      | 3   | P2         |
+
 ---
 
 ## Resumo de esforço por Épico (P0 + P1, o que define o MVP)
@@ -226,7 +263,8 @@ do primeiro form real, não depois.
 | 10 — Validação e Feedback | 6      | 2      | —      |
 | 11 — Configurações        | —      | 12     | 4      |
 | 12 — Relatórios           | —      | —      | 26     |
-| **Total**                 | **64** | **73** | **46** |
+| 13 — Painel Superadmin    | —      | 23     | 6      |
+| **Total**                 | **64** | **96** | **52** |
 
 MVP (P0, "consigo vender algo de ponta a ponta em produção") = **64 pontos**.
-Produto completo para operação real (P0 + P1) = **137 pontos**.
+Produto completo para operação real (P0 + P1) = **160 pontos**.

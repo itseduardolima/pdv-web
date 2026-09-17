@@ -24,10 +24,10 @@ frontend) — não quando o código só "existe".
   4.7 e 11.6 — ver seção própria abaixo.
 - Sprint 10 (Relatórios, decisão de 2026-09-14) concluída: 12.1-12.7 — ver
   seção própria abaixo.
-- Épico 13 (Painel Superadmin — criar loja nova por UI em vez de rodar o
-  seed manualmente, decisão de 2026-09-16) adicionado ao backlog, HUs
-  13.1-13.8 em `docs/scrum/BACKLOG.md`. Ainda sem sprint definida.
-- Próximo: 9.3/9.4, Épico 13, ou nova prioridade a definir com o usuário.
+- Épico 13 (Painel Superadmin, decisão de 2026-09-16) — 13.1-13.7 concluídas
+  (backend + tela + suspender/reativar loja); 13.8 é P2, backlog. Ver seção
+  própria abaixo.
+- Próximo: 9.3/9.4, ou nova prioridade a definir com o usuário.
 
 ---
 
@@ -237,6 +237,101 @@ detalhe do plano em `docs/scrum/SPRINTS.md`.
       ganhou `illustrationSrc` por prop nessas duas telas (o padrão
       `store-illustration.svg` continua em Esqueci meu PIN e Definir PIN —
       não pedido pro usuário mudar).
+
+## Épico 13 — Painel Superadmin (decisão de 2026-09-16)
+
+Hoje criar uma loja nova era só via `apps/api/prisma/seed.ts` manual
+(`07-multitenant-whitelabel.md` § Fora de escopo). HUs em
+`docs/scrum/BACKLOG.md` Épico 13 (13.1-13.8); detalhe do plano de
+implementação no plano aprovado desta sessão. Esta fatia é só o backend
+(13.1-13.5) — a tela (13.6) fica para uma próxima sessão.
+
+- [x] 13.1 — Modelo `PlatformAdmin` (sem `tenantId`, sem RLS — mesmo
+      tratamento de `Tenant`), migration `20260916210000_platform_admin`.
+      Bootstrap só via seed (`SEED_PLATFORM_ADMIN_EMAIL`/`_PASSWORD`/`_NAME`,
+      opcional, idempotente por e-mail). `03-regras-negocio.md` § Papéis
+      ganhou nota explícita: superadmin é um terceiro tipo de conta, fora
+      do par Operador/Administrador.
+- [x] 13.2 — Host reservado (`PLATFORM_HOST`, ex. `admin.app.localhost`)
+      excluído do `TenantMiddleware` (`platform/{*path}` no
+      `.exclude(...)` de `app.module.ts`); slugs reservados (`admin`,
+      `api`, `www`, `platform`) validados na criação de tenant.
+- [x] 13.3 — `POST /platform/auth/login` (e-mail+senha, argon2),
+      `GET /platform/auth/me`, `POST /platform/auth/logout` —
+      `PlatformAuthGuard`/`PlatformAuthModule` com `JwtService` e cookie
+      (`pdv_platform_session`) **separados** do de operador (segredo
+      `PLATFORM_SESSION_SECRET` próprio, não-global, escopado ao módulo).
+      Throttle 5/15min (mais restrito que o login de operador).
+- [x] 13.4 — `POST /platform/tenants` — cria loja + admin inicial numa
+      chamada, reaproveitando `provisionTenant`
+      (`apps/api/src/modules/tenant/tenant-provisioning.ts`, extraído do
+      `seed.ts` — mesma lógica pros dois caminhos, não duplica regra). 409
+      `SLUG_IN_USE`, 400 `VALIDATION` para slug reservado.
+- [x] 13.5 — `GET /platform/tenants` — lista com contagem de operadores
+      ativos por loja (nunca dado operacional). Jest cobre os 3 services
+      novos + `tenant-provisioning`; suíte completa (204 testes) e
+      regressão manual de todos os módulos já existentes (Produtos, Caixa,
+      Dashboard, Relatórios, Operadores, Vendas, Tenant, Uploads) sem
+      quebra.
+- **Achado real durante a implementação** (documentado em
+  `08-seguranca.md` § 1): `tenantStorage.run(store, callback)` só propaga o
+  contexto do `AsyncLocalStorage` pra extensão de RLS do Prisma se a
+  chamada for **awaitada dentro do próprio callback** — devolver a
+  `PrismaPromise` sem `await` (`() => prisma.operator.count(...)`) perde o
+  contexto antes da query rodar de verdade, mesmo com o `.run()`
+  envolvendo a chamada. Só afeta esse novo uso (`platform-tenant.service.ts`);
+  o único outro lugar que usa `tenantStorage.run` (`TenantMiddleware`,
+  `() => next()`) não tem esse problema por natureza do Express.
+- **Efeito colateral corrigido**: `seed.ts` refatorado tinha um bug (nome
+  do tenant sempre caindo no default `'Mercadinho Demo'` mesmo em `update`
+  sem `SEED_TENANT_NAME`) que resetou o nome real do tenant `demo` durante
+  o smoke test — corrigido (`ProvisionTenantInput.name` opcional, só
+  sobrescreve se informado) e o nome foi restaurado.
+- **Mudança colateral de convenção**: `apps/api/tsconfig.seed.json` mudou
+  `rootDir` de `./prisma` pra `.` (precisava incluir
+  `tenant-provisioning.ts`, fora de `prisma/`) — o build do seed agora sai
+  em `dist/seed/prisma/seed.js`, não mais `dist/seed/seed.js`.
+  `db:seed:prod` e as referências em `README.md`/specs/`SPEC.md` já
+  atualizadas.
+- [x] 13.6 — Tela do painel em `apps/web` — mesmo app (decisão confirmada
+      com o usuário: sem app Next.js separado). `RootLayout` ganhou
+      `isPlatformHost()` (`lib/platform.server.ts`, compara o header `host`
+      contra `PLATFORM_HOST`) checado ANTES de `getCurrentTenant()` — no
+      host reservado pula tema/`TenantProvider`/erro de tenant por completo
+      (zero mudança de comportamento em qualquer host de tenant real).
+      Rotas em `src/app/platform/` (pasta normal, não route group — `/login`
+      já existe pro app de tenant, precisa de prefixo de URL próprio):
+      `platform/login` (`SplitAuthLayout` reaproveitado, formulário
+      e-mail+senha) e `platform/tenants` (formulário de criar loja +
+      listagem, `PageHeader`/`Input`/`Button`/`InlineAlert`/`EmptyState`/`Loader`
+      reaproveitados — nenhum componente de `components/pos/`/`AppShell`,
+      que dependem de tenant/sessão de operador). `getCurrentPlatformAdmin`
+      (`lib/platform-session.server.ts`) espelha `getCurrentSession`; hooks
+      `use-platform-login`/`use-platform-logout`/`use-platform-tenants`/
+      `use-create-platform-tenant` espelham os de operador, mesmo
+      `apiRequest`/mapeamento de `fieldErrors` (`useOperatorForm` →
+      `usePlatformTenantForm`). Validado: typecheck, lint, `next build`
+      (rotas `/platform/login` e `/platform/tenants` geradas), e smoke test
+      via curl com `Host` forjado (fluxo completo: página renderiza sem
+      erro de tenant, redireciona pro login sem sessão, formulário completo
+      aparece com sessão válida) — num servidor Next à parte (porta 3002),
+      sem mexer no servidor de dev do usuário (porta 3000, em uso).
+- [x] 13.7 — Suspender/reativar loja sem apagar dado nenhum. Campo
+      `Tenant.active` (boolean, default `true`, migration
+      `20260917140000_tenant_active`). `TenantMiddleware` responde 403
+      `TENANT_SUSPENDED` (não 404 — diferencia "suspensa" de "não existe")
+      quando `active === false`; `PATCH /platform/tenants/:id/active`
+      (`PlatformTenantService.setActive`, 404 `TENANT_NOT_FOUND` se o id
+      não existe). **Achado**: `TenantService` cacheia host→tenant por até
+      `TENANT_CACHE_TTL_MS` (60s padrão) — sem invalidar esse cache,
+      "reativar restaura o acesso na hora" seria mentira por até 1 minuto;
+      `setActive` chama `TenantService.clearHostCache()` (novo método,
+      `PlatformModule` importa `TenantModule` só pra isso) depois de gravar.
+      Tela: badge Ativa/Suspensa por loja, botão Suspender (com
+      `ConfirmDialog`, reaproveitado de Produtos/Operadores) e Reativar
+      (direto, sem confirmação — é o caminho de desfazer). Jest cobre
+      `TenantMiddleware`, `TenantService.resolveByHost` e
+      `PlatformTenantService.setActive` (212 testes na suíte da API).
 
 ## Backlog P2 (sem sprint fixa ainda)
 
