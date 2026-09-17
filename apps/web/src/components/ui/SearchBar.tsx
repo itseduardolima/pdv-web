@@ -5,7 +5,7 @@ type SearchBarProps = InputHTMLAttributes<HTMLInputElement>
 
 export function SearchBar({ className = '', ...rest }: SearchBarProps) {
   return (
-    <label className={`flex h-12 items-center gap-2.5 rounded-input bg-surface px-4 ${className}`}>
+    <label className={`flex h-12 shrink-0 items-center gap-2.5 rounded-input bg-surface px-4 md:h-[52px] ${className}`}>
       <SearchIcon aria-hidden className="shrink-0 text-accent" />
       <input
         type="search"

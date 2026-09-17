@@ -11,7 +11,7 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, subtitle, backHref, actions }: PageHeaderProps) {
   return (
-    <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+    <header className="flex shrink-0 flex-col gap-3 md:flex-row md:items-end md:justify-between">
       <div className="flex items-center gap-3">
         {backHref && (
           <Link
