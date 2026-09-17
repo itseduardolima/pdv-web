@@ -36,9 +36,11 @@ o mínimo que não pode faltar:
   (Let's Encrypt), mas o uptime check acima já pega indiretamente se a
   renovação falhar (o site vira inacessível/com erro de certificado).
 - **Espaço em disco da VPS** — volumes do Postgres e do MinIO crescem sem
-  limite natural; um cron simples (`df` + alerta se > 80%) evita a VPS
-  parar de escrever no banco por disco cheio, que é um dos jeitos mais
-  silenciosos de derrubar o sistema.
+  limite natural; `scripts/disk-space-check.sh` (`df` + alerta se > 80%,
+  limite configurável via `DISK_ALERT_THRESHOLD`) registrado no crontab da
+  VPS (exemplo no `README.md` § Deploy na VPS) evita a VPS parar de
+  escrever no banco por disco cheio, que é um dos jeitos mais silenciosos
+  de derrubar o sistema.
 
 ## 3. Logs
 

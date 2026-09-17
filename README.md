@@ -113,6 +113,14 @@ subida), condição para a Row-Level Security valer; migrations rodam no
 `CMD` da API antes de subir. Monitoramento, backup/restore e rollback: ver
 [`docs/specs/09-operacao.md`](./docs/specs/09-operacao.md).
 
+Alerta de espaço em disco (09-operacao § 2) — registrar no crontab da VPS
+(o comportamento padrão do cron já envia por e-mail qualquer saída de um
+job, se o sistema tiver MTA/MAILTO configurado):
+
+```cron
+0 * * * * /caminho/para/pdv-web/scripts/disk-space-check.sh
+```
+
 Atualizar uma versão: `git pull && ./scripts/deploy-check.sh && docker compose up -d --build`.
 Ambiente local continua em `docker-compose.dev.yml` (defaults `*.localhost`
 e senhas triviais — nunca use esses defaults na VPS).
