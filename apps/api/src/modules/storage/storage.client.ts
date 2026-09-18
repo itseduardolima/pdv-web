@@ -27,6 +27,12 @@ export interface ObjectHead {
 export class StorageClient implements OnModuleInit {
   private readonly logger = new Logger(StorageClient.name)
   private readonly s3: S3Client
+  // Client separado só para presignPost: precisa apontar pro host público
+  // (media.APP_DOMAIN), porque quem faz o POST é o navegador do usuário —
+  // ele nunca alcança STORAGE_ENDPOINT (http://minio:9000, interno ao
+  // Docker). O client principal (this.s3) continua no endpoint interno,
+  // que é onde a própria API precisa falar com o MinIO.
+  private readonly presignS3: S3Client
   readonly bucket: string
   readonly publicBaseUrl: string
 
@@ -35,14 +41,23 @@ export class StorageClient implements OnModuleInit {
     this.publicBaseUrl = config
       .get<string>('STORAGE_PUBLIC_URL', `http://localhost:9000/${this.bucket}`)
       .replace(/\/$/, '')
+    const credentials = {
+      accessKeyId: config.getOrThrow<string>('STORAGE_ACCESS_KEY'),
+      secretAccessKey: config.getOrThrow<string>('STORAGE_SECRET_KEY'),
+    }
+    const region = config.get<string>('STORAGE_REGION', 'us-east-1')
     this.s3 = new S3Client({
       endpoint: config.get<string>('STORAGE_ENDPOINT', 'http://localhost:9000'),
-      region: config.get<string>('STORAGE_REGION', 'us-east-1'),
+      region,
       forcePathStyle: true,
-      credentials: {
-        accessKeyId: config.getOrThrow<string>('STORAGE_ACCESS_KEY'),
-        secretAccessKey: config.getOrThrow<string>('STORAGE_SECRET_KEY'),
-      },
+      credentials,
+    })
+    const publicOrigin = new URL(this.publicBaseUrl)
+    this.presignS3 = new S3Client({
+      endpoint: `${publicOrigin.protocol}//${publicOrigin.host}`,
+      region,
+      forcePathStyle: true,
+      credentials,
     })
   }
 
@@ -74,7 +89,7 @@ export class StorageClient implements OnModuleInit {
   }
 
   presignPost(key: string, contentType: string, maxBytes: number, expiresInSeconds: number): Promise<PresignedPost> {
-    return createPresignedPost(this.s3, {
+    return createPresignedPost(this.presignS3, {
       Bucket: this.bucket,
       Key: key,
       Conditions: [
