@@ -15,7 +15,7 @@ import { getCurrentSession } from '@/lib/session.server'
 // caixa de outra pessoa ou só olhar o Dashboard sem operar um caixa.
 export default async function OperatingLayout({ children }: { children: ReactNode }) {
   const session = await getCurrentSession()
-  if (!session) return null
+  if (!session) redirect('/login')
   const mine = await getMyCashSession()
   if (mine) return <AppShell>{children}</AppShell>
   if (session.operator.role === 'ADMIN' && (await getCurrentCashSession())) return <AppShell>{children}</AppShell>

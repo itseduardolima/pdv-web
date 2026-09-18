@@ -8,7 +8,7 @@ import { getCurrentSession } from '@/lib/session.server'
 // impedir este de abrir o próprio (getCurrentCashSession, tenant-wide, é só
 // pro guard de `(operating)/layout.tsx`, nunca pra decidir isso aqui).
 export default async function OpenRegisterLayout({ children }: { children: ReactNode }) {
-  if (!(await getCurrentSession())) return null
+  if (!(await getCurrentSession())) redirect('/login')
   if (await getMyCashSession()) redirect('/')
   return children
 }
