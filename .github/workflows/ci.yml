@@ -193,8 +193,12 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           script: |
+            cd "${{ secrets.DEPLOY_PATH || '/opt/pdv-web' }}"
+            # api não publica porta nenhuma no host (só Caddy expõe 80/443,
+            # ver docker-compose.yml) — checar de dentro do container é o
+            # mesmo que fazíamos manualmente pra validar cada deploy.
             for i in $(seq 1 30); do
-              curl -sf http://localhost:3001/health && exit 0
+              docker compose exec -T api wget -qO- http://localhost:3001/health && exit 0
               sleep 2
             done
             echo "ERRO: /health não respondeu 200 depois do deploy" >&2
