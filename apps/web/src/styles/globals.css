@@ -8,6 +8,17 @@ body {
   @apply bg-canvas text-ink font-body antialiased;
 }
 
+/* iOS Safari dá zoom automático no foco de um campo de texto com font-size
+   abaixo de 16px — sobrescreve as classes utilitárias (text-[15px] etc) só
+   no mobile; desktop/tablet mantêm o tamanho do design system. */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* Vender: produto voando até o carrinho + destaque quando o 1º item entra. */
 @keyframes fly-to-cart {
   0% {
