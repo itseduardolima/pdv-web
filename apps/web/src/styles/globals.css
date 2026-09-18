@@ -8,6 +8,27 @@ body {
   @apply bg-canvas text-ink font-body antialiased;
 }
 
+/* Barra de scroll fina e no tom do design system, em vez da nativa do SO —
+   vale pra qualquer elemento com scroll (sidebar, listas, diálogos). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--color-ink) 35%, var(--color-border));
+}
+
 /* iOS Safari dá zoom automático no foco de um campo de texto com font-size
    abaixo de 16px — sobrescreve as classes utilitárias (text-[15px] etc) só
    no mobile; desktop/tablet mantêm o tamanho do design system. */
