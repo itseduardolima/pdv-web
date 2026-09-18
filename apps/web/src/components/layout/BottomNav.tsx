@@ -3,17 +3,21 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import Link from 'next/link'
 import { useState } from 'react'
-import { MoreIcon } from '@/components/ui/Icons'
+import { LogoutIcon, MoreIcon } from '@/components/ui/Icons'
 import { splitBottomNavItems, type NavItem } from '@/lib/navigation'
 
 interface BottomNavProps {
   items: (NavItem & { active: boolean })[]
+  onLogout: () => void
 }
 
 // Abaixo de md: barra flutuante no rodapé (padrão "Celular" do protótipo).
 // ADMIN vê até 7 itens — não cabem lado a lado sem apertar o alvo de toque,
 // então o excedente vira um item "Mais" que abre uma folha com o resto.
-export function BottomNav({ items }: BottomNavProps) {
+// "Mais" também é o único jeito de sair no mobile (a Sidebar tem "Sair"
+// direto, mas ela não existe abaixo de md) — por isso sempre aparece, com
+// ou sem itens de overflow.
+export function BottomNav({ items, onLogout }: BottomNavProps) {
   const [moreOpen, setMoreOpen] = useState(false)
   const { primary, overflow } = splitBottomNavItems(items)
   const overflowActive = overflow.some((item) => item.active)
@@ -35,18 +39,16 @@ export function BottomNav({ items }: BottomNavProps) {
             <Icon aria-hidden className="h-6 w-6" />
           </Link>
         ))}
-        {overflow.length > 0 && (
-          <button
-            type="button"
-            aria-label="Mais opções"
-            aria-haspopup="dialog"
-            aria-expanded={moreOpen}
-            onClick={() => setMoreOpen(true)}
-            className={`flex h-12 w-12 items-center justify-center rounded-frame ${overflowActive ? 'bg-primary text-primary-ink' : 'text-ink'}`}
-          >
-            <MoreIcon aria-hidden className="h-6 w-6" />
-          </button>
-        )}
+        <button
+          type="button"
+          aria-label="Mais opções"
+          aria-haspopup="dialog"
+          aria-expanded={moreOpen}
+          onClick={() => setMoreOpen(true)}
+          className={`flex h-12 w-12 items-center justify-center rounded-frame ${overflowActive ? 'bg-primary text-primary-ink' : 'text-ink'}`}
+        >
+          <MoreIcon aria-hidden className="h-6 w-6" />
+        </button>
       </nav>
 
       <Dialog.Root open={moreOpen} onOpenChange={setMoreOpen}>
@@ -66,6 +68,17 @@ export function BottomNav({ items }: BottomNavProps) {
                 </Link>
               </Dialog.Close>
             ))}
+            {overflow.length > 0 && <hr className="my-1 border-border" />}
+            <Dialog.Close asChild>
+              <button
+                type="button"
+                onClick={onLogout}
+                className="flex items-center gap-3 rounded-frame px-3 py-3 font-body text-sm font-medium text-danger"
+              >
+                <LogoutIcon aria-hidden />
+                Sair
+              </button>
+            </Dialog.Close>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
