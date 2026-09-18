@@ -2,7 +2,8 @@
 
 import { PageHeader } from '@/components/layout/PageHeader'
 import { PaymentMethodIllustration } from '@/components/pos/PaymentMethodIllustration'
-import { SaleHistoryRow } from '@/components/pos/SaleHistoryRow'
+import { SaleDetailsDialog } from '@/components/pos/SaleDetailsDialog'
+import { SaleHistoryEntry } from '@/components/pos/SaleHistoryEntry'
 import { StatTile } from '@/components/pos/StatTile'
 import { TotalCard } from '@/components/pos/TotalCard'
 import { Button } from '@/components/ui/Button'
@@ -120,15 +121,17 @@ export default function ClosingPage() {
             ) : page.sales.length === 0 ? (
               <EmptyState title="Nenhuma venda ainda" description="As vendas deste caixa aparecem aqui." />
             ) : (
-              <ul className="min-h-0 flex-1 overflow-y-auto">
+              <ul className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
                 {page.sales.map((sale) => (
-                  <SaleHistoryRow key={sale.id} sale={sale} />
+                  <SaleHistoryEntry key={sale.id} sale={sale} onSelect={page.handleSelectSale} />
                 ))}
               </ul>
             )}
           </section>
         </>
       )}
+
+      <SaleDetailsDialog sale={page.selectedSale} onOpenChange={(open) => !open && page.handleCloseSaleDetails()} />
     </>
   )
 }

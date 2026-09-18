@@ -1,5 +1,6 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import type { Sale } from '@pdv/shared'
 import { useCashSession } from '@/hooks/queries/use-cash-session'
 import { useCashSessionRegisters } from '@/hooks/queries/use-cash-session-registers'
 import { useCashSessionSales } from '@/hooks/queries/use-cash-session-sales'
@@ -17,6 +18,7 @@ export function useClosingPage() {
   const current = useCurrentCashSession() // "meu" caixa, se eu tiver um aberto
   const registers = useCashSessionRegisters()
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null)
 
   // HU 4.7: Administrador pode fechar QUALQUER caixa aberto, não só o
   // próprio — a lista mostra todos os abertos (o dele incluso, se tiver),
@@ -90,5 +92,8 @@ export function useClosingPage() {
     activeSessionId,
     myOwnSessionId,
     handleSelectRegister,
+    selectedSale,
+    handleSelectSale: setSelectedSale,
+    handleCloseSaleDetails: () => setSelectedSale(null),
   }
 }

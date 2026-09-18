@@ -5,9 +5,8 @@ import { formatTime } from '@/lib/utils/format-date'
 import { PAYMENT_METHOD_LABEL } from '@/lib/utils/payment-method'
 import { PaymentMethodIllustration } from './PaymentMethodIllustration'
 
-// Tela Histórico de Vendas: card clicável (abre SaleDetailsDialog com os
-// itens) — diferente de SaleHistoryRow (Fechamento), que é só um resumo
-// sem interação, então não reaproveita o mesmo componente.
+// Card clicável de uma venda (Histórico de Vendas e Fechamento): clicar
+// abre o SaleDetailsDialog com os itens.
 export function SaleHistoryEntry({ sale, onSelect }: { sale: Sale; onSelect: (sale: Sale) => void }) {
   const itemCount = sale.items.reduce((sum, item) => sum + item.quantity, 0)
   const itemsLabel = `${itemCount} ${itemCount === 1 ? 'item' : 'itens'}`
