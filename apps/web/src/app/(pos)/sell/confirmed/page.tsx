@@ -34,7 +34,7 @@ export default function SaleConfirmedPage() {
 
       <hr className="w-full border-border" />
 
-      <ul className="flex w-full flex-col gap-2 md:gap-2.5">
+      <ul className="flex max-h-[30vh] w-full flex-col gap-2 overflow-y-auto md:max-h-[35vh] md:gap-2.5">
         {sale.items.map((item) => (
           <li key={item.productId} className="flex justify-between font-body text-xs md:text-[13px]">
             <span className="text-ink/60">
@@ -43,7 +43,10 @@ export default function SaleConfirmedPage() {
             <span className="font-semibold">{formatCurrency(item.quantity * item.unitPriceCents)}</span>
           </li>
         ))}
-        <li className="mt-1 flex justify-between font-body text-sm font-bold md:text-[15px]">
+      </ul>
+
+      <ul className="flex w-full flex-col gap-2 md:gap-2.5">
+        <li className="flex justify-between font-body text-sm font-bold md:text-[15px]">
           <span>Total</span>
           <span>{formatCurrency(sale.totalCents)}</span>
         </li>

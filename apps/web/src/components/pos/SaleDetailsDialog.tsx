@@ -20,7 +20,7 @@ export function SaleDetailsDialog({ sale, onOpenChange }: SaleDetailsDialogProps
     <Dialog.Root open={sale !== null} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-20 bg-ink/40 backdrop-blur-sm" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-30 flex w-[calc(100%-32px)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-card border border-border bg-surface p-6 md:p-8">
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-30 flex max-h-[85vh] w-[calc(100%-32px)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-card border border-border bg-surface p-6 md:p-8">
           {sale && (
             <>
               <div className="flex items-center gap-3">
@@ -37,7 +37,7 @@ export function SaleDetailsDialog({ sale, onOpenChange }: SaleDetailsDialogProps
                 </div>
               </div>
 
-              <ul className="flex flex-col divide-y divide-border">
+              <ul className="flex min-h-0 flex-1 flex-col divide-y divide-border overflow-y-auto">
                 {sale.items.map((item, index) => (
                   <li key={`${item.productId}-${index}`} className="flex items-center gap-3 py-2.5">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-pill bg-canvas font-body text-xs font-bold text-ink/60">
