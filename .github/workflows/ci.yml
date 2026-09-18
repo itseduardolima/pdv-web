@@ -81,6 +81,10 @@ jobs:
       # (crash silencioso: o loop de espera só faz curl e desiste sem falhar
       # o step, então os testes seguintes viam ECONNREFUSED/500 sem pista).
       PLATFORM_SESSION_SECRET: e2e-platform-secret-not-used-in-production
+      # 10 specs de login repetido na mesma IP/instância batem no throttle
+      # de PIN (08-seguranca § 5) rapidinho — mesmo motivo de já desligar
+      # isso no .env de dev local (apps/api/.env.example), nunca em produção.
+      RATE_LIMIT_ENABLED: 'false'
       NODE_ENV: development
       APP_BASE_DOMAIN: app.localhost
       CORS_ORIGIN: http://demo.app.localhost:3000
