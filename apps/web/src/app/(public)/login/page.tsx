@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { SplitAuthLayout } from '@/components/layout/SplitAuthLayout'
 import { COMPACT_THRESHOLD, OperatorAvatarPicker } from '@/components/pos/OperatorAvatarPicker'
 import { PinKeypad } from '@/components/pos/PinKeypad'
+import { Avatar } from '@/components/ui/Avatar'
 import { Button } from '@/components/ui/Button'
 import { InlineAlert } from '@/components/ui/InlineAlert'
 import { useTenant } from '@/hooks/use-tenant'
@@ -39,28 +40,46 @@ export default function LoginPage() {
         />
       )}
 
-      <hr className="w-full border-border" />
+      {page.selectedOperator && (
+        <>
+          <hr className="w-full border-border" />
 
-      <PinKeypad
-        pin={page.pin}
-        onDigit={page.handleDigit}
-        onBackspace={page.handleBackspace}
-        onClear={page.handleClear}
-        disabled={page.isSubmitting}
-      />
+          <div className="flex items-center gap-2.5 rounded-pill bg-primary/10 px-4 py-2">
+            <Avatar
+              name={page.selectedOperator.name}
+              photoUrl={page.selectedOperator.photoUrl}
+              className="h-8 w-8 text-xs"
+            />
+            <span className="font-body text-sm">
+              PIN de <span className="font-bold">{page.selectedOperator.name}</span>
+            </span>
+          </div>
 
-      {page.errorMessage && <InlineAlert onDismiss={page.dismissError}>{page.errorMessage}</InlineAlert>}
+          <PinKeypad
+            pin={page.pin}
+            onDigit={page.handleDigit}
+            onBackspace={page.handleBackspace}
+            onClear={page.handleClear}
+            disabled={page.isSubmitting}
+          />
 
-      <Button
-        onClick={page.handleSubmit}
-        state={page.isSubmitting ? 'loading' : 'idle'}
-        className="w-full max-w-[340px]"
-      >
-        Entrar
-      </Button>
-      <Link href="/forgot-pin" className="font-body text-sm font-medium text-ink/60 underline-offset-4 hover:underline">
-        Esqueci meu PIN
-      </Link>
+          {page.errorMessage && <InlineAlert onDismiss={page.dismissError}>{page.errorMessage}</InlineAlert>}
+
+          <Button
+            onClick={page.handleSubmit}
+            state={page.isSubmitting ? 'loading' : 'idle'}
+            className="w-full max-w-[340px]"
+          >
+            Entrar
+          </Button>
+          <Link
+            href="/forgot-pin"
+            className="font-body text-sm font-medium text-ink/60 underline-offset-4 hover:underline"
+          >
+            Esqueci meu PIN
+          </Link>
+        </>
+      )}
     </SplitAuthLayout>
   )
 }

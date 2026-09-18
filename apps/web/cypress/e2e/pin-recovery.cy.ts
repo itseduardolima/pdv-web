@@ -7,6 +7,7 @@ describe('Recuperação de PIN', () => {
 
   it('asks for the e-mail and always shows the same confirmation', () => {
     cy.visit('/login')
+    cy.contains('button', 'Administrador').click()
     cy.contains('a', 'Esqueci meu PIN').click()
     cy.location('pathname').should('eq', '/forgot-pin')
 

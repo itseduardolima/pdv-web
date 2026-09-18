@@ -36,11 +36,14 @@ export function useLoginPage() {
     )
   }
 
+  const selectedOperator = operators.data?.find((operator) => operator.id === selectedOperatorId) ?? null
+
   return {
     operators: operators.data ?? [],
     operatorsError: apiErrorMessage(operators.error),
     isLoadingOperators: operators.isPending,
     selectedOperatorId,
+    selectedOperator,
     pin: pinInput.pin,
     isSubmitting: login.isPending,
     errorMessage: apiErrorMessage(login.error),
