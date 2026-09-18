@@ -66,13 +66,12 @@ export function useOpenRegisterPage() {
       { openingAmountCents: amountCents, registerNumber: registerNumber ?? undefined },
       {
         // Direto pra /sell (destino incondicional de '/' com caixa aberto,
-        // (operating)/page.tsx) — evita o salto extra por '/' que, em
-        // paralelo com este router.refresh(), corria o risco de deixar a
-        // navegação parada bem no meio do caminho.
-        onSuccess: () => {
-          router.push('/sell')
-          router.refresh()
-        },
+        // (operating)/page.tsx). Sem router.refresh(): chamado logo depois
+        // do push, na mesma tick, ele disputava com a navegação e podia
+        // cancelá-la (ficava parado na própria tela de Abertura) — não
+        // precisa de qualquer forma, /sell é rota nova nesta sessão, os
+        // guards já leem sessão/caixa frescos a cada request.
+        onSuccess: () => router.push('/sell'),
       },
     )
   }
