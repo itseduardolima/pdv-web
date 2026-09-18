@@ -77,6 +77,10 @@ jobs:
       # usuário da aplicação sem superusuário, como na VPS (RLS precisa disso)
       DATABASE_URL: postgresql://pdv:pdv@localhost:5432/pdv?schema=public
       SESSION_SECRET: e2e-secret-not-used-in-production
+      # PlatformModule (Épico 13) usa getOrThrow — sem isso a API nem sobe
+      # (crash silencioso: o loop de espera só faz curl e desiste sem falhar
+      # o step, então os testes seguintes viam ECONNREFUSED/500 sem pista).
+      PLATFORM_SESSION_SECRET: e2e-platform-secret-not-used-in-production
       NODE_ENV: development
       APP_BASE_DOMAIN: app.localhost
       CORS_ORIGIN: http://demo.app.localhost:3000
@@ -110,7 +114,19 @@ jobs:
           pnpm --filter api build
           (cd apps/api && node dist/main.js > /tmp/api.log 2>&1 &)
           (cd apps/web && pnpm dev > /tmp/web.log 2>&1 &)
-          for i in $(seq 1 60); do curl -sf http://localhost:3001/docs >/dev/null && curl -sf -H 'Host: demo.app.localhost:3000' http://localhost:3000/login >/dev/null && break; sleep 2; done
+          ready=false
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:3001/docs >/dev/null && curl -sf -H 'Host: demo.app.localhost:3000' http://localhost:3000/login >/dev/null; then
+              ready=true
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" != "true" ]; then
+            echo "::error::API/web não ficaram prontos em 120s — logs:"
+            tail -n 100 /tmp/api.log /tmp/web.log
+            exit 1
+          fi
       - name: Cypress E2E
         run: pnpm --filter web cy:run:e2e
       - name: Logs on failure
