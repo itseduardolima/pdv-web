@@ -47,11 +47,16 @@ export class AuthController {
   ) {
     // Todos os flags de 08-seguranca § 4; Secure só cai em desenvolvimento
     // local (http://), nunca em staging/produção.
+    // COOKIE_DOMAIN é obrigatório sempre que APP_DOMAIN e API_DOMAIN forem
+    // hosts diferentes (caso normal em produção): sem isso, o cookie fica
+    // restrito ao host da própria API e o Next.js nunca o recebe ao checar
+    // sessão no servidor pra renderizar uma página em app.<domínio>.
     this.cookieOptions = {
       httpOnly: true,
       secure: config.get<string>('NODE_ENV') !== 'development',
       sameSite: 'lax',
       path: '/',
+      domain: config.get<string>('COOKIE_DOMAIN') || undefined,
       maxAge: config.get<number>('SESSION_TTL_HOURS', 12) * 60 * 60 * 1000,
     }
   }

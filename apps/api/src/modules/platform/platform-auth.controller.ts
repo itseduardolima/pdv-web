@@ -55,6 +55,9 @@ export class PlatformAuthController {
       secure: config.get<string>('NODE_ENV') !== 'development',
       sameSite: 'lax',
       path: '/',
+      // Ver auth.controller.ts — mesmo motivo: sem isso o Next.js nunca
+      // recebe o cookie ao checar sessão no servidor pra admin.APP_DOMAIN.
+      domain: config.get<string>('COOKIE_DOMAIN') || undefined,
       maxAge: config.get<number>('PLATFORM_SESSION_TTL_HOURS', 8) * 60 * 60 * 1000,
     }
   }
