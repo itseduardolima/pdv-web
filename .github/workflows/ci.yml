@@ -131,6 +131,18 @@ jobs:
             tail -n 100 /tmp/api.log /tmp/web.log
             exit 1
           fi
+      - name: Warm up Next.js dev routes
+        # `next dev` compila cada rota sob demanda na primeira visita — na
+        # primeira vez, num runner compartilhado, isso passa fácil dos 10s
+        # de timeout padrão do Cypress (visto de verdade: critical-flow.cy.ts
+        # travando em '/open-register' esperando '/sell' compilar). Visitar
+        # cada rota uma vez aqui (fora do timing de nenhum teste) força essa
+        # compilação adiantada, sem mudar nenhum comportamento em produção
+        # (lá é build estático via `next build`, sem essa lentificação).
+        run: |
+          for path in /login /open-register /sell /products /products/new /closing /dashboard /operators /operators/new /settings /reports /history /forgot-pin; do
+            curl -s -H 'Host: demo.app.localhost:3000' "http://localhost:3000$path" >/dev/null || true
+          done
       - name: Cypress E2E
         run: pnpm --filter web cy:run:e2e
       - name: Logs on failure
