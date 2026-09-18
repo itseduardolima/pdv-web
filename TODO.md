@@ -27,7 +27,14 @@ frontend) — não quando o código só "existe".
 - Épico 13 (Painel Superadmin, decisão de 2026-09-16) — 13.1-13.7 concluídas
   (backend + tela + suspender/reativar loja); 13.8 é P2, backlog. Ver seção
   própria abaixo.
-- Próximo: 9.3/9.4, ou nova prioridade a definir com o usuário.
+- Primeiro deploy de produção real feito em 2026-09-17 (`bananapdv.com.br`,
+  VPS Hostinger) — 9.2 validada, 6 bugs achados só nesse teste e corrigidos
+  (ver seção "Primeiro deploy de produção real" na Sprint 5). Superadmin
+  criado, SMTP real configurado. Nenhuma loja/tenant real criada ainda.
+- Próximo: 9.6 (monitor de uptime externo, **P0, bloqueia produção**) —
+  único item que falta pra essa VPS estar pronta pra receber o primeiro
+  cliente de verdade. Depois: 9.3/9.4, ou nova prioridade a definir com o
+  usuário.
 
 ---
 
@@ -80,10 +87,45 @@ frontend) — não quando o código só "existe".
 ## Sprint 5 — Deploy do primeiro cliente real
 
 - [x] 9.1 — `docker compose up` completo, documentado (README § Deploy na VPS + `scripts/deploy-check.sh`)
-- [~] 9.2 — HTTPS automático (Caddy + Let's Encrypt, `on_demand_tls` com `tls-check`) — implementado; **validar com domínio real no primeiro deploy**
+- [x] 9.2 — HTTPS automático (Caddy + Let's Encrypt, `on_demand_tls` com `tls-check`) — **validado em produção real** (2026-09-17, Hostinger VPS + domínio `bananapdv.com.br`): certificados emitidos pra `api`/`media`/`admin.app` (estático) e on-demand funcionando pra tenant
 - [x] 1.4 — Row-Level Security no Postgres (policies + extensão do Prisma + usuário sem superusuário)
 - [x] Testes E2E Cypress dos fluxos críticos (login → abrir caixa → vender → fechar caixa) + CRUD de produto (`apps/web/cypress/e2e`, job `e2e` no CI)
 - [x] Troco em venda em Dinheiro (API calcula/valida, front só exibe) — E2E cobre troco ao vivo e recusa de valor menor
+
+### Primeiro deploy de produção real (2026-09-17) — bugs achados só nesse teste
+
+Nunca tinha sido feito um deploy ponta-a-ponta contra uma VPS/domínio de
+verdade antes; apareceram 5 bugs que só se manifestam fora do ambiente de
+dev, todos corrigidos e no `main`:
+
+- `docker-compose.yml` não propagava `PLATFORM_HOST` pro container `web`
+  (painel Superadmin nunca reconheceria o host em produção).
+- `.env.example` da raiz sem as variáveis do painel Superadmin
+  (`PLATFORM_HOST`/`PLATFORM_SESSION_SECRET`/etc.), embora
+  `deploy-check.sh` já exigisse uma delas.
+- `prisma` (CLI) estava em `devDependencies` — `pnpm --prod deploy` remove
+  isso do runtime, container entrava em crash loop tentando baixar a CLI
+  do zero a cada boot. Movido para `dependencies`.
+- Client do Prisma gerado no build não sobrevive ao `pnpm --prod deploy`
+  (node_modules de produção é recriado do zero) — `Dockerfile` agora roda
+  `prisma generate` de novo no `CMD`, antes do `migrate deploy`.
+- **Painel Superadmin nunca conseguiria certificado TLS**: caía no bloco
+  `on_demand_tls` genérico do Caddy, cujo `ask` (`tenant/tls-check`) só
+  reconhece tenant — `PLATFORM_HOST` ganhou bloco estático próprio.
+- **Cookie de sessão (operador e Superadmin) sem `Domain`**: em produção,
+  com `APP_DOMAIN`/`API_DOMAIN` sendo hosts diferentes (caso normal), o
+  cookie ficava restrito ao host da API — login parecia funcionar e
+  "deslogava" ao navegar, porque a checagem de sessão no servidor (Next.js
+  repassando o `Cookie` da requisição recebida) nunca via o cookie. Nova env
+  opcional `COOKIE_DOMAIN` (domínio pai compartilhado, ex.
+  `.bananapdv.com.br`) resolve — documentada em `.env.example`.
+
+Primeiro cliente real (`bananapdv.com.br`) no ar: 5 containers saudáveis,
+DNS configurado no Hostinger, Superadmin criado, SMTP real configurado
+(Hostinger, `smtp.hostinger.com`) e validado com `transporter.verify()`.
+Nenhum tenant/loja real criado ainda de propósito — fica pro onboarding via
+painel Superadmin quando o primeiro cliente entrar. Ainda falta 9.6
+(monitor de uptime externo, P0 — ver abaixo).
 
 ## Extra — Atalho "Ajustar estoque" na venda (decisão de 2026-09-12)
 
