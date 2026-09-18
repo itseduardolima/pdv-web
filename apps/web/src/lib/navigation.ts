@@ -3,6 +3,7 @@ import { OPERATOR_ROLE_LABEL, type OperatorRole } from '@pdv/shared'
 import {
   ClosingIcon,
   DashboardIcon,
+  HistoryIcon,
   OperatorsIcon,
   ProductsIcon,
   ReportsIcon,
@@ -23,6 +24,7 @@ export const NAV_ITEMS: NavItem[] = [
   { key: 'sell', label: 'Vender', href: '/sell', icon: SellIcon },
   { key: 'products', label: 'Produtos', href: '/products', icon: ProductsIcon },
   { key: 'closing', label: 'Fechamento', href: '/closing', icon: ClosingIcon },
+  { key: 'sales-history', label: 'Histórico', href: '/history', icon: HistoryIcon },
   { key: 'dashboard', label: 'Dashboard', href: '/dashboard', icon: DashboardIcon, roles: ['ADMIN'] },
   { key: 'reports', label: 'Relatórios', href: '/reports', icon: ReportsIcon, roles: ['ADMIN'] },
   { key: 'operators', label: 'Operadores', href: '/operators', icon: OperatorsIcon, roles: ['ADMIN'] },
@@ -38,9 +40,10 @@ export function isNavItemActive(item: NavItem, pathname: string): boolean {
 }
 
 // Itens que ficam de fora da bottom-nav quando ela precisa colapsar (ADMIN,
-// 7 itens): Produtos, Relatórios, Operadores e Configurações são consultados
-// com menos frequência no dia a dia do caixa do que Vender/Fechamento/Dashboard.
-const BOTTOM_NAV_OVERFLOW_KEYS = new Set(['products', 'reports', 'operators', 'settings'])
+// 8 itens): Produtos, Histórico, Relatórios, Operadores e Configurações são
+// consultados com menos frequência no dia a dia do caixa do que
+// Vender/Fechamento/Dashboard.
+const BOTTOM_NAV_OVERFLOW_KEYS = new Set(['products', 'sales-history', 'reports', 'operators', 'settings'])
 
 // Bottom-nav do celular não cabe mais que ~4 ícones sem apertar o alvo de
 // toque (ADMIN vê até 7 itens). Só junta o excedente num item "Mais" quando

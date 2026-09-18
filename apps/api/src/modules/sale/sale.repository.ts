@@ -70,4 +70,20 @@ export class SaleRepository {
       })
     })
   }
+
+  // Tela Histórico de Vendas: vendas de UM dia (janela [from, to) resolvida
+  // pelo Service no fuso da loja), mais recente primeiro. `search` filtra
+  // pelo nome do produto congelado em SaleItem (o que o operador viu na
+  // hora da venda, não o nome atual do Product).
+  findHistory(tenantId: string, from: Date, to: Date, search?: string): Promise<SaleRow[]> {
+    return this.prisma.sale.findMany({
+      where: {
+        tenantId,
+        soldAt: { gte: from, lt: to },
+        ...(search ? { items: { some: { productName: { contains: search, mode: 'insensitive' } } } } : {}),
+      },
+      include: saleInclude,
+      orderBy: { soldAt: 'desc' },
+    })
+  }
 }

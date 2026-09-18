@@ -40,6 +40,16 @@ export function ClosingIcon(props: IconProps) {
   )
 }
 
+export function HistoryIcon(props: IconProps) {
+  return (
+    <svg {...base} strokeWidth="2.2" width="20" height="20" {...props}>
+      <path d="M3 12a9 9 0 109-9" />
+      <path d="M3 4v5h5" />
+      <path d="M12 7v5l4 2" />
+    </svg>
+  )
+}
+
 export function DashboardIcon(props: IconProps) {
   return (
     <svg {...base} strokeWidth="2.2" width="20" height="20" {...props}>

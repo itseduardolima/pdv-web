@@ -1,8 +1,18 @@
 import type { Product } from '@prisma/client'
 import type { CashSessionService } from '../cash-session/cash-session.service'
+import type { TenantService } from '../tenant/tenant.service'
+import { addDaysToDayKey, startOfDayInTimeZone } from '../../common/utils/time-zone'
 import { ConflictError } from '../../common/errors/domain.error'
 import { SaleRepository, StockRaceError, type NewSale } from './sale.repository'
 import { SaleService } from './sale.service'
+
+const STORE_TIME_ZONE = 'America/Sao_Paulo'
+function makeTenants(overrides: Partial<Record<keyof TenantService, jest.Mock>> = {}) {
+  return {
+    getCurrent: jest.fn().mockResolvedValue({ timezone: STORE_TIME_ZONE }),
+    ...overrides,
+  }
+}
 
 const operator = { id: 'op1', tenantId: 't1', role: 'OPERATOR' as const }
 const uuid = '8f0e1a3c-4c5b-4d6e-8f70-0123456789ab'
@@ -42,11 +52,13 @@ function makeService(overrides: Partial<Record<keyof SaleRepository, jest.Mock>>
       ? jest.fn().mockResolvedValue({ id: 'cs1' })
       : jest.fn().mockRejectedValue(new ConflictError('CASH_SESSION_NOT_OPEN', 'Abra o caixa antes de vender.')),
   }
+  const tenants = makeTenants()
   const service = new SaleService(
     repository as unknown as SaleRepository,
     cashSessions as unknown as CashSessionService,
+    tenants as unknown as TenantService,
   )
-  return { service, repository, cashSessions }
+  return { service, repository, cashSessions, tenants }
 }
 
 describe('SaleService.create', () => {
@@ -268,6 +280,7 @@ function makeStatefulService(startingStock: Record<string, number> = { p1: 3, p2
   const service = new SaleService(
     repository as unknown as SaleRepository,
     cashSessions as unknown as CashSessionService,
+    makeTenants() as unknown as TenantService,
   )
   return { service, repository, stock, existingUuids }
 }
@@ -336,11 +349,65 @@ describe('SaleService.syncBatch', () => {
     const brokenService = new SaleService(
       repository as unknown as SaleRepository,
       cashSessions as unknown as CashSessionService,
+      makeTenants() as unknown as TenantService,
     )
     await expect(
       brokenService.syncBatch('t1', operator, {
         sales: [{ uuid: uuid1, paymentMethod: 'PIX', items: [{ productId: 'p1', quantity: 1 }] }],
       }),
     ).rejects.toThrow('db down')
+  })
+})
+
+describe('SaleService.history', () => {
+  const now = new Date('2026-09-18T15:00:00.000Z') // 12h em America/Sao_Paulo, mesmo dia
+  const emptyRow = { id: 's1', tenantId: 't1', operator: { name: 'Karol' }, items: [] }
+
+  function makeHistoryService() {
+    const repository = { findHistory: jest.fn().mockResolvedValue([]) }
+    const tenants = makeTenants()
+    const service = new SaleService(
+      repository as unknown as SaleRepository,
+      {} as unknown as CashSessionService,
+      tenants as unknown as TenantService,
+    )
+    return { service, repository }
+  }
+
+  it('resolves "today" to the store\'s current day', async () => {
+    const { service, repository } = makeHistoryService()
+    await service.history('t1', { period: 'today' }, now)
+    const from = startOfDayInTimeZone('2026-09-18', STORE_TIME_ZONE)
+    const to = startOfDayInTimeZone('2026-09-19', STORE_TIME_ZONE)
+    expect(repository.findHistory).toHaveBeenCalledWith('t1', from, to, undefined)
+  })
+
+  it('resolves "yesterday" to the day before the store\'s current day', async () => {
+    const { service, repository } = makeHistoryService()
+    await service.history('t1', { period: 'yesterday' }, now)
+    const from = startOfDayInTimeZone(addDaysToDayKey('2026-09-18', -1), STORE_TIME_ZONE)
+    const to = startOfDayInTimeZone('2026-09-18', STORE_TIME_ZONE)
+    expect(repository.findHistory).toHaveBeenCalledWith('t1', from, to, undefined)
+  })
+
+  it('uses the given date for period "day"', async () => {
+    const { service, repository } = makeHistoryService()
+    await service.history('t1', { period: 'day', date: '2026-01-05' }, now)
+    const from = startOfDayInTimeZone('2026-01-05', STORE_TIME_ZONE)
+    const to = startOfDayInTimeZone('2026-01-06', STORE_TIME_ZONE)
+    expect(repository.findHistory).toHaveBeenCalledWith('t1', from, to, undefined)
+  })
+
+  it('passes the product search through to the repository', async () => {
+    const { service, repository } = makeHistoryService()
+    await service.history('t1', { period: 'today', search: 'Coca' }, now)
+    expect(repository.findHistory).toHaveBeenCalledWith('t1', expect.any(Date), expect.any(Date), 'Coca')
+  })
+
+  it('maps repository rows through the same Sale shape as create()', async () => {
+    const { service, repository } = makeHistoryService()
+    repository.findHistory.mockResolvedValue([{ ...emptyRow, soldAt: now }])
+    const result = await service.history('t1', { period: 'today' }, now)
+    expect(result).toEqual([expect.objectContaining({ id: 's1', operatorName: 'Karol' })])
   })
 })

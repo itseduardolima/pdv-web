@@ -67,3 +67,24 @@ export type SyncSaleResult = z.infer<typeof syncSaleResultSchema>
 
 export const syncSalesResultSchema = z.object({ results: z.array(syncSaleResultSchema) })
 export type SyncSalesResult = z.infer<typeof syncSalesResultSchema>
+
+// Tela Histórico de Vendas: sempre um único dia de calendário no fuso da
+// loja (não intervalo) — "day" exige `date` (mesma convenção de dayKey de
+// schemas/report.ts). Busca por produto é texto livre contra o nome
+// congelado no momento da venda (SaleItem.productName).
+const dayKey = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+
+export const salesHistoryPeriodSchema = z.enum(['today', 'yesterday', 'day'])
+export type SalesHistoryPeriod = z.infer<typeof salesHistoryPeriodSchema>
+
+export const salesHistoryQuerySchema = z
+  .object({
+    period: salesHistoryPeriodSchema,
+    date: dayKey.optional(),
+    search: z.string().trim().min(1).max(100).optional(),
+  })
+  .refine((v) => v.period !== 'day' || v.date !== undefined, {
+    message: 'Informe o dia.',
+    path: ['date'],
+  })
+export type SalesHistoryQuery = z.infer<typeof salesHistoryQuerySchema>

@@ -212,6 +212,7 @@ entra, em `create`/`setPin`, já com argon2). Soft-delete também marca
 | ------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
 | POST   | `/sales`             | Cria venda (`CreateSaleInput`) — idempotente por `uuid`; 409 `CASH_SESSION_NOT_OPEN` / `INSUFFICIENT_STOCK`; 400 `INSUFFICIENT_CASH` (Dinheiro com recebido < total)                                                      | operador |
 | POST   | `/sales/sync`        | Lote de vendas da fila offline, upsert por `uuid`                                                                                                                                                                         | operador |
+| GET    | `/sales`             | Histórico de vendas de UM dia (`period=today\|yesterday\|day` + `date` se `day`; `search` opcional filtra por produto vendido), mais recente primeiro, no fuso da loja                                                    | operador |
 | GET    | `/dashboard/summary` | Hoje (total, nº de vendas, por forma de pagamento, 5 mais vendidos com foto) + últimos 7 dias zerados quando sem venda — tudo no fuso da loja (`Tenant.timezone`, IANA, default `America/Sao_Paulo`; inválido cai em UTC) | admin    |
 
 ## Convenções de DTO e erro

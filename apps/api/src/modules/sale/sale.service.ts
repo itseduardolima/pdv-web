@@ -1,17 +1,29 @@
 import { Injectable } from '@nestjs/common'
 import type { Product } from '@prisma/client'
-import type { CreateSaleInput, Sale, SyncSaleResult, SyncSalesInput, SyncSalesResult } from '@pdv/shared'
+import type {
+  CreateSaleInput,
+  Sale,
+  SalesHistoryQuery,
+  SyncSaleResult,
+  SyncSalesInput,
+  SyncSalesResult,
+} from '@pdv/shared'
+import { addDaysToDayKey, dayKeyInTimeZone, isValidTimeZone, startOfDayInTimeZone } from '../../common/utils/time-zone'
 import { ConflictError, DomainError, NotFoundError } from '../../common/errors/domain.error'
 import type { OperatorSession } from '../../common/types/request'
 import { CashSessionService } from '../cash-session/cash-session.service'
+import { TenantService } from '../tenant/tenant.service'
 import { toSale } from './sale.mapper'
 import { SaleRepository, StockRaceError, type NewSaleItem } from './sale.repository'
+
+const FALLBACK_TIME_ZONE = 'UTC'
 
 @Injectable()
 export class SaleService {
   constructor(
     private readonly sales: SaleRepository,
     private readonly cashSessions: CashSessionService,
+    private readonly tenants: TenantService,
   ) {}
 
   // 03-regras-negocio § Venda: preço congelado, estoque debitado, nunca
@@ -97,6 +109,26 @@ export class SaleService {
       }
     }
     return { results }
+  }
+
+  // Tela Histórico de Vendas: sempre um dia de calendário no fuso da loja —
+  // "today"/"yesterday" resolvidos a partir de `now`, "day" usa a data que
+  // o usuário escolheu direto.
+  async history(tenantId: string, query: SalesHistoryQuery, now: Date = new Date()): Promise<Sale[]> {
+    const timeZone = await this.resolveTimeZone(tenantId)
+    const today = dayKeyInTimeZone(now, timeZone)
+    const dayKey =
+      query.period === 'today' ? today : query.period === 'yesterday' ? addDaysToDayKey(today, -1) : query.date!
+
+    const from = startOfDayInTimeZone(dayKey, timeZone)
+    const to = startOfDayInTimeZone(addDaysToDayKey(dayKey, 1), timeZone)
+    const rows = await this.sales.findHistory(tenantId, from, to, query.search)
+    return rows.map(toSale)
+  }
+
+  private async resolveTimeZone(tenantId: string): Promise<string> {
+    const tenant = await this.tenants.getCurrent(tenantId)
+    return isValidTimeZone(tenant.timezone) ? tenant.timezone : FALLBACK_TIME_ZONE
   }
 }
 

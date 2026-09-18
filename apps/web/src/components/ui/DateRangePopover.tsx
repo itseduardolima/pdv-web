@@ -13,6 +13,10 @@ interface DateRangePopoverProps {
   // no mês certo e pré-marcar a seleção; nunca muda sozinho.
   value: { from: string | null; to: string | null }
   onApply: (from: string, to: string) => void
+  // 'single' (Histórico de Vendas): primeiro clique já escolhe o dia e
+  // habilita "Aplicar" — sem esperar um segundo clique pra fechar o
+  // intervalo. Default 'range' mantém o comportamento de sempre.
+  mode?: 'range' | 'single'
 }
 
 const WEEKDAY_LABELS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
@@ -26,7 +30,7 @@ function formatShort(dayKey: string): string {
 // Selecionar dois dias monta o intervalo; só "Aplicar" propaga pra fora —
 // enquanto o usuário está escolhendo, o relatório do período anterior
 // continua na tela (decisão de 2026-09-14).
-export function DateRangePopover({ label, active, value, onApply }: DateRangePopoverProps) {
+export function DateRangePopover({ label, active, value, onApply, mode = 'range' }: DateRangePopoverProps) {
   const today = new Date()
   const initial = value.from ? parseDayKey(value.from) : today
   const [cursor, setCursor] = useState({ year: initial.getFullYear(), month: initial.getMonth() })
@@ -37,6 +41,11 @@ export function DateRangePopover({ label, active, value, onApply }: DateRangePop
   const todayKey = dayKeyFromDate(today)
 
   function handlePick(dayKey: string) {
+    if (mode === 'single') {
+      setDraftFrom(dayKey)
+      setDraftTo(dayKey)
+      return
+    }
     if (!draftFrom || (draftFrom && draftTo)) {
       setDraftFrom(dayKey)
       setDraftTo(null)
@@ -135,9 +144,15 @@ export function DateRangePopover({ label, active, value, onApply }: DateRangePop
           </div>
 
           <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3 font-body text-xs text-ink/60">
-            <span>{draftFrom ? formatShort(draftFrom) : 'De'}</span>
-            <span>—</span>
-            <span>{draftTo ? formatShort(draftTo) : 'Até'}</span>
+            {mode === 'single' ? (
+              <span className="w-full text-center">{draftFrom ? formatShort(draftFrom) : 'Escolha um dia'}</span>
+            ) : (
+              <>
+                <span>{draftFrom ? formatShort(draftFrom) : 'De'}</span>
+                <span>—</span>
+                <span>{draftTo ? formatShort(draftTo) : 'Até'}</span>
+              </>
+            )}
           </div>
 
           <div className="mt-3 flex gap-2">

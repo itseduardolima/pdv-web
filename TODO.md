@@ -455,6 +455,39 @@ implementação no plano aprovado desta sessão. Esta fatia é só o backend
       (nenhum Postgres disponível lá) — roda com
       `pnpm --filter api test:integration`, banco de dev no ar.
 
+## Extra — Histórico de Vendas (decisão de 2026-09-18)
+
+- [x] Nova tela `/history` (Admin **e** Operador — diferente de Relatórios,
+      que é só Admin) pra olhar venda por venda de UM dia (Hoje/Ontem/dia
+      escolhido no calendário), com busca por produto vendido. `GET /sales`
+      novo (`sale.controller.ts`, sem `@Roles`) — período resolvido no fuso
+      da loja (mesmas funções de `common/utils/time-zone.ts` usadas por
+      Relatórios); busca filtra por `SaleItem.productName` (nome congelado
+      na venda, não o nome atual do produto). Sem paginação nesta versão
+      (janela é sempre 1 dia). Jest cobre resolução de período/busca
+      (`sale.service.spec.ts`).
+- [x] Frontend: `SaleHistoryEntry` (card clicável, ícone da forma de
+      pagamento, hora/itens/operador, total) + `SaleDetailsDialog` (clique
+      abre o detalhe item a item — nome, quantidade, preço unitário e
+      subtotal congelados, forma de pagamento, troco). `DateRangePopover`
+      ganhou `mode="single"` (reaproveitado, sem duplicar o calendário) pro
+      seletor de dia único. Nav item "Histórico" sem restrição de papel
+      (`lib/navigation.ts`); ADMIN (8 itens) ganhou overflow "Mais" no
+      mobile, Operador (4 itens) cabe direto na bottom-nav. E2E
+      `cypress/e2e/sales-history.cy.ts`.
+- **Achado durante a implementação**: dois E2E pré-existentes
+  (`critical-flow.cy.ts` "blocks a sale above the available stock" e
+  `products.cy.ts` "creates, edits and deletes a product") falharam numa
+  rodada da suíte completa **sem relação com esta feature** — não tocam
+  nada que mudou aqui (estoque de "Feijão 1kg", navegação pra edição de
+  produto). Sintoma de dev DB compartilhado/com estado acumulado entre
+  execuções (mesma classe de flakiness já documentada em sessões
+  anteriores), não regressão. Rodados isoladamente batem no mesmo
+  problema, então não é ordem-de-specs — provavelmente precisa de reset de
+  seed antes da suíte rodar. Não investigado a fundo aqui (fora do escopo
+  desta tarefa); vale investigar numa sessão futura antes de confiar 100%
+  em "suíte verde" no CI/dev local.
+
 ## Backlog P2 (sem sprint fixa ainda)
 
 - [ ] Sessão com renovação deslizante por inatividade (hoje o JWT expira 12h fixas após o login — decisão da Sprint 1)
