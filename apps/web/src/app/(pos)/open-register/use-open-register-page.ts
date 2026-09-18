@@ -65,8 +65,12 @@ export function useOpenRegisterPage() {
     open.mutate(
       { openingAmountCents: amountCents, registerNumber: registerNumber ?? undefined },
       {
+        // Direto pra /sell (destino incondicional de '/' com caixa aberto,
+        // (operating)/page.tsx) — evita o salto extra por '/' que, em
+        // paralelo com este router.refresh(), corria o risco de deixar a
+        // navegação parada bem no meio do caminho.
         onSuccess: () => {
-          router.push('/')
+          router.push('/sell')
           router.refresh()
         },
       },
