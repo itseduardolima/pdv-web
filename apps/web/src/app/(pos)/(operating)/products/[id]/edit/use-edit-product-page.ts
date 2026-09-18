@@ -21,10 +21,23 @@ export function useEditProductPage() {
   const save = useSaveState(update.isPending)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
 
-  // Formulário pré-preenchido, idêntico ao de criação (HU 3.3).
+  // Formulário pré-preenchido, idêntico ao de criação (HU 3.3). Duas
+  // precauções pro Select de Categoria (Radix) não "perder" o valor
+  // carregado e voltar pro placeholder:
+  // 1. Só reseta depois das categorias carregarem (senão a opção da
+  //    categoria atual nem existe ainda pro Radix escolher).
+  // 2. Mesmo com as categorias prontas, o <select> nativo escondido que o
+  //    Radix usa por baixo ainda leva alguns ciclos de efeito pra terminar
+  //    de registrar as <option> (fragmento off-DOM → portal → cada item se
+  //    registra) — resetar na mesma passagem em que o campo monta arrisca
+  //    setar o valor antes desse registro acabar, e o Radix devolve vazio.
+  //    Um `setTimeout(0)` empurra o reset pra depois desse boot inicial.
   useEffect(() => {
-    if (product.data) form.reset(productToFormValues(product.data))
-  }, [product.data, form])
+    if (!product.data || categories.isPending) return
+    const data = product.data
+    const timer = setTimeout(() => form.reset(productToFormValues(data)), 0)
+    return () => clearTimeout(timer)
+  }, [product.data, categories.isPending, form])
 
   const handleSubmit = form.handleSubmit((values) => {
     update.mutate(formValuesToInput(values), {
@@ -44,7 +57,11 @@ export function useEditProductPage() {
   return {
     form,
     productName: product.data?.name ?? '',
-    isLoading: product.isPending,
+    // Espera as categorias também: se o Select de Categoria montar antes
+    // delas existirem, o <select> nativo escondido do Radix não tem as
+    // <option> ainda quando o valor carregado chegar (ver comentário do
+    // reset abaixo) — o formulário nunca mostraria a categoria certa.
+    isLoading: product.isPending || categories.isPending,
     loadErrorMessage: apiErrorMessage(product.error),
     categories: categories.data ?? [],
     handleSubmit,

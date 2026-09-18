@@ -32,6 +32,11 @@ describe('Produtos: criar, editar e excluir', () => {
     // editar
     cy.get(`a[aria-label="Editar ${name}"]`).first().click({ force: true })
     cy.contains('h1', 'Editar Produto')
+    // Categoria/Unidade pré-carregados têm que aparecer selecionados, não o
+    // placeholder — o Select de Categoria depende de uma lista assíncrona
+    // (categorias em uso) e já teve regressão nisso.
+    cy.contains('button[role=combobox]', 'Bebidas')
+    cy.contains('button[role=combobox]', 'Pct (pacote)')
     cy.get('input[name=salePrice]').clear().type('13,50')
     cy.contains('button', 'Salvar Produto').click()
     cy.location('pathname').should('eq', '/products')
