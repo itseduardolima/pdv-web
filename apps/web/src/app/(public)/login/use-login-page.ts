@@ -17,6 +17,12 @@ export function useLoginPage() {
     login.reset()
   }
 
+  function handleChangeOperator() {
+    setSelectedOperatorId(null)
+    pinInput.clear()
+    login.reset()
+  }
+
   function handleDigit(digit: string) {
     login.reset()
     pinInput.append(digit)
@@ -48,6 +54,7 @@ export function useLoginPage() {
     isSubmitting: login.isPending,
     errorMessage: apiErrorMessage(login.error),
     handleSelectOperator,
+    handleChangeOperator,
     handleDigit,
     handleBackspace: pinInput.backspace,
     handleClear: pinInput.clear,

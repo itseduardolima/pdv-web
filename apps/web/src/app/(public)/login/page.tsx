@@ -28,31 +28,22 @@ export default function LoginPage() {
         <span className="font-heading text-sm font-bold tracking-tight">{tenant.name}</span>
       </div>
 
-      <h1 className="text-center font-heading text-xl font-bold tracking-tight sm:text-2xl">Quem está no caixa?</h1>
-
-      {page.operatorsError ? (
-        <InlineAlert>{page.operatorsError}</InlineAlert>
-      ) : (
-        <OperatorAvatarPicker
-          operators={page.operators}
-          selectedId={page.selectedOperatorId}
-          onSelect={page.handleSelectOperator}
-        />
-      )}
-
-      {page.selectedOperator && (
+      {page.selectedOperator ? (
         <>
-          <hr className="w-full border-border" />
-
-          <div className="flex items-center gap-2.5 rounded-pill bg-primary/10 px-4 py-2">
+          <div className="flex flex-col items-center gap-2">
             <Avatar
               name={page.selectedOperator.name}
               photoUrl={page.selectedOperator.photoUrl}
-              className="h-8 w-8 text-xs"
+              className="h-16 w-16 text-lg ring-4 ring-primary"
             />
-            <span className="font-body text-sm">
-              PIN de <span className="font-bold">{page.selectedOperator.name}</span>
-            </span>
+            <p className="font-heading text-lg font-bold tracking-tight">{page.selectedOperator.name}</p>
+            <button
+              type="button"
+              onClick={page.handleChangeOperator}
+              className="font-body text-sm font-medium text-ink/60 underline-offset-4 hover:underline"
+            >
+              Trocar operador
+            </button>
           </div>
 
           <PinKeypad
@@ -78,6 +69,20 @@ export default function LoginPage() {
           >
             Esqueci meu PIN
           </Link>
+        </>
+      ) : (
+        <>
+          <h1 className="text-center font-heading text-xl font-bold tracking-tight sm:text-2xl">Quem está no caixa?</h1>
+
+          {page.operatorsError ? (
+            <InlineAlert>{page.operatorsError}</InlineAlert>
+          ) : (
+            <OperatorAvatarPicker
+              operators={page.operators}
+              selectedId={page.selectedOperatorId}
+              onSelect={page.handleSelectOperator}
+            />
+          )}
         </>
       )}
     </SplitAuthLayout>
