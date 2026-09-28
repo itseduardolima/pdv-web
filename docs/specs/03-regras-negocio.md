@@ -91,14 +91,18 @@ a mesma pessoa administrando duas contas do sistema, o que o painel recusa
   altera vendas passadas).
 - Forma de pagamento: Dinheiro, Cartão ou Pix — obrigatório escolher uma antes
   de finalizar.
-- Pagamento misto (decisão de 2026-09-28): a venda pode ser paga em até 2
-  formas (Pix+Dinheiro, Pix+Cartão, Cartão+Dinheiro, ou a mesma forma duas vezes, ex.: 2 cartões). O operador
-  informa a 1ª forma com o valor (`partialPayment`) e a 2ª (`paymentMethod`)
-  paga o resto. Cada forma vira uma linha em `SalePayment`; a soma é sempre o
-  total da venda. Recusado com 400 se o valor da 1ª não deixar resto
-  (`PARTIAL_PAYMENT_TOO_HIGH`). Sem 3+ formas e sem parcelamento em v1.
-  Fechamento, Dashboard e Relatórios somam por `SalePayment`, então só a
-  parte em Dinheiro entra no saldo esperado da gaveta.
+- Pagamento misto (decisão de 2026-09-28): a venda pode ser paga em até 5
+  formas (`MAX_SALE_PAYMENTS`), que podem repetir (Pix+Dinheiro, 2 cartões,
+  Pix+Dinheiro+Cartão…). O operador informa as partes com valor
+  (`partialPayments`) e a última forma (`paymentMethod`) paga o resto. Cada
+  forma vira uma linha em `SalePayment`; a soma é sempre o total da venda.
+  Recusado com 400 se a soma das partes informadas não deixar resto
+  (`PARTIAL_PAYMENT_TOO_HIGH`) ou se passar de 5 formas (`VALIDATION`). Sem
+  parcelamento em v1. A tela oferece o atalho "Dividir igualmente" (2 a 5
+  partes iguais, a última absorve os centavos que sobram) — só sugere os
+  valores; a API continua conferindo a soma. Fechamento, Dashboard e
+  Relatórios somam por `SalePayment`, então só a parte em Dinheiro entra no
+  saldo esperado da gaveta.
 - Troco (decisão de 2026-09-12): quando há parte em Dinheiro o operador pode
   informar quanto o cliente entregou (`amountReceivedCents`, opcional). A
   API calcula o troco (`changeCents = recebido − parte em Dinheiro`) e grava
@@ -115,6 +119,17 @@ a mesma pessoa administrando duas contas do sistema, o que o painel recusa
     [01-arquitetura](./01-arquitetura.md)).
   - Mostra a tela "Venda Confirmada" (sem opção de imprimir — decisão já
     tomada no protótipo: o mercado-alvo não emite nota/recibo físico em v1).
+- Anular venda (decisão de 2026-09-28): só o Administrador anula uma venda já
+  finalizada, com motivo obrigatório (`reason`, até 200 caracteres), e só
+  enquanto o caixa dela está aberto — em caixa fechado a API recusa sempre
+  (409 `CASH_SESSION_CLOSED`), porque a sessão fechada é imutável. Nunca
+  apaga a linha: a venda ganha `voidedAt`/`voidedById`/`voidReason` e
+  continua no Histórico marcada como anulada. Devolve o estoque de cada item
+  (na mesma transação), sai do Fechamento, do Dashboard e dos Relatórios.
+  Irreversível; anular de novo é 409 `ALREADY_VOIDED`. Anular não devolve
+  dinheiro ao cliente — só corrige o registro. Venda ainda na fila offline
+  (não sincronizada) não pode ser anulada. Quem anulou, qual venda e o
+  motivo vão para o log estruturado.
 - Cancelar uma venda em progresso (antes de finalizar) apenas descarta o
   carrinho — não gera registro nenhum.
 - Estoque não pode ficar negativo: se a quantidade solicitada excede o estoque

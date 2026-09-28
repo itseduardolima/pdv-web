@@ -102,7 +102,8 @@ model Operator {
 
   tenant       Tenant        @relation(fields: [tenantId], references: [id])
   cashSessions CashSession[]
-  sales        Sale[]
+  sales        Sale[]        @relation("SaleOperator")
+  voidedSales  Sale[]        @relation("SaleVoidedBy")
   pinTokens    PinToken[]
 
   @@unique([tenantId, email])
@@ -188,10 +189,15 @@ model Sale {
   amountReceivedCents Int?
   changeCents         Int?
   soldAt              DateTime      @default(now())
+  // Anulação (03-regras-negocio § Venda): nunca apaga a linha.
+  voidedAt            DateTime?
+  voidedById          String?
+  voidReason          String?
 
   tenant      Tenant      @relation(fields: [tenantId], references: [id])
   cashSession CashSession @relation(fields: [cashSessionId], references: [id])
-  operator    Operator    @relation(fields: [operatorId], references: [id])
+  operator    Operator    @relation("SaleOperator", fields: [operatorId], references: [id])
+  voidedBy    Operator?   @relation("SaleVoidedBy", fields: [voidedById], references: [id])
   items       SaleItem[]
   payments    SalePayment[]
 

@@ -5,6 +5,7 @@ import { CartLine } from '@/components/pos/CartLine'
 import { CashReceived } from '@/components/pos/CashReceived'
 import { CategoryFilter } from '@/components/pos/CategoryFilter'
 import { FlyToCartLayer } from '@/components/pos/FlyToCartLayer'
+import { PaymentDialog } from '@/components/pos/PaymentDialog'
 import { PaymentMethodPicker } from '@/components/pos/PaymentMethodPicker'
 import { SplitPayment } from '@/components/pos/SplitPayment'
 import { QuickStockAdjust } from '@/components/pos/QuickStockAdjust'
@@ -136,7 +137,7 @@ export default function SellPage() {
             </span>
           </div>
 
-          <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <ul className="flex min-h-[120px] flex-1 flex-col overflow-y-auto">
             {page.cart.items.length === 0 ? (
               <li className="flex flex-1">
                 <EmptyState
@@ -167,69 +168,9 @@ export default function SellPage() {
             </span>
           </div>
 
-          {page.cart.splitting ? (
-            <SplitPayment
-              firstMethod={page.cart.partialMethod}
-              firstAmountText={page.cart.partialAmountText}
-              secondMethod={page.cart.paymentMethod}
-              remainderCents={page.cart.remainderCents}
-              onFirstMethodChange={page.cart.setPartialMethod}
-              onFirstAmountChange={page.cart.setPartialAmountText}
-              onSecondMethodChange={page.cart.setPaymentMethod}
-              firstAmountError={page.partialAmountError ?? undefined}
-              secondMethodError={page.paymentMethodError ?? undefined}
-            />
-          ) : (
-            <PaymentMethodPicker
-              value={page.cart.paymentMethod}
-              onChange={page.cart.setPaymentMethod}
-              error={page.paymentMethodError ?? undefined}
-            />
-          )}
-          <button
-            type="button"
-            onClick={() => page.cart.setSplitting(!page.cart.splitting)}
-            className="self-start font-body text-xs font-semibold text-ink/60 underline"
-          >
-            {page.cart.splitting ? 'Pagar com uma forma só' : 'Dividir pagamento'}
-          </button>
-
-          {!page.cart.splitting && page.cart.paymentMethod === 'CASH' && (
-            <CashReceived
-              value={page.cart.amountReceivedText}
-              onChange={page.handleAmountReceivedChange}
-              changeCents={page.cart.changeCents}
-              error={page.amountReceivedError ?? undefined}
-            />
-          )}
-
-          {page.errorMessage && (
-            <InlineAlert
-              onDismiss={page.dismissError}
-              action={
-                page.insufficientStock && page.canAdjustStock && !page.adjustingStock
-                  ? { label: 'Ajustar estoque', onClick: page.openAdjustStock }
-                  : undefined
-              }
-            >
-              {page.errorMessage}
-            </InlineAlert>
-          )}
-
-          {page.adjustingStock && page.insufficientStock && (
-            <QuickStockAdjust
-              productName={page.insufficientStock.productName}
-              initialQuantity={page.insufficientStock.available}
-              onConfirm={page.handleAdjustStock}
-              onCancel={page.closeAdjustStock}
-              confirmState={page.adjustStockState}
-              error={page.adjustStockError ?? undefined}
-            />
-          )}
-
           <div className="flex flex-col gap-2">
-            <Button onClick={page.handleCheckout} state={page.isSubmitting ? 'loading' : 'idle'} className="w-full">
-              Finalizar Venda
+            <Button onClick={page.openPayment} disabled={page.cart.items.length === 0} className="w-full">
+              Ir para o pagamento
             </Button>
             <Button
               variant="secondary"
@@ -243,6 +184,83 @@ export default function SellPage() {
           </div>
         </aside>
       </div>
+
+      <PaymentDialog
+        open={page.paymentOpen}
+        onOpenChange={(open) => !open && !page.isSubmitting && page.closePayment()}
+        totalCents={page.cart.totalCents}
+        onConfirm={page.handleCheckout}
+        confirmState={page.isSubmitting ? 'loading' : 'idle'}
+        alertKey={page.alertKey}
+      >
+        {page.itemsError && <InlineAlert>{page.itemsError}</InlineAlert>}
+        {page.cart.splitting ? (
+          <SplitPayment
+            parts={page.cart.parts}
+            lastMethod={page.cart.paymentMethod}
+            remainderCents={page.cart.remainderCents}
+            onPartMethodChange={page.cart.setPartMethod}
+            onPartAmountChange={page.cart.setPartAmountText}
+            onAddPart={page.cart.addPart}
+            onRemovePart={page.cart.removePart}
+            onLastMethodChange={page.cart.setPaymentMethod}
+            onSplitEqually={page.cart.splitEqually}
+            evenSplit={page.cart.evenSplit}
+            partErrors={page.partErrors.map((error) => ({
+              method: error.method ?? undefined,
+              amount: error.amount ?? undefined,
+            }))}
+            partsError={page.partialPaymentsError ?? undefined}
+            lastMethodError={page.cart.paymentMethod === null ? (page.paymentMethodError ?? undefined) : undefined}
+          />
+        ) : (
+          <PaymentMethodPicker
+            value={page.cart.paymentMethod}
+            onChange={page.cart.setPaymentMethod}
+            error={page.paymentMethodError ?? undefined}
+          />
+        )}
+        <button
+          type="button"
+          onClick={() => page.cart.setSplitting(!page.cart.splitting)}
+          className="self-start font-body text-xs font-semibold text-ink/60 underline"
+        >
+          {page.cart.splitting ? 'Pagar com uma forma só' : 'Dividir pagamento'}
+        </button>
+
+        {!page.cart.splitting && page.cart.paymentMethod === 'CASH' && (
+          <CashReceived
+            value={page.cart.amountReceivedText}
+            onChange={page.handleAmountReceivedChange}
+            changeCents={page.cart.changeCents}
+            error={page.amountReceivedError ?? undefined}
+          />
+        )}
+
+        {page.errorMessage && (
+          <InlineAlert
+            onDismiss={page.dismissError}
+            action={
+              page.insufficientStock && page.canAdjustStock && !page.adjustingStock
+                ? { label: 'Ajustar estoque', onClick: page.openAdjustStock }
+                : undefined
+            }
+          >
+            {page.errorMessage}
+          </InlineAlert>
+        )}
+
+        {page.adjustingStock && page.insufficientStock && (
+          <QuickStockAdjust
+            productName={page.insufficientStock.productName}
+            initialQuantity={page.insufficientStock.available}
+            onConfirm={page.handleAdjustStock}
+            onCancel={page.closeAdjustStock}
+            confirmState={page.adjustStockState}
+            error={page.adjustStockError ?? undefined}
+          />
+        )}
+      </PaymentDialog>
 
       <FlyToCartLayer flights={page.flights} />
       <CalculatorDialog open={page.calculatorOpen} onOpenChange={page.setCalculatorOpen} />

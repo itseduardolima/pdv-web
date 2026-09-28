@@ -2,9 +2,19 @@ import type { Prisma } from '@prisma/client'
 import type { Sale } from '@pdv/shared'
 
 export type SaleRow = Prisma.SaleGetPayload<{
-  include: { items: true; payments: true; operator: { select: { name: true } } }
+  include: {
+    items: true
+    payments: true
+    operator: { select: { name: true } }
+    cashSession: { select: { closedAt: true } }
+  }
 }>
-export const saleInclude = { items: true, payments: true, operator: { select: { name: true } } } as const
+export const saleInclude = {
+  items: true,
+  payments: true,
+  operator: { select: { name: true } },
+  cashSession: { select: { closedAt: true } },
+} as const
 
 // Nunca devolver a linha do Prisma inteira (08-seguranca § 9).
 export function toSale(row: SaleRow): Sale {
@@ -20,6 +30,9 @@ export function toSale(row: SaleRow): Sale {
     amountReceivedCents: row.amountReceivedCents,
     changeCents: row.changeCents,
     soldAt: row.soldAt.toISOString(),
+    voidable: isVoidable(row),
+    voidedAt: row.voidedAt?.toISOString() ?? null,
+    voidReason: row.voidReason,
     items: row.items.map((item) => ({
       productId: item.productId,
       productName: item.productName,
@@ -27,4 +40,9 @@ export function toSale(row: SaleRow): Sale {
       unitPriceCents: item.unitPriceCents,
     })),
   }
+}
+
+// Regra única de "pode anular" (03-regras-negocio § Venda), usada pelo mapper e pelo Service.
+export function isVoidable(row: Pick<SaleRow, 'voidedAt' | 'cashSession'>): boolean {
+  return row.voidedAt === null && row.cashSession.closedAt === null
 }

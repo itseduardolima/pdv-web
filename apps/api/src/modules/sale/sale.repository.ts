@@ -28,6 +28,9 @@ export interface NewSale {
   items: NewSaleItem[]
 }
 
+// A venda já estava anulada ou o caixa fechou entre a checagem e a gravação.
+export class SaleNotVoidableError extends Error {}
+
 export class StockRaceError extends Error {
   constructor(public readonly productId: string) {
     super(`Stock changed concurrently for product ${productId}`)
@@ -40,6 +43,10 @@ export class SaleRepository {
 
   findByUuid(tenantId: string, uuid: string): Promise<SaleRow | null> {
     return this.prisma.sale.findUnique({ where: { tenantId_uuid: { tenantId, uuid } }, include: saleInclude })
+  }
+
+  findById(tenantId: string, id: string): Promise<SaleRow | null> {
+    return this.prisma.sale.findFirst({ where: { tenantId, id }, include: saleInclude })
   }
 
   findProducts(tenantId: string, ids: string[]): Promise<Product[]> {
@@ -75,6 +82,33 @@ export class SaleRepository {
         },
         include: saleInclude,
       })
+    })
+  }
+
+  // Anulação: marca a venda e devolve o estoque numa transação. Com a sessão
+  // travada, o updateMany condicional (não anulada, caixa aberto) vê o estado
+  // final de qualquer anulação ou fechamento concorrente.
+  voidWithStockReturn(tenantId: string, saleId: string, voidedById: string, reason: string): Promise<SaleRow> {
+    return this.prisma.$transaction(async (tx) => {
+      await setTenantInTransaction(tx, tenantId)
+      // Trava a sessão do caixa: serializa com o fechamento (que trava a
+      // mesma linha), então não anula uma venda já contada nos totais congelados.
+      const sale = await tx.sale.findFirst({ where: { tenantId, id: saleId }, select: { cashSessionId: true } })
+      if (!sale) throw new SaleNotVoidableError()
+      await tx.$queryRaw`SELECT id FROM "CashSession" WHERE id = ${sale.cashSessionId} FOR UPDATE`
+      const marked = await tx.sale.updateMany({
+        where: { tenantId, id: saleId, voidedAt: null, cashSession: { closedAt: null } },
+        data: { voidedAt: new Date(), voidedById, voidReason: reason },
+      })
+      if (marked.count === 0) throw new SaleNotVoidableError()
+      const items = await tx.saleItem.findMany({ where: { saleId, sale: { tenantId } } })
+      for (const item of items) {
+        await tx.product.updateMany({
+          where: { tenantId, id: item.productId },
+          data: { stockQuantity: { increment: item.quantity } },
+        })
+      }
+      return tx.sale.findFirstOrThrow({ where: { tenantId, id: saleId }, include: saleInclude })
     })
   }
 

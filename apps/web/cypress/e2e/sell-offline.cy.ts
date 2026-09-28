@@ -8,7 +8,7 @@ describe('Vender sem rede: catálogo em cache', () => {
 
     // 1) online: a lista completa é sincronizada pro IndexedDB
     cy.visit('/sell')
-    cy.get('button[aria-label="Adicionar Arroz 5kg"]').should('be.visible')
+    cy.get('button[aria-label="Adicionar Arroz 5kg"]').scrollIntoView().should('be.visible')
 
     // 2) API fora do ar: só produtos e categorias falham
     cy.intercept('GET', '**/products/categories', { forceNetworkError: true }).as('categoriesOffline')
@@ -17,7 +17,7 @@ describe('Vender sem rede: catálogo em cache', () => {
 
     cy.visit('/sell')
     cy.wait('@productsOffline')
-    cy.get('button[aria-label="Adicionar Arroz 5kg"]').should('be.visible').click()
+    cy.get('button[aria-label="Adicionar Arroz 5kg"]').scrollIntoView().should('be.visible').click()
     cy.get('[data-cy=cart-line]').should('have.length', 1).and('contain', 'Arroz')
     cy.contains('[role=alert]', 'Falha ao comunicar').should('not.exist')
 

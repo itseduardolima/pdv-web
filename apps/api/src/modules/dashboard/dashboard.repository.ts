@@ -38,7 +38,7 @@ export class DashboardRepository {
   // Vendas no intervalo [from, to), só os campos que o resumo agrega.
   findSalesBetween(tenantId: string, from: Date, to: Date): Promise<DashboardSaleRow[]> {
     return this.prisma.sale.findMany({
-      where: { tenantId, soldAt: { gte: from, lt: to } },
+      where: { tenantId, voidedAt: null, soldAt: { gte: from, lt: to } },
       select: {
         soldAt: true,
         totalCents: true,

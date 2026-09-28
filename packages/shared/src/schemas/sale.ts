@@ -11,9 +11,12 @@ export const saleItemInputSchema = z.object({
     .positive('A quantidade deve ser maior que zero'),
 })
 
-// Pagamento misto: `partialPayment` é a parte paga numa 1ª forma, com valor
-// explícito; `paymentMethod` paga o resto. A API valida que as formas são
-// diferentes e que o valor fica entre 0 e o total.
+// Teto de formas de pagamento numa venda (partes explícitas + o resto).
+export const MAX_SALE_PAYMENTS = 5
+
+// Pagamento misto: `partialPayments` são as partes pagas com valor explícito
+// (cada uma na sua forma); `paymentMethod` paga o resto. A API valida que a
+// soma das partes fica abaixo do total.
 export const partialPaymentSchema = z.object({
   method: paymentMethodSchema,
   amountCents: z
@@ -27,7 +30,10 @@ export const createSaleSchema = z.object({
   uuid: z.string().uuid('Identificador da venda inválido'),
   items: z.array(saleItemInputSchema).min(1, 'Adicione ao menos um item ao carrinho'),
   paymentMethod: paymentMethodSchema,
-  partialPayment: partialPaymentSchema.optional(),
+  partialPayments: z
+    .array(partialPaymentSchema)
+    .max(MAX_SALE_PAYMENTS - 1, `No máximo ${MAX_SALE_PAYMENTS} formas de pagamento por venda`)
+    .optional(),
   // Só para Dinheiro e opcional: quanto o cliente entregou pela parte em
   // Dinheiro. A API calcula o troco e recusa se for menor que essa parte; em
   // Cartão/Pix é ignorado.
@@ -39,6 +45,16 @@ export const createSaleSchema = z.object({
   soldAt: z.string().datetime().optional(),
 })
 export type CreateSaleInput = z.infer<typeof createSaleSchema>
+
+export const voidSaleSchema = z.object({
+  reason: z
+    .string({ required_error: 'Informe o motivo da anulação' })
+    .trim()
+    .min(1, 'Informe o motivo da anulação')
+    .min(5, 'Descreva o motivo em pelo menos 5 caracteres')
+    .max(200, 'O motivo pode ter no máximo 200 caracteres'),
+})
+export type VoidSaleInput = z.infer<typeof voidSaleSchema>
 
 export const syncSalesSchema = z.object({
   sales: z.array(createSaleSchema).min(1).max(200),
@@ -62,13 +78,19 @@ export const saleSchema = z.object({
   operatorId: idSchema,
   operatorName: z.string(),
   paymentMethod: paymentMethodSchema,
-  // 1 ou 2 formas de pagamento; a soma é totalCents.
-  payments: z.array(salePaymentSchema).min(1).max(2),
+  // 1 a 5 formas de pagamento; a soma é totalCents.
+  payments: z.array(salePaymentSchema).min(1).max(MAX_SALE_PAYMENTS),
   totalCents: cents,
   // Preenchidos só em venda em Dinheiro com valor recebido informado.
   amountReceivedCents: cents.nullable(),
   changeCents: cents.nullable(),
   soldAt: z.string().datetime(),
+  // Venda anulada continua no histórico, marcada (03-regras-negocio § Venda).
+  // Só o Administrador anula, e só com o caixa da venda aberto e a venda não
+  // anulada — a API calcula `voidable` para a tela não oferecer o que falha.
+  voidable: z.boolean(),
+  voidedAt: z.string().datetime().nullable(),
+  voidReason: z.string().nullable(),
   items: z.array(saleItemSchema),
 })
 export type Sale = z.infer<typeof saleSchema>

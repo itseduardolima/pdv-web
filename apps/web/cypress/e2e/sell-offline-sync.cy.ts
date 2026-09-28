@@ -31,6 +31,7 @@ describe('Vender sem rede: fila e sincronização', () => {
 
         cy.visit('/sell')
         cy.get('button[aria-label="Adicionar Sal Refinado 1kg"]').click()
+        cy.contains('button', 'Ir para o pagamento').click()
         cy.contains('[role=radio]', 'Pix').click()
 
         cy.contains('button', 'Finalizar Venda').click()

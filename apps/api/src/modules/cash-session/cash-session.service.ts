@@ -5,11 +5,13 @@ import type { OperatorSession } from '../../common/types/request'
 import { toSale } from '../sale/sale.mapper'
 import {
   CashSessionRepository,
+  CashSessionAlreadyClosedError,
   RegisterAlreadyOpenError,
   type CashSessionRow,
   type PaymentTotals,
 } from './cash-session.repository'
 
+const alreadyClosed = () => new ConflictError('CASH_SESSION_ALREADY_CLOSED', 'Este caixa já foi fechado.')
 const sessionNotFound = () => new NotFoundError('CASH_SESSION_NOT_FOUND', 'Caixa não encontrado.')
 // Mesmo formato do 400 VALIDATION do pipe, para cair embaixo do campo na tela.
 const invalidRegister = () =>
@@ -108,11 +110,15 @@ export class CashSessionService {
   async close(tenantId: string, id: string, operator: OperatorSession): Promise<CashSessionSummary> {
     const row = await this.sessions.findById(tenantId, id)
     if (!row) throw sessionNotFound()
-    if (row.closedAt) throw new ConflictError('CASH_SESSION_ALREADY_CLOSED', 'Este caixa já foi fechado.')
+    if (row.closedAt) throw alreadyClosed()
     assertCanAccess(row, operator, 'fechá-lo')
-    const { totals } = await this.sessions.sumSalesByPaymentMethod(tenantId, id)
-    const closed = await this.sessions.close(tenantId, id, totals, new Date())
-    return this.toSummary(tenantId, closed)
+    try {
+      const closed = await this.sessions.close(tenantId, id, new Date())
+      return this.toSummary(tenantId, closed)
+    } catch (error) {
+      if (error instanceof CashSessionAlreadyClosedError) throw alreadyClosed()
+      throw error
+    }
   }
 
   async listSales(tenantId: string, id: string, operator: OperatorSession): Promise<Sale[]> {

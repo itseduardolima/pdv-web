@@ -19,6 +19,7 @@ describe('Dashboard', () => {
       .then((before) => {
         cy.visit('/sell')
         cy.get('button[aria-label="Adicionar Sal Refinado 1kg"]').click()
+        cy.contains('button', 'Ir para o pagamento').click()
         cy.contains('[role=radio]', 'Cartão').click()
         cy.contains('button', 'Finalizar Venda').click()
         cy.location('pathname').should('eq', '/sell/confirmed')

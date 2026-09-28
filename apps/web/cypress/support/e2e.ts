@@ -13,6 +13,26 @@ Cypress.Commands.add('loginAs', (name: string, pin: string) => {
   })
 })
 
+// Os E2E vendem de verdade e o estoque é finito: sem isto, rodadas seguidas
+// esgotam o produto e a venda passa a falhar com 409 INSUFFICIENT_STOCK
+// (não é bug do app). Repõe só se estiver abaixo do mínimo. Precisa de
+// sessão de Administrador (editar produto é ADMIN_ONLY).
+Cypress.Commands.add('ensureStock', (productName: string, minimum: number) => {
+  cy.request({ url: api('/products'), headers: headers() }).then(({ body }) => {
+    const product = (body as { id: string; name: string; stockQuantity: number }[]).find(
+      (item) => item.name === productName,
+    )
+    if (!product) throw new Error(`Produto "${productName}" não está no seed`)
+    if (product.stockQuantity >= minimum) return
+    cy.request({
+      method: 'PATCH',
+      url: api(`/products/${product.id}`),
+      headers: headers(),
+      body: { stockQuantity: minimum * 2 },
+    })
+  })
+})
+
 // Garante que não há caixa aberto (fecha o que existir) — deixa o fluxo determinístico.
 Cypress.Commands.add('ensureRegisterClosed', () => {
   cy.request({ url: api('/cash-sessions/current'), headers: headers() }).then(({ body }) => {
@@ -82,6 +102,7 @@ declare global {
     interface Chainable {
       loginAs(name: string, pin: string): Chainable<void>
       ensureRegisterClosed(): Chainable<void>
+      ensureStock(productName: string, minimum: number): Chainable<void>
       ensureRegisterOpen(): Chainable<void>
       ensureAllRegistersClosed(): Chainable<void>
     }

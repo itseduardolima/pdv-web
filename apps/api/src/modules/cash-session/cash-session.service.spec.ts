@@ -1,4 +1,9 @@
-import { CashSessionRepository, RegisterAlreadyOpenError, type CashSessionRow } from './cash-session.repository'
+import {
+  CashSessionAlreadyClosedError,
+  CashSessionRepository,
+  RegisterAlreadyOpenError,
+  type CashSessionRow,
+} from './cash-session.repository'
 import { CashSessionService } from './cash-session.service'
 
 const openRow: CashSessionRow = {
@@ -29,15 +34,13 @@ function makeService(overrides: Partial<Record<keyof CashSessionRepository, jest
     findById: jest.fn().mockResolvedValue(null),
     countOpenedUpTo: jest.fn().mockResolvedValue(1),
     create: jest.fn().mockResolvedValue(openRow),
-    close: jest
-      .fn()
-      .mockImplementation(async (_t: string, _id: string, totals: Record<string, number>, closedAt: Date) => ({
-        ...openRow,
-        closedAt,
-        totalCashCents: totals.CASH,
-        totalCardCents: totals.CARD,
-        totalPixCents: totals.PIX,
-      })),
+    close: jest.fn().mockImplementation(async (_t: string, _id: string, closedAt: Date) => ({
+      ...openRow,
+      closedAt,
+      totalCashCents: 21400,
+      totalCardCents: 17890,
+      totalPixCents: 21950,
+    })),
     sumSalesByPaymentMethod: jest
       .fn()
       .mockResolvedValue({ totals: { CASH: 21400, CARD: 17890, PIX: 21950 }, count: 42 }),
@@ -189,18 +192,24 @@ describe('CashSessionService', () => {
   })
 
   describe('close', () => {
-    it('sums sales by payment method, freezes the totals and sets closedAt', async () => {
+    it('closes through the repository (which freezes the totals atomically) and sets closedAt', async () => {
       const { service, repository } = makeService({ findById: jest.fn().mockResolvedValue(openRow) })
       const result = await service.close('t1', 'cs1', operator)
-      expect(repository.close).toHaveBeenCalledWith(
-        't1',
-        'cs1',
-        { CASH: 21400, CARD: 17890, PIX: 21950 },
-        expect.any(Date),
-      )
+      expect(repository.close).toHaveBeenCalledWith('t1', 'cs1', expect.any(Date))
       expect(result.closedAt).not.toBeNull()
       expect(result.totalCashCents).toBe(21400)
       expect(result.totalCents).toBe(61240)
+    })
+
+    it('answers 409 when a concurrent close won the race (repository refuses to overwrite)', async () => {
+      const { service } = makeService({
+        findById: jest.fn().mockResolvedValue(openRow),
+        close: jest.fn().mockRejectedValue(new CashSessionAlreadyClosedError()),
+      })
+      await expect(service.close('t1', 'cs1', operator)).rejects.toMatchObject({
+        code: 'CASH_SESSION_ALREADY_CLOSED',
+        statusCode: 409,
+      })
     })
 
     it('throws 404 for an unknown session', async () => {
@@ -286,6 +295,7 @@ describe('CashSessionService', () => {
             soldAt: new Date('2026-09-12T16:42:00Z'),
             operator: { name: 'Karol' },
             payments: [],
+            cashSession: { closedAt: null },
             items: [
               { id: 'i1', saleId: 's1', productId: 'p1', productName: 'Arroz 5kg', quantity: 2, unitPriceCents: 2890 },
             ],

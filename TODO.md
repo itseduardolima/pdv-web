@@ -490,8 +490,20 @@ implementação no plano aprovado desta sessão. Esta fatia é só o backend
 
 ## Pagamento misto (decisão de 2026-09-28)
 
-- [x] Venda paga em até 2 formas, podendo repetir (Pix+Dinheiro, Pix+Cartão, Cartão+Dinheiro, 2 cartões): `SalePayment` (migration `sale_payment`, com backfill das vendas antigas e RLS), `partialPayment` no `createSaleSchema`, regra `PARTIAL_PAYMENT_TOO_HIGH`; sem troco na tela do pagamento misto (só na venda com uma forma só). Fechamento, Dashboard e Relatórios somam por `SalePayment`. Tela Vender: botão "Dividir pagamento" (`SplitPayment`). Spec: `03-regras-negocio` § Venda. Validado: Jest (+9 no total), component tests, E2E `sell-split-payment.cy.ts`.
+- [x] Venda paga em até 5 formas, podendo repetir (Pix+Dinheiro, 2 cartões, Pix+Cartão+Dinheiro…): `SalePayment` (migration `sale_payment`, com backfill das vendas antigas e RLS), `partialPayments` (lista) no `createSaleSchema`, teto `MAX_SALE_PAYMENTS = 5`, regra `PARTIAL_PAYMENT_TOO_HIGH`; sem troco na tela do pagamento misto (só na venda com uma forma só). Fechamento, Dashboard e Relatórios somam por `SalePayment`. Tela Vender: botão "Dividir pagamento" (`SplitPayment`). Spec: `03-regras-negocio` § Venda. Validado: Jest (+9 no total), component tests, E2E `sell-split-payment.cy.ts`.
 - [ ] Sem HU no `BACKLOG.md` ainda — registrar critério de aceite/pontos lá.
+
+- [x] Pagamento saiu da coluna do carrinho: o carrinho tem só itens, total e "Ir para o pagamento"; a forma/divisão/troco/erros vivem no `PaymentDialog` (modal; tela cheia no celular), com cabeçalho e botões fixos e só o miolo rolando — com 5 partes o pagamento inline passava da altura da tela e cobria os botões. Fechar o modal ("Voltar") não descarta o que foi digitado.
+- [x] Atalho "Dividir igualmente por N" (2 a 5) na tela Vender: preenche as partes, a última absorve os centavos (`splitEvenly`). Só sugere valores; a API confere a soma.
+
+## Anular venda (decisão de 2026-09-28)
+
+- [x] `POST /sales/:id/void` (só Administrador): marca `voidedAt`/`voidedById`/`voidReason` (nunca apaga a linha), devolve o estoque na mesma transação, sai do Fechamento/Dashboard/Relatórios, aparece no Histórico como "Anulada". Só com o caixa da venda aberto (409 `CASH_SESSION_CLOSED` sempre), 409 `ALREADY_VOIDED`, motivo obrigatório. `Sale.voidable` calculado pela API (a tela só oferece o botão quando é possível). Fechamento de caixa agora é atômico (trava a sessão com `FOR UPDATE`, soma e grava numa transação) e a anulação trava a mesma linha — fecha a corrida achada no code review. Spec: `03-regras-negocio` § Venda. Validado: Jest, component tests, E2E `void-sale.cy.ts`.
+- [x] Motivo da anulação: mínimo 5 e máximo 200 caracteres (contador no campo); o texto longo sem espaços quebra dentro do detalhe da venda.
+- [x] Achados do 2º code review: fechar o mesmo caixa 2x não sobrescreve os totais congelados (`CASH_SESSION_ALREADY_CLOSED`), a anulação filtra `SaleItem` por tenant e `removePart` desliga o modo dividido quando some a última parte.
+- [x] Reparo do backfill de `SalePayment` (migration `20260929010000_sale_payment_backfill`): a migration original inseria 0 linhas porque o `migrate deploy` roda com o usuário da aplicação (RLS forçado, sem `app.tenant_id`) — vendas antigas ficavam sem forma de pagamento, quebravam o Histórico e sumiam das somas por forma. O reparo define o tenant por loja e é idempotente.
+- [ ] Venda ainda na fila offline não pode ser anulada (fora da v1).
+- [ ] Sem HU no `BACKLOG.md` ainda (pagamento misto e anular venda) — registrar critério de aceite/pontos lá.
 
 ## Backlog P2 (sem sprint fixa ainda)
 

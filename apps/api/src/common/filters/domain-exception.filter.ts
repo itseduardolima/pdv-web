@@ -1,6 +1,7 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common'
 import type { Response } from 'express'
 import { ZodValidationException } from 'nestjs-zod'
+import type { ZodError } from 'zod'
 import type { ApiError } from '@pdv/shared'
 import { DomainError } from '../errors/domain.error'
 
@@ -32,7 +33,7 @@ export class DomainExceptionFilter implements ExceptionFilter {
         statusCode: HttpStatus.BAD_REQUEST,
         code: 'VALIDATION',
         message: 'Dados inválidos.',
-        details: exception.getZodError().flatten(),
+        details: validationDetails(exception.getZodError()),
       }
     }
     if (exception instanceof HttpException) {
@@ -60,4 +61,19 @@ function codeForStatus(status: number): string {
     default:
       return 'HTTP_ERROR'
   }
+}
+
+// `flatten()` só devolve a chave de 1º nível (ex.: `partialPayments`), o que
+// não diz QUAL item da lista errou. Somamos as chaves com caminho
+// (`partialPayments.0.method`) para a tela marcar o campo certo; as chaves
+// de 1º nível continuam iguais, então nada existente muda.
+export function validationDetails(error: ZodError) {
+  const flat = error.flatten()
+  const nested: Record<string, string[]> = {}
+  for (const issue of error.issues) {
+    if (issue.path.length < 2) continue
+    const key = issue.path.join('.')
+    nested[key] = [...(nested[key] ?? []), issue.message]
+  }
+  return { ...flat, fieldErrors: { ...flat.fieldErrors, ...nested } }
 }

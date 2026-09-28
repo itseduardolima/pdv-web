@@ -41,3 +41,11 @@ export function changeForCash(
   if (paymentMethod !== 'CASH' || !Number.isFinite(amountReceivedCents)) return null
   return amountReceivedCents - totalCents
 }
+
+// "Dividir igualmente" entre `parts` pagamentos: cada um leva o piso da
+// divisão e o último absorve os centavos que sobram (291,94 / 3 = 97,31 +
+// 97,31 + 97,32). Só sugere valores — a API confere a soma.
+export function splitEvenly(totalCents: number, parts: number): number[] {
+  const base = Math.floor(totalCents / parts)
+  return Array.from({ length: parts }, (_, index) => (index === parts - 1 ? totalCents - base * (parts - 1) : base))
+}

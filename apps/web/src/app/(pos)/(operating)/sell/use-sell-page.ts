@@ -35,6 +35,7 @@ export function useSellPage() {
   const [category, setCategory] = useState<string | null>(null)
   const [adjustingStock, setAdjustingStock] = useState(false)
   const [calculatorOpen, setCalculatorOpen] = useState(false)
+  const [paymentOpen, setPaymentOpen] = useState(false)
   const flyToCart = useFlyToCart()
   const cartRef = useRef<HTMLElement>(null)
   const cartBadgeRef = useRef<HTMLSpanElement>(null)
@@ -91,12 +92,11 @@ export function useSellPage() {
   // troco). O valor recebido só vai em Dinheiro e só se foi digitado.
   function handleCheckout() {
     const sendsReceived = !cart.splitting && cart.paymentMethod === 'CASH' && cart.amountReceivedText.trim() !== ''
-    const partialPayment =
-      cart.partialMethod !== null ? { method: cart.partialMethod, amountCents: cart.partialAmountCents } : undefined
+    const partialPayments = cart.partialPayments
     const input: CreateSaleInput = {
       uuid: cart.saleUuid,
       paymentMethod: cart.paymentMethod ?? ('' as never),
-      ...(partialPayment ? { partialPayment } : {}),
+      ...(partialPayments ? { partialPayments } : {}),
       ...(sendsReceived ? { amountReceivedCents: cart.amountReceivedCents } : {}),
       items: cart.items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
     }
@@ -118,7 +118,7 @@ export function useSellPage() {
               uuid: input.uuid,
               items: cart.items,
               paymentMethod: cart.paymentMethod as NonNullable<typeof cart.paymentMethod>,
-              partialPayment,
+              partialPayments,
               amountReceivedCents: sendsReceived ? cart.amountReceivedCents : null,
               changeCents: sendsReceived ? cart.changeCents : null,
               totalCents: cart.totalCents,
@@ -138,6 +138,7 @@ export function useSellPage() {
 
   function handleCancel() {
     createSale.reset()
+    setPaymentOpen(false)
     cart.clear()
   }
 
@@ -186,7 +187,13 @@ export function useSellPage() {
     handleCancel,
     isSubmitting: createSale.isPending,
     paymentMethodError: fieldErrors?.paymentMethod ?? null,
-    partialAmountError: fieldErrors?.partialPayment ?? null,
+    // Erro por parte (a API diz qual item da lista falhou); o geral da lista
+    // (ex.: soma que cobre o total) só aparece quando nenhuma parte tem o seu.
+    partErrors: cart.parts.map((_, index) => ({
+      method: fieldErrors?.[`partialPayments.${index}.method`] ?? null,
+      amount: fieldErrors?.[`partialPayments.${index}.amountCents`] ?? null,
+    })),
+    partialPaymentsError: fieldErrors?.partialPayments ?? null,
     itemsError: fieldErrors?.items ?? null,
     amountReceivedError: fieldErrors?.amountReceivedCents ?? insufficientCash,
     errorMessage: insufficientCash ? null : apiGeneralErrorMessage(createSale.error),
@@ -200,6 +207,19 @@ export function useSellPage() {
     handleAdjustStock,
     adjustStockState: adjustStock.isPending ? ('loading' as const) : ('idle' as const),
     adjustStockError: apiErrorMessage(adjustStock.error),
+    // Só existe com aviso na tela; muda a cada tentativa que falhou e ao
+    // abrir o ajuste de estoque (o modal rola até o aviso).
+    alertKey:
+      createSale.isError || adjustingStock
+        ? `${createSale.isError ? createSale.submittedAt : 0}|${adjustingStock}`
+        : undefined,
+    paymentOpen,
+    openPayment: () => {
+      createSale.reset()
+      setPaymentOpen(true)
+    },
+    // Fechar não descarta nada: forma e valores digitados ficam guardados.
+    closePayment: () => setPaymentOpen(false),
     calculatorOpen,
     openCalculator: () => setCalculatorOpen(true),
     setCalculatorOpen,

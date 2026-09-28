@@ -3,7 +3,7 @@ import type { CashSessionService } from '../cash-session/cash-session.service'
 import type { TenantService } from '../tenant/tenant.service'
 import { addDaysToDayKey, startOfDayInTimeZone } from '../../common/utils/time-zone'
 import { ConflictError } from '../../common/errors/domain.error'
-import { SaleRepository, StockRaceError, type NewSale } from './sale.repository'
+import { SaleNotVoidableError, SaleRepository, StockRaceError, type NewSale } from './sale.repository'
 import { SaleService } from './sale.service'
 
 const STORE_TIME_ZONE = 'America/Sao_Paulo'
@@ -43,6 +43,7 @@ function makeService(overrides: Partial<Record<keyof SaleRepository, jest.Mock>>
       tenantId: 't1',
       ...sale,
       operator: { name: 'Karol' },
+      cashSession: { closedAt: null },
       items: sale.items.map((item, index) => ({ id: `i${index}`, saleId: 's1', ...item })),
     })),
     ...overrides,
@@ -103,6 +104,7 @@ describe('SaleService.create', () => {
       soldAt: new Date(),
       operator: { name: 'Karol' },
       payments: [],
+      cashSession: { closedAt: null },
       items: [],
     }
     const { service, repository, cashSessions } = makeService({ findByUuid: jest.fn().mockResolvedValue(existing) })
@@ -228,7 +230,7 @@ describe('SaleService.create', () => {
   })
 
   describe('split payment (pagamento misto)', () => {
-    it('records a single payment for the whole total when there is no partialPayment', async () => {
+    it('records a single payment for the whole total when there is no partialPayments', async () => {
       const { service, repository } = makeService()
       await service.create('t1', operator, input)
       expect(repository.createWithStockDebit).toHaveBeenCalledWith(
@@ -242,7 +244,7 @@ describe('SaleService.create', () => {
       const sale = await service.create('t1', operator, {
         ...input,
         paymentMethod: 'CARD',
-        partialPayment: { method: 'PIX', amountCents: 1000 },
+        partialPayments: [{ method: 'PIX', amountCents: 1000 }],
       })
       expect(repository.createWithStockDebit).toHaveBeenCalledWith(
         't1',
@@ -261,7 +263,7 @@ describe('SaleService.create', () => {
       const sale = await service.create('t1', operator, {
         ...input,
         paymentMethod: 'CASH',
-        partialPayment: { method: 'PIX', amountCents: 1688 },
+        partialPayments: [{ method: 'PIX', amountCents: 1688 }],
         amountReceivedCents: 5000,
       })
       expect(sale).toMatchObject({ amountReceivedCents: 5000, changeCents: 3000 })
@@ -273,7 +275,7 @@ describe('SaleService.create', () => {
         service.create('t1', operator, {
           ...input,
           paymentMethod: 'CASH',
-          partialPayment: { method: 'PIX', amountCents: 1688 },
+          partialPayments: [{ method: 'PIX', amountCents: 1688 }],
           amountReceivedCents: 1999,
         }),
       ).rejects.toMatchObject({
@@ -288,7 +290,7 @@ describe('SaleService.create', () => {
       const sale = await service.create('t1', operator, {
         ...input,
         paymentMethod: 'CARD',
-        partialPayment: { method: 'PIX', amountCents: 1000 },
+        partialPayments: [{ method: 'PIX', amountCents: 1000 }],
         amountReceivedCents: 100,
       })
       expect(sale).toMatchObject({ amountReceivedCents: null, changeCents: null })
@@ -299,7 +301,7 @@ describe('SaleService.create', () => {
       await service.create('t1', operator, {
         ...input,
         paymentMethod: 'CARD',
-        partialPayment: { method: 'CARD', amountCents: 1000 },
+        partialPayments: [{ method: 'CARD', amountCents: 1000 }],
       })
       expect(repository.createWithStockDebit).toHaveBeenCalledWith(
         't1',
@@ -312,13 +314,51 @@ describe('SaleService.create', () => {
       )
     })
 
+    it('splits into 3 payments: two explicit parts and the remainder', async () => {
+      const { service, repository } = makeService()
+      const sale = await service.create('t1', operator, {
+        ...input,
+        paymentMethod: 'CASH',
+        partialPayments: [
+          { method: 'PIX', amountCents: 1000 },
+          { method: 'CARD', amountCents: 1000 },
+        ],
+      })
+      expect(repository.createWithStockDebit).toHaveBeenCalledWith(
+        't1',
+        expect.objectContaining({
+          payments: [
+            { method: 'PIX', amountCents: 1000 },
+            { method: 'CARD', amountCents: 1000 },
+            { method: 'CASH', amountCents: 1688 },
+          ],
+        }),
+      )
+      expect(sale.payments).toHaveLength(3)
+    })
+
+    it('rejects explicit parts whose sum leaves no remainder, even if each one alone would fit', async () => {
+      const { service, repository } = makeService()
+      await expect(
+        service.create('t1', operator, {
+          ...input,
+          paymentMethod: 'CASH',
+          partialPayments: [
+            { method: 'PIX', amountCents: 2000 },
+            { method: 'CARD', amountCents: 1688 },
+          ],
+        }),
+      ).rejects.toMatchObject({ code: 'PARTIAL_PAYMENT_TOO_HIGH', details: { amountCents: 3688 } })
+      expect(repository.createWithStockDebit).not.toHaveBeenCalled()
+    })
+
     it.each([3688, 5000])('rejects a partial amount of %i that leaves no remainder', async (amountCents) => {
       const { service, repository } = makeService()
       await expect(
         service.create('t1', operator, {
           ...input,
           paymentMethod: 'CARD',
-          partialPayment: { method: 'PIX', amountCents },
+          partialPayments: [{ method: 'PIX', amountCents }],
         }),
       ).rejects.toMatchObject({ code: 'PARTIAL_PAYMENT_TOO_HIGH', statusCode: 400 })
       expect(repository.createWithStockDebit).not.toHaveBeenCalled()
@@ -332,6 +372,109 @@ describe('SaleService.create', () => {
       't1',
       expect.objectContaining({ soldAt: new Date('2026-09-12T10:00:00.000Z') }),
     )
+  })
+})
+
+describe('SaleService.void', () => {
+  const admin = { id: 'adm1', tenantId: 't1', role: 'ADMIN' as const }
+  const openSale = { id: 's1', voidedAt: null, cashSession: { closedAt: null } }
+  const voidedRow = {
+    id: 's1',
+    tenantId: 't1',
+    uuid,
+    cashSessionId: 'cs1',
+    operatorId: 'op1',
+    paymentMethod: 'PIX' as const,
+    totalCents: 100,
+    amountReceivedCents: null,
+    changeCents: null,
+    soldAt: new Date(),
+    voidedAt: new Date('2026-09-28T20:00:00.000Z'),
+    voidedById: 'adm1',
+    voidReason: 'Cliente desistiu',
+    operator: { name: 'Karol' },
+    payments: [],
+    cashSession: { closedAt: null },
+    items: [],
+  }
+
+  function makeVoidService(overrides: Partial<Record<keyof SaleRepository, jest.Mock>> = {}) {
+    return makeService({
+      findById: jest.fn().mockResolvedValue(openSale),
+      voidWithStockReturn: jest.fn().mockResolvedValue(voidedRow),
+      ...overrides,
+    })
+  }
+
+  it('voids an open-register sale with the reason and returns it marked as voided', async () => {
+    const { service, repository } = makeVoidService()
+    const sale = await service.void('t1', 's1', admin, { reason: 'Cliente desistiu' })
+    expect(repository.voidWithStockReturn).toHaveBeenCalledWith('t1', 's1', 'adm1', 'Cliente desistiu')
+    expect(sale).toMatchObject({ voidedAt: '2026-09-28T20:00:00.000Z', voidReason: 'Cliente desistiu' })
+  })
+
+  it('404s when the sale does not exist in the tenant', async () => {
+    const { service, repository } = makeVoidService({ findById: jest.fn().mockResolvedValue(null) })
+    await expect(service.void('t1', 'nope', admin, { reason: 'x' })).rejects.toMatchObject({
+      code: 'SALE_NOT_FOUND',
+      statusCode: 404,
+    })
+    expect(repository.voidWithStockReturn).not.toHaveBeenCalled()
+  })
+
+  it('refuses a sale whose cash session is already closed, always', async () => {
+    const { service, repository } = makeVoidService({
+      findById: jest.fn().mockResolvedValue({ ...openSale, cashSession: { closedAt: new Date() } }),
+    })
+    await expect(service.void('t1', 's1', admin, { reason: 'x' })).rejects.toMatchObject({
+      code: 'CASH_SESSION_CLOSED',
+      statusCode: 409,
+    })
+    expect(repository.voidWithStockReturn).not.toHaveBeenCalled()
+  })
+
+  it('refuses to void a sale twice', async () => {
+    const { service, repository } = makeVoidService({
+      findById: jest.fn().mockResolvedValue({ ...openSale, voidedAt: new Date() }),
+    })
+    await expect(service.void('t1', 's1', admin, { reason: 'x' })).rejects.toMatchObject({ code: 'ALREADY_VOIDED' })
+    expect(repository.voidWithStockReturn).not.toHaveBeenCalled()
+  })
+
+  it('reports the right reason when another request voided it first (race)', async () => {
+    const findById = jest
+      .fn()
+      .mockResolvedValueOnce(openSale)
+      .mockResolvedValueOnce({ ...openSale, voidedAt: new Date() })
+    const { service } = makeVoidService({
+      findById,
+      voidWithStockReturn: jest.fn().mockRejectedValue(new SaleNotVoidableError()),
+    })
+    await expect(service.void('t1', 's1', admin, { reason: 'x' })).rejects.toMatchObject({ code: 'ALREADY_VOIDED' })
+  })
+
+  it('answers 409 (never a raw error) when the race is lost but the sale looks voidable again', async () => {
+    const { service } = makeVoidService({
+      voidWithStockReturn: jest.fn().mockRejectedValue(new SaleNotVoidableError()),
+    })
+    await expect(service.void('t1', 's1', admin, { reason: 'x' })).rejects.toMatchObject({
+      code: 'SALE_NOT_VOIDABLE',
+      statusCode: 409,
+    })
+  })
+
+  it('reports CASH_SESSION_CLOSED when the register closed in the meantime (race)', async () => {
+    const findById = jest
+      .fn()
+      .mockResolvedValueOnce(openSale)
+      .mockResolvedValueOnce({ ...openSale, cashSession: { closedAt: new Date() } })
+    const { service } = makeVoidService({
+      findById,
+      voidWithStockReturn: jest.fn().mockRejectedValue(new SaleNotVoidableError()),
+    })
+    await expect(service.void('t1', 's1', admin, { reason: 'x' })).rejects.toMatchObject({
+      code: 'CASH_SESSION_CLOSED',
+    })
   })
 })
 
@@ -356,6 +499,7 @@ function makeStatefulService(startingStock: Record<string, number> = { p1: 3, p2
             soldAt: new Date(),
             operator: { name: 'Karol' },
             payments: [],
+            cashSession: { closedAt: null },
             items: [],
           }
         : null,
@@ -373,6 +517,7 @@ function makeStatefulService(startingStock: Record<string, number> = { p1: 3, p2
         ...sale,
         operator: { name: 'Karol' },
         payments: [],
+        cashSession: { closedAt: null },
         items: sale.items.map((item, index) => ({ id: `i${index}`, saleId: `s-${sale.uuid}`, ...item })),
       }
     }),
@@ -462,7 +607,16 @@ describe('SaleService.syncBatch', () => {
 
 describe('SaleService.history', () => {
   const now = new Date('2026-09-18T15:00:00.000Z') // 12h em America/Sao_Paulo, mesmo dia
-  const emptyRow = { id: 's1', tenantId: 't1', operator: { name: 'Karol' }, payments: [], items: [] }
+  const emptyRow = {
+    id: 's1',
+    tenantId: 't1',
+    operator: { name: 'Karol' },
+    payments: [],
+    voidedAt: null,
+    voidReason: null,
+    cashSession: { closedAt: null },
+    items: [],
+  }
 
   function makeHistoryService() {
     const repository = { findHistory: jest.fn().mockResolvedValue([]) }
@@ -510,5 +664,20 @@ describe('SaleService.history', () => {
     repository.findHistory.mockResolvedValue([{ ...emptyRow, soldAt: now }])
     const result = await service.history('t1', { period: 'today' }, now)
     expect(result).toEqual([expect.objectContaining({ id: 's1', operatorName: 'Karol' })])
+  })
+
+  it('marks a sale as voidable only while it is not voided and its register is open', async () => {
+    const { service, repository } = makeHistoryService()
+    repository.findHistory.mockResolvedValue([
+      { ...emptyRow, id: 'open', soldAt: now },
+      { ...emptyRow, id: 'closed', soldAt: now, cashSession: { closedAt: now } },
+      { ...emptyRow, id: 'voided', soldAt: now, voidedAt: now, voidReason: 'erro' },
+    ])
+    const result = await service.history('t1', { period: 'today' }, now)
+    expect(result.map((sale) => [sale.id, sale.voidable])).toEqual([
+      ['open', true],
+      ['closed', false],
+      ['voided', false],
+    ])
   })
 })

@@ -8,18 +8,24 @@ export function useCart() {
   const totalCents = cartTotalCents(store.items)
   // NaN quando vazio/inválido: nada é enviado e a API decide o resto.
   const amountReceivedCents = parseMoneyInput(store.amountReceivedText)
-  const partialAmountCents = parseMoneyInput(store.partialAmountText)
+  const partsCents = store.parts.map((part) => parseMoneyInput(part.amountText))
   return {
     items: store.items,
     paymentMethod: store.paymentMethod,
     amountReceivedText: store.amountReceivedText,
     amountReceivedCents,
     splitting: store.splitting,
-    partialMethod: store.partialMethod,
-    partialAmountText: store.partialAmountText,
-    partialAmountCents,
-    // Resto da 2ª forma; NaN enquanto o valor da 1ª não é válido.
-    remainderCents: totalCents - partialAmountCents,
+    parts: store.parts,
+    evenSplit: store.evenSplit,
+    // O que vai para a API; forma vazia segue como '' e a API responde o erro.
+    partialPayments: store.splitting
+      ? store.parts.map((part) => ({
+          method: part.method ?? ('' as never),
+          amountCents: parseMoneyInput(part.amountText),
+        }))
+      : undefined,
+    // Resto da última forma; NaN enquanto algum valor não é válido.
+    remainderCents: totalCents - partsCents.reduce((sum, cents) => sum + cents, 0),
     // Sem troco no pagamento misto.
     changeCents: store.splitting ? null : changeForCash(store.paymentMethod, amountReceivedCents, totalCents),
     saleUuid: store.saleUuid,
@@ -33,8 +39,11 @@ export function useCart() {
     setPaymentMethod: store.setPaymentMethod,
     setAmountReceivedText: store.setAmountReceivedText,
     setSplitting: store.setSplitting,
-    setPartialMethod: store.setPartialMethod,
-    setPartialAmountText: store.setPartialAmountText,
+    addPart: store.addPart,
+    removePart: store.removePart,
+    setPartMethod: store.setPartMethod,
+    setPartAmountText: store.setPartAmountText,
+    splitEqually: store.splitEqually,
     clear: store.clear,
     finish: store.finish,
   }

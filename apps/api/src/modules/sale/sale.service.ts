@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import type { Product } from '@prisma/client'
 import type {
   CreateSaleInput,
   Sale,
   SalesHistoryQuery,
+  VoidSaleInput,
   SyncSaleResult,
   SyncSalesInput,
   SyncSalesResult,
@@ -14,12 +15,20 @@ import type { OperatorSession } from '../../common/types/request'
 import { CashSessionService } from '../cash-session/cash-session.service'
 import { TenantService } from '../tenant/tenant.service'
 import { toSale } from './sale.mapper'
-import { SaleRepository, StockRaceError, type NewSaleItem, type NewSalePayment } from './sale.repository'
+import {
+  SaleNotVoidableError,
+  SaleRepository,
+  StockRaceError,
+  type NewSaleItem,
+  type NewSalePayment,
+} from './sale.repository'
 
 const FALLBACK_TIME_ZONE = 'UTC'
 
 @Injectable()
 export class SaleService {
+  private readonly logger = new Logger(SaleService.name)
+
   constructor(
     private readonly sales: SaleRepository,
     private readonly cashSessions: CashSessionService,
@@ -86,6 +95,26 @@ export class SaleService {
     }
   }
 
+  // Anulação (03-regras-negocio § Venda): o controller restringe a Administrador; só com o caixa da
+  // venda aberto, nunca apaga a linha e devolve o estoque.
+  async void(tenantId: string, id: string, operator: OperatorSession, input: VoidSaleInput): Promise<Sale> {
+    const sale = await this.sales.findById(tenantId, id)
+    if (!sale) throw new NotFoundError('SALE_NOT_FOUND', 'Venda não encontrada.')
+    assertVoidable(sale)
+
+    try {
+      const row = await this.sales.voidWithStockReturn(tenantId, id, operator.id, input.reason)
+      this.logger.log(`Sale ${id} voided by admin ${operator.id}: ${input.reason}`)
+      return toSale(row)
+    } catch (error) {
+      if (!(error instanceof SaleNotVoidableError)) throw error
+      // Perdeu a corrida: reavalia para devolver o motivo certo.
+      const current = await this.sales.findById(tenantId, id)
+      if (current) assertVoidable(current)
+      throw new ConflictError('SALE_NOT_VOIDABLE', 'Não foi possível anular esta venda agora. Tente de novo.')
+    }
+  }
+
   // HU 8.2 (fila offline): processa em ordem — cada venda já é idempotente
   // por uuid (create()), então reenviar o mesmo lote nunca duplica nada.
   // Uma venda com erro de regra (ex.: sem estoque quando enfim sincronizou)
@@ -134,21 +163,29 @@ export class SaleService {
   }
 }
 
-// Pagamento misto (03-regras-negocio § Venda): `partialPayment` paga uma
-// parte com valor explícito e `paymentMethod` paga o resto. Máx. 2 formas
-// (podem repetir, ex.: 2 cartões) e a parte explícita precisa deixar resto > 0.
+function assertVoidable(sale: { voidedAt: Date | null; cashSession: { closedAt: Date | null } }): void {
+  if (sale.voidedAt) throw new ConflictError('ALREADY_VOIDED', 'Esta venda já foi anulada.')
+  if (sale.cashSession.closedAt) {
+    throw new ConflictError('CASH_SESSION_CLOSED', 'O caixa desta venda já foi fechado — não é possível anular.')
+  }
+}
+
+// Pagamento misto (03-regras-negocio § Venda): `partialPayments` são as
+// partes com valor explícito e `paymentMethod` paga o resto. As formas podem
+// repetir (2 cartões) e a soma das partes explícitas precisa deixar resto > 0.
 function splitPayments(input: CreateSaleInput, totalCents: number): NewSalePayment[] {
-  const partial = input.partialPayment
-  if (!partial) return [{ method: input.paymentMethod, amountCents: totalCents }]
-  if (partial.amountCents >= totalCents) {
+  const partials = input.partialPayments ?? []
+  if (partials.length === 0) return [{ method: input.paymentMethod, amountCents: totalCents }]
+  const explicitCents = partials.reduce((sum, partial) => sum + partial.amountCents, 0)
+  if (explicitCents >= totalCents) {
     throw new DomainError(
       'PARTIAL_PAYMENT_TOO_HIGH',
-      'O valor da primeira forma de pagamento deve ser menor que o total da venda.',
+      'A soma dos valores informados deve ser menor que o total da venda.',
       400,
-      { totalCents, amountCents: partial.amountCents },
+      { totalCents, amountCents: explicitCents },
     )
   }
-  return [partial, { method: input.paymentMethod, amountCents: totalCents - partial.amountCents }]
+  return [...partials, { method: input.paymentMethod, amountCents: totalCents - explicitCents }]
 }
 
 // Troco (03-regras-negocio § Venda): só sobre a parte em Dinheiro e só se o

@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common'
 import { Prisma, type CashSession, type PaymentMethod } from '@prisma/client'
 import type { OpenCashSessionInput } from '@pdv/shared'
-import { PRISMA, type PrismaService } from '../../prisma/prisma.client'
+import { PRISMA, setTenantInTransaction, type PrismaService, type PrismaTransaction } from '../../prisma/prisma.client'
 import { saleInclude, type SaleRow } from '../sale/sale.mapper'
 
 export type CashSessionRow = CashSession & { openedBy: { name: string } }
@@ -14,7 +14,31 @@ export type PaymentTotals = Record<PaymentMethod, number>
 // vez do Prisma estourar um 500 genérico.
 export class RegisterAlreadyOpenError extends Error {}
 
+// Outro fechamento do mesmo caixa venceu a corrida (o lock serializa; o
+// segundo não pode sobrescrever closedAt nem os totais congelados).
+export class CashSessionAlreadyClosedError extends Error {}
+
 const withOpener = { openedBy: { select: { name: true } } } as const
+
+// Total por forma de pagamento (vendas anuladas não contam) — usado ao vivo
+// e dentro da transação de fechamento.
+async function sumPayments(
+  db: Pick<PrismaTransaction, 'salePayment' | 'sale'>,
+  tenantId: string,
+  cashSessionId: string,
+): Promise<{ totals: PaymentTotals; count: number }> {
+  const [groups, count] = await Promise.all([
+    db.salePayment.groupBy({
+      by: ['method'],
+      where: { tenantId, sale: { cashSessionId, voidedAt: null } },
+      _sum: { amountCents: true },
+    }),
+    db.sale.count({ where: { tenantId, cashSessionId, voidedAt: null } }),
+  ])
+  const totals: PaymentTotals = { CASH: 0, CARD: 0, PIX: 0 }
+  for (const group of groups) totals[group.method] = group._sum.amountCents ?? 0
+  return { totals, count }
+}
 
 @Injectable()
 export class CashSessionRepository {
@@ -81,29 +105,25 @@ export class CashSessionRepository {
     }
   }
 
-  close(tenantId: string, id: string, totals: PaymentTotals, closedAt: Date): Promise<CashSessionRow> {
-    return this.prisma.cashSession.update({
-      where: { id, tenantId },
-      data: { closedAt, totalCashCents: totals.CASH, totalCardCents: totals.CARD, totalPixCents: totals.PIX },
-      include: withOpener,
+  // Fechar é atômico: trava a sessão (FOR UPDATE), soma os totais e grava.
+  // A anulação de venda trava a mesma linha, então nunca sobra uma venda
+  // anulada contada nos totais congelados de um caixa fechado.
+  close(tenantId: string, id: string, closedAt: Date): Promise<CashSessionRow> {
+    return this.prisma.$transaction(async (tx) => {
+      await setTenantInTransaction(tx, tenantId)
+      await tx.$queryRaw`SELECT id FROM "CashSession" WHERE id = ${id} FOR UPDATE`
+      const { totals } = await sumPayments(tx, tenantId, id)
+      const closed = await tx.cashSession.updateMany({
+        where: { id, tenantId, closedAt: null },
+        data: { closedAt, totalCashCents: totals.CASH, totalCardCents: totals.CARD, totalPixCents: totals.PIX },
+      })
+      if (closed.count === 0) throw new CashSessionAlreadyClosedError()
+      return tx.cashSession.findFirstOrThrow({ where: { id, tenantId }, include: withOpener })
     })
   }
 
-  async sumSalesByPaymentMethod(
-    tenantId: string,
-    cashSessionId: string,
-  ): Promise<{ totals: PaymentTotals; count: number }> {
-    const [groups, count] = await Promise.all([
-      this.prisma.salePayment.groupBy({
-        by: ['method'],
-        where: { tenantId, sale: { cashSessionId } },
-        _sum: { amountCents: true },
-      }),
-      this.prisma.sale.count({ where: { tenantId, cashSessionId } }),
-    ])
-    const totals: PaymentTotals = { CASH: 0, CARD: 0, PIX: 0 }
-    for (const group of groups) totals[group.method] = group._sum.amountCents ?? 0
-    return { totals, count }
+  sumSalesByPaymentMethod(tenantId: string, cashSessionId: string): Promise<{ totals: PaymentTotals; count: number }> {
+    return sumPayments(this.prisma, tenantId, cashSessionId)
   }
 
   findSales(tenantId: string, cashSessionId: string): Promise<SaleRow[]> {

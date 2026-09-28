@@ -1,6 +1,11 @@
 // Fluxo crítico do produto (SPRINTS.md § Definition of Done):
 // login → abrir caixa → vender → fechar caixa, contra a API real.
 describe('Fluxo crítico: login, abrir caixa, vender, fechar caixa', () => {
+  beforeEach(() => {
+    cy.loginAs('Administrador', '1234')
+    cy.ensureStock('Arroz 5kg', 20)
+  })
+
   it('completes a full shift through the UI', () => {
     // estado inicial determinístico: nenhum caixa aberto
     cy.loginAs('Administrador', '1234')
@@ -28,6 +33,7 @@ describe('Fluxo crítico: login, abrir caixa, vender, fechar caixa', () => {
     cy.get('[data-cy=cart-line]').should('have.length', 1).and('contain', 'Arroz')
     cy.get('[data-cy=cart-line] output').should('have.text', '2')
 
+    cy.contains('button', 'Ir para o pagamento').click()
     // sem forma de pagamento: a API responde e a mensagem aparece embaixo do seletor
     cy.contains('button', 'Finalizar Venda').click()
     cy.contains('Escolha a forma de pagamento')
@@ -66,6 +72,7 @@ describe('Fluxo crítico: login, abrir caixa, vender, fechar caixa', () => {
     cy.visit('/sell')
     // Sal Refinado 1kg custa R$ 2,49
     cy.get('button[aria-label="Adicionar Sal Refinado 1kg"]').click()
+    cy.contains('button', 'Ir para o pagamento').click()
     cy.contains('[role=radio]', 'Dinheiro').click()
 
     // troco ao vivo enquanto digita (máscara estilo calculadora: "500" -> R$ 5,00)
@@ -91,6 +98,7 @@ describe('Fluxo crítico: login, abrir caixa, vender, fechar caixa', () => {
     cy.visit('/sell')
     // Feijão 1kg tem 30 no seed; 31 cliques excedem
     for (let i = 0; i < 31; i += 1) cy.get('button[aria-label="Adicionar Feijão 1kg"]').click()
+    cy.contains('button', 'Ir para o pagamento').click()
     cy.contains('[role=radio]', 'Dinheiro').click()
     cy.contains('button', 'Finalizar Venda').click()
     cy.get('[role=alert]').should('contain', 'Estoque insuficiente').and('contain', 'Feijão')
@@ -106,6 +114,8 @@ describe('Fluxo crítico: login, abrir caixa, vender, fechar caixa', () => {
     })
     cy.get('[data-cy=quick-stock-adjust]').should('not.exist')
 
+    // fecha o modal de pagamento e descarta o carrinho
+    cy.contains('button', 'Voltar').click()
     cy.contains('button', 'Cancelar').click()
     cy.get('[data-cy=cart-line]').should('not.exist')
   })

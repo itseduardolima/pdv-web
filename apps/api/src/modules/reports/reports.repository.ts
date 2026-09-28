@@ -37,7 +37,7 @@ export class ReportsRepository {
   // agregações do relatório (total, forma de pagamento, produtos, operador).
   async findSalesBetween(tenantId: string, from: Date, to: Date): Promise<ReportSaleRow[]> {
     const rows = await this.prisma.sale.findMany({
-      where: { tenantId, soldAt: { gte: from, lt: to } },
+      where: { tenantId, voidedAt: null, soldAt: { gte: from, lt: to } },
       select: {
         soldAt: true,
         totalCents: true,
@@ -62,7 +62,7 @@ export class ReportsRepository {
   // precisa do detalhe por venda.
   async sumTotalBetween(tenantId: string, from: Date, to: Date): Promise<number> {
     const result = await this.prisma.sale.aggregate({
-      where: { tenantId, soldAt: { gte: from, lt: to } },
+      where: { tenantId, voidedAt: null, soldAt: { gte: from, lt: to } },
       _sum: { totalCents: true },
     })
     return result._sum.totalCents ?? 0
