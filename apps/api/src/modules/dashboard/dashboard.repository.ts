@@ -12,7 +12,7 @@ export interface DashboardSaleItemRow {
 export interface DashboardSaleRow {
   soldAt: Date
   totalCents: number
-  paymentMethod: PaymentMethod
+  payments: { method: PaymentMethod; amountCents: number }[]
   items: DashboardSaleItemRow[]
 }
 
@@ -42,7 +42,7 @@ export class DashboardRepository {
       select: {
         soldAt: true,
         totalCents: true,
-        paymentMethod: true,
+        payments: { select: { method: true, amountCents: true } },
         items: { select: { productId: true, productName: true, quantity: true, unitPriceCents: true } },
       },
       orderBy: { soldAt: 'asc' },

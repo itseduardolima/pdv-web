@@ -67,7 +67,7 @@ function dayTotals(date: string, sales: DashboardSaleRow[]): DashboardDay {
 
 function totalsByPaymentMethod(sales: DashboardSaleRow[]): Record<PaymentMethod, number> {
   const totals: Record<PaymentMethod, number> = { CASH: 0, CARD: 0, PIX: 0 }
-  for (const sale of sales) totals[sale.paymentMethod] += sale.totalCents
+  for (const sale of sales) for (const payment of sale.payments) totals[payment.method] += payment.amountCents
   return totals
 }
 

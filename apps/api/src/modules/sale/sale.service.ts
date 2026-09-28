@@ -14,7 +14,7 @@ import type { OperatorSession } from '../../common/types/request'
 import { CashSessionService } from '../cash-session/cash-session.service'
 import { TenantService } from '../tenant/tenant.service'
 import { toSale } from './sale.mapper'
-import { SaleRepository, StockRaceError, type NewSaleItem } from './sale.repository'
+import { SaleRepository, StockRaceError, type NewSaleItem, type NewSalePayment } from './sale.repository'
 
 const FALLBACK_TIME_ZONE = 'UTC'
 
@@ -59,7 +59,8 @@ export class SaleService {
     })
 
     const totalCents = items.reduce((sum, item) => sum + item.quantity * item.unitPriceCents, 0)
-    const change = computeChange(input.paymentMethod, input.amountReceivedCents, totalCents)
+    const payments = splitPayments(input, totalCents)
+    const change = computeChange(payments, input.amountReceivedCents)
 
     try {
       const row = await this.sales.createWithStockDebit(tenantId, {
@@ -67,6 +68,7 @@ export class SaleService {
         cashSessionId: session.id,
         operatorId: operator.id,
         paymentMethod: input.paymentMethod,
+        payments,
         totalCents,
         amountReceivedCents: change.amountReceivedCents,
         changeCents: change.changeCents,
@@ -132,24 +134,44 @@ export class SaleService {
   }
 }
 
-// Troco (03-regras-negocio § Venda): só em Dinheiro e só se o operador
-// informou quanto recebeu. Calculado aqui, nunca aceito pronto do cliente;
-// recebido menor que o total é recusado. Em Cartão/Pix o valor é ignorado.
-function computeChange(
-  paymentMethod: CreateSaleInput['paymentMethod'],
-  amountReceivedCents: number | undefined,
-  totalCents: number,
-): { amountReceivedCents: number | null; changeCents: number | null } {
-  if (paymentMethod !== 'CASH' || amountReceivedCents === undefined) {
-    return { amountReceivedCents: null, changeCents: null }
+// Pagamento misto (03-regras-negocio § Venda): `partialPayment` paga uma
+// parte com valor explícito e `paymentMethod` paga o resto. Máx. 2 formas
+// (podem repetir, ex.: 2 cartões) e a parte explícita precisa deixar resto > 0.
+function splitPayments(input: CreateSaleInput, totalCents: number): NewSalePayment[] {
+  const partial = input.partialPayment
+  if (!partial) return [{ method: input.paymentMethod, amountCents: totalCents }]
+  if (partial.amountCents >= totalCents) {
+    throw new DomainError(
+      'PARTIAL_PAYMENT_TOO_HIGH',
+      'O valor da primeira forma de pagamento deve ser menor que o total da venda.',
+      400,
+      { totalCents, amountCents: partial.amountCents },
+    )
   }
-  if (amountReceivedCents < totalCents) {
-    throw new DomainError('INSUFFICIENT_CASH', 'Valor recebido menor que o total da venda.', 400, {
-      totalCents,
+  return [partial, { method: input.paymentMethod, amountCents: totalCents - partial.amountCents }]
+}
+
+// Troco (03-regras-negocio § Venda): só sobre a parte em Dinheiro e só se o
+// operador informou quanto recebeu. Calculado aqui, nunca aceito pronto do
+// cliente; recebido menor que a parte em Dinheiro é recusado. Sem Dinheiro
+// na venda o valor é ignorado.
+function computeChange(
+  payments: NewSalePayment[],
+  amountReceivedCents: number | undefined,
+): { amountReceivedCents: number | null; changeCents: number | null } {
+  const cashCents = payments.reduce((sum, payment) => sum + (payment.method === 'CASH' ? payment.amountCents : 0), 0)
+  if (cashCents === 0 || amountReceivedCents === undefined) return { amountReceivedCents: null, changeCents: null }
+  if (amountReceivedCents < cashCents) {
+    const message =
+      payments.length === 1
+        ? 'Valor recebido menor que o total da venda.'
+        : 'Valor recebido menor que o valor em Dinheiro.'
+    throw new DomainError('INSUFFICIENT_CASH', message, 400, {
+      totalCents: cashCents,
       amountReceivedCents,
     })
   }
-  return { amountReceivedCents, changeCents: amountReceivedCents - totalCents }
+  return { amountReceivedCents, changeCents: amountReceivedCents - cashCents }
 }
 
 // Mesmo produto em duas linhas vira uma só (a checagem de estoque é por produto).

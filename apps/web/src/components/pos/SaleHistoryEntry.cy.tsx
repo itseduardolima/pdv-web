@@ -7,6 +7,7 @@ const sale = {
   operatorId: 'op1',
   operatorName: 'Karol',
   paymentMethod: 'PIX' as const,
+  payments: [{ method: 'PIX' as const, amountCents: 8340 }],
   totalCents: 8340,
   amountReceivedCents: null,
   changeCents: null,
@@ -38,5 +39,38 @@ describe('SaleHistoryEntry', () => {
     )
     cy.get('button').click()
     cy.get('@onSelect').should('have.been.calledWith', sale)
+  })
+
+  it('shows both methods of a mixed payment', () => {
+    const mixed = {
+      ...sale,
+      payments: [
+        { method: 'PIX' as const, amountCents: 3000 },
+        { method: 'CASH' as const, amountCents: 5340 },
+      ],
+    }
+    cy.mount(
+      <ul>
+        <SaleHistoryEntry sale={mixed} onSelect={() => {}} />
+      </ul>,
+    )
+    cy.contains('4 itens · Karol · Pix + Dinheiro')
+  })
+
+  it('shows a repeated method only once (2 cards)', () => {
+    const twoCards = {
+      ...sale,
+      payments: [
+        { method: 'CARD' as const, amountCents: 3000 },
+        { method: 'CARD' as const, amountCents: 5340 },
+      ],
+    }
+    cy.mount(
+      <ul>
+        <SaleHistoryEntry sale={twoCards} onSelect={() => {}} />
+      </ul>,
+    )
+    cy.contains('4 itens · Karol · Cartão').should('exist')
+    cy.contains('Cartão + Cartão').should('not.exist')
   })
 })

@@ -1,8 +1,10 @@
 import type { Prisma } from '@prisma/client'
 import type { Sale } from '@pdv/shared'
 
-export type SaleRow = Prisma.SaleGetPayload<{ include: { items: true; operator: { select: { name: true } } } }>
-export const saleInclude = { items: true, operator: { select: { name: true } } } as const
+export type SaleRow = Prisma.SaleGetPayload<{
+  include: { items: true; payments: true; operator: { select: { name: true } } }
+}>
+export const saleInclude = { items: true, payments: true, operator: { select: { name: true } } } as const
 
 // Nunca devolver a linha do Prisma inteira (08-seguranca § 9).
 export function toSale(row: SaleRow): Sale {
@@ -13,6 +15,7 @@ export function toSale(row: SaleRow): Sale {
     operatorId: row.operatorId,
     operatorName: row.operator.name,
     paymentMethod: row.paymentMethod,
+    payments: row.payments.map((payment) => ({ method: payment.method, amountCents: payment.amountCents })),
     totalCents: row.totalCents,
     amountReceivedCents: row.amountReceivedCents,
     changeCents: row.changeCents,

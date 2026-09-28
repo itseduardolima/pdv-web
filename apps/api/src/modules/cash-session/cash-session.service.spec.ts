@@ -285,6 +285,7 @@ describe('CashSessionService', () => {
             totalCents: 8340,
             soldAt: new Date('2026-09-12T16:42:00Z'),
             operator: { name: 'Karol' },
+            payments: [],
             items: [
               { id: 'i1', saleId: 's1', productId: 'p1', productName: 'Arroz 5kg', quantity: 2, unitPriceCents: 2890 },
             ],

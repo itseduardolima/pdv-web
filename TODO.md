@@ -488,6 +488,11 @@ implementação no plano aprovado desta sessão. Esta fatia é só o backend
   desta tarefa); vale investigar numa sessão futura antes de confiar 100%
   em "suíte verde" no CI/dev local.
 
+## Pagamento misto (decisão de 2026-09-28)
+
+- [x] Venda paga em até 2 formas, podendo repetir (Pix+Dinheiro, Pix+Cartão, Cartão+Dinheiro, 2 cartões): `SalePayment` (migration `sale_payment`, com backfill das vendas antigas e RLS), `partialPayment` no `createSaleSchema`, regra `PARTIAL_PAYMENT_TOO_HIGH`; sem troco na tela do pagamento misto (só na venda com uma forma só). Fechamento, Dashboard e Relatórios somam por `SalePayment`. Tela Vender: botão "Dividir pagamento" (`SplitPayment`). Spec: `03-regras-negocio` § Venda. Validado: Jest (+9 no total), component tests, E2E `sell-split-payment.cy.ts`.
+- [ ] Sem HU no `BACKLOG.md` ainda — registrar critério de aceite/pontos lá.
+
 ## Backlog P2 (sem sprint fixa ainda)
 
 - [ ] Sessão com renovação deslizante por inatividade (hoje o JWT expira 12h fixas após o login — decisão da Sprint 1)

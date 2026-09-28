@@ -102,6 +102,7 @@ describe('SaleService.create', () => {
       totalCents: 100,
       soldAt: new Date(),
       operator: { name: 'Karol' },
+      payments: [],
       items: [],
     }
     const { service, repository, cashSessions } = makeService({ findByUuid: jest.fn().mockResolvedValue(existing) })
@@ -226,6 +227,104 @@ describe('SaleService.create', () => {
     })
   })
 
+  describe('split payment (pagamento misto)', () => {
+    it('records a single payment for the whole total when there is no partialPayment', async () => {
+      const { service, repository } = makeService()
+      await service.create('t1', operator, input)
+      expect(repository.createWithStockDebit).toHaveBeenCalledWith(
+        't1',
+        expect.objectContaining({ payments: [{ method: 'PIX', amountCents: 3688 }] }),
+      )
+    })
+
+    it('pays the partial amount in the first method and the remainder in paymentMethod', async () => {
+      const { service, repository } = makeService()
+      const sale = await service.create('t1', operator, {
+        ...input,
+        paymentMethod: 'CARD',
+        partialPayment: { method: 'PIX', amountCents: 1000 },
+      })
+      expect(repository.createWithStockDebit).toHaveBeenCalledWith(
+        't1',
+        expect.objectContaining({
+          payments: [
+            { method: 'PIX', amountCents: 1000 },
+            { method: 'CARD', amountCents: 2688 },
+          ],
+        }),
+      )
+      expect(sale.payments).toHaveLength(2)
+    })
+
+    it('computes change only over the cash part', async () => {
+      const { service } = makeService()
+      const sale = await service.create('t1', operator, {
+        ...input,
+        paymentMethod: 'CASH',
+        partialPayment: { method: 'PIX', amountCents: 1688 },
+        amountReceivedCents: 5000,
+      })
+      expect(sale).toMatchObject({ amountReceivedCents: 5000, changeCents: 3000 })
+    })
+
+    it('rejects a received amount below the cash part, without creating the sale', async () => {
+      const { service, repository } = makeService()
+      await expect(
+        service.create('t1', operator, {
+          ...input,
+          paymentMethod: 'CASH',
+          partialPayment: { method: 'PIX', amountCents: 1688 },
+          amountReceivedCents: 1999,
+        }),
+      ).rejects.toMatchObject({
+        code: 'INSUFFICIENT_CASH',
+        details: { totalCents: 2000, amountReceivedCents: 1999 },
+      })
+      expect(repository.createWithStockDebit).not.toHaveBeenCalled()
+    })
+
+    it('ignores the received amount when neither payment is cash', async () => {
+      const { service } = makeService()
+      const sale = await service.create('t1', operator, {
+        ...input,
+        paymentMethod: 'CARD',
+        partialPayment: { method: 'PIX', amountCents: 1000 },
+        amountReceivedCents: 100,
+      })
+      expect(sale).toMatchObject({ amountReceivedCents: null, changeCents: null })
+    })
+
+    it('accepts the same method twice (2 cards)', async () => {
+      const { service, repository } = makeService()
+      await service.create('t1', operator, {
+        ...input,
+        paymentMethod: 'CARD',
+        partialPayment: { method: 'CARD', amountCents: 1000 },
+      })
+      expect(repository.createWithStockDebit).toHaveBeenCalledWith(
+        't1',
+        expect.objectContaining({
+          payments: [
+            { method: 'CARD', amountCents: 1000 },
+            { method: 'CARD', amountCents: 2688 },
+          ],
+        }),
+      )
+    })
+
+    it.each([3688, 5000])('rejects a partial amount of %i that leaves no remainder', async (amountCents) => {
+      const { service, repository } = makeService()
+      await expect(
+        service.create('t1', operator, {
+          ...input,
+          paymentMethod: 'CARD',
+          partialPayment: { method: 'PIX', amountCents },
+        }),
+      ).rejects.toMatchObject({ code: 'PARTIAL_PAYMENT_TOO_HIGH', statusCode: 400 })
+      expect(repository.createWithStockDebit).not.toHaveBeenCalled()
+    })
+  })
+
   it('keeps soldAt from the client when provided (offline queue)', async () => {
     const { service, repository } = makeService()
     await service.create('t1', operator, { ...input, soldAt: '2026-09-12T10:00:00.000Z' })
@@ -256,6 +355,7 @@ function makeStatefulService(startingStock: Record<string, number> = { p1: 3, p2
             changeCents: null,
             soldAt: new Date(),
             operator: { name: 'Karol' },
+            payments: [],
             items: [],
           }
         : null,
@@ -272,6 +372,7 @@ function makeStatefulService(startingStock: Record<string, number> = { p1: 3, p2
         tenantId: 't1',
         ...sale,
         operator: { name: 'Karol' },
+        payments: [],
         items: sale.items.map((item, index) => ({ id: `i${index}`, saleId: `s-${sale.uuid}`, ...item })),
       }
     }),
@@ -361,7 +462,7 @@ describe('SaleService.syncBatch', () => {
 
 describe('SaleService.history', () => {
   const now = new Date('2026-09-18T15:00:00.000Z') // 12h em America/Sao_Paulo, mesmo dia
-  const emptyRow = { id: 's1', tenantId: 't1', operator: { name: 'Karol' }, items: [] }
+  const emptyRow = { id: 's1', tenantId: 't1', operator: { name: 'Karol' }, payments: [], items: [] }
 
   function makeHistoryService() {
     const repository = { findHistory: jest.fn().mockResolvedValue([]) }

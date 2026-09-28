@@ -4,7 +4,7 @@ import { SplitAuthLayout } from '@/components/layout/SplitAuthLayout'
 import { Button } from '@/components/ui/Button'
 import { CardIcon, CashIcon, CheckCircleIcon, PixIcon } from '@/components/ui/Icons'
 import { formatCurrency } from '@/lib/utils/format-currency'
-import { PAYMENT_METHOD_LABEL } from '@/lib/utils/payment-method'
+import { salePaymentLabel } from '@/lib/utils/payment-method'
 import { useSaleConfirmedPage } from './use-sale-confirmed-page'
 
 const ICONS = { CASH: CashIcon, CARD: CardIcon, PIX: PixIcon }
@@ -29,7 +29,7 @@ export default function SaleConfirmedPage() {
       </div>
       <span className="flex items-center gap-2 rounded-pill bg-primary px-4 py-2 font-body text-xs font-semibold text-primary-ink md:text-[13px]">
         <PaymentIcon aria-hidden width="14" height="14" />
-        Pago com {PAYMENT_METHOD_LABEL[sale.paymentMethod]}
+        Pago com {salePaymentLabel(sale.payments)}
       </span>
 
       <hr className="w-full border-border" />

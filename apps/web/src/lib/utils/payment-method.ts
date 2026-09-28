@@ -7,3 +7,11 @@ export const PAYMENT_METHODS: PaymentMethod[] = ['CASH', 'CARD', 'PIX']
 export function percentOf(part: number, total: number): number {
   return total > 0 ? Math.round((part / total) * 100) : 0
 }
+
+// "Pix", "Pix + Dinheiro" (pagamento misto) — formas repetidas aparecem uma
+// vez só (2 cartões = "Cartão").
+export function salePaymentLabel(payments: { method: PaymentMethod }[]): string {
+  return [...new Set(payments.map((payment) => payment.method))]
+    .map((method) => PAYMENT_METHOD_LABEL[method])
+    .join(' + ')
+}

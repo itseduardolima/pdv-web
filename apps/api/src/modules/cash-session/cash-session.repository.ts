@@ -93,18 +93,16 @@ export class CashSessionRepository {
     tenantId: string,
     cashSessionId: string,
   ): Promise<{ totals: PaymentTotals; count: number }> {
-    const groups = await this.prisma.sale.groupBy({
-      by: ['paymentMethod'],
-      where: { tenantId, cashSessionId },
-      _sum: { totalCents: true },
-      _count: { _all: true },
-    })
+    const [groups, count] = await Promise.all([
+      this.prisma.salePayment.groupBy({
+        by: ['method'],
+        where: { tenantId, sale: { cashSessionId } },
+        _sum: { amountCents: true },
+      }),
+      this.prisma.sale.count({ where: { tenantId, cashSessionId } }),
+    ])
     const totals: PaymentTotals = { CASH: 0, CARD: 0, PIX: 0 }
-    let count = 0
-    for (const group of groups) {
-      totals[group.paymentMethod] = group._sum.totalCents ?? 0
-      count += group._count._all
-    }
+    for (const group of groups) totals[group.method] = group._sum.amountCents ?? 0
     return { totals, count }
   }
 

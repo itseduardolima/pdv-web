@@ -9,12 +9,18 @@ interface PaymentMethodPickerProps {
   value: PaymentMethod | null
   onChange: (method: PaymentMethod) => void
   error?: string
+  label?: string
 }
 
-export function PaymentMethodPicker({ value, onChange, error }: PaymentMethodPickerProps) {
+export function PaymentMethodPicker({
+  value,
+  onChange,
+  error,
+  label = 'Forma de pagamento',
+}: PaymentMethodPickerProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <div role="radiogroup" aria-label="Forma de pagamento" className="flex gap-1.5 md:gap-2">
+      <div role="radiogroup" aria-label={label} className="flex gap-1.5 md:gap-2">
         {PAYMENT_METHODS.map((method) => {
           const Icon = ICONS[method]
           const selected = value === method

@@ -2,7 +2,7 @@ import type { Sale } from '@pdv/shared'
 import { BackIcon } from '@/components/ui/Icons'
 import { formatCurrency } from '@/lib/utils/format-currency'
 import { formatTime } from '@/lib/utils/format-date'
-import { PAYMENT_METHOD_LABEL } from '@/lib/utils/payment-method'
+import { salePaymentLabel } from '@/lib/utils/payment-method'
 import { PaymentMethodIllustration } from './PaymentMethodIllustration'
 
 // Card clicável de uma venda (Histórico de Vendas e Fechamento): clicar
@@ -24,7 +24,7 @@ export function SaleHistoryEntry({ sale, onSelect }: { sale: Sale; onSelect: (sa
         <div className="min-w-0 flex-1">
           <p className="truncate font-body text-sm font-semibold">{formatTime(new Date(sale.soldAt))}</p>
           <p className="truncate font-body text-xs text-ink/45">
-            {itemsLabel} · {sale.operatorName} · {PAYMENT_METHOD_LABEL[sale.paymentMethod]}
+            {itemsLabel} · {sale.operatorName} · {salePaymentLabel(sale.payments)}
           </p>
         </div>
         <span className="shrink-0 font-body text-sm font-bold">{formatCurrency(sale.totalCents)}</span>

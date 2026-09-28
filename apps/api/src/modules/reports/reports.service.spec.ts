@@ -9,12 +9,13 @@ const now = new Date('2026-09-13T15:00:00.000Z')
 function sale(
   soldAt: string,
   totalCents: number,
-  paymentMethod: ReportSaleRow['paymentMethod'],
+  payment: ReportSaleRow['payments'][number]['method'] | ReportSaleRow['payments'],
   operatorId = 'op1',
   operatorName = 'Karol',
   items: ReportSaleRow['items'] = [],
 ): ReportSaleRow {
-  return { soldAt: new Date(soldAt), totalCents, paymentMethod, operatorId, operatorName, items }
+  const payments = typeof payment === 'string' ? [{ method: payment, amountCents: totalCents }] : payment
+  return { soldAt: new Date(soldAt), totalCents, payments, operatorId, operatorName, items }
 }
 
 function makeService(
@@ -107,6 +108,18 @@ describe('ReportsService.summary', () => {
       expect(summary.totalCents).toBe(4000)
       expect(summary.salesCount).toBe(3)
       expect(summary.byPaymentMethod).toEqual({ CASH: 1500, CARD: 0, PIX: 2500 })
+    })
+
+    it('splits a mixed-payment sale across its payment methods', async () => {
+      const { service } = makeService([
+        sale('2026-09-13T14:00:00.000Z', 5000, [
+          { method: 'CARD', amountCents: 2500 },
+          { method: 'CASH', amountCents: 2500 },
+        ]),
+      ])
+      const summary = await service.summary('t1', today, now)
+      expect(summary.totalCents).toBe(5000)
+      expect(summary.byPaymentMethod).toEqual({ CASH: 2500, CARD: 2500, PIX: 0 })
     })
   })
 

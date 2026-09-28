@@ -90,10 +90,13 @@ export function useSellPage() {
   // Sempre envia: a API decide (caixa aberto, estoque, forma de pagamento,
   // troco). O valor recebido só vai em Dinheiro e só se foi digitado.
   function handleCheckout() {
-    const sendsReceived = cart.paymentMethod === 'CASH' && cart.amountReceivedText.trim() !== ''
+    const sendsReceived = !cart.splitting && cart.paymentMethod === 'CASH' && cart.amountReceivedText.trim() !== ''
+    const partialPayment =
+      cart.partialMethod !== null ? { method: cart.partialMethod, amountCents: cart.partialAmountCents } : undefined
     const input: CreateSaleInput = {
       uuid: cart.saleUuid,
       paymentMethod: cart.paymentMethod ?? ('' as never),
+      ...(partialPayment ? { partialPayment } : {}),
       ...(sendsReceived ? { amountReceivedCents: cart.amountReceivedCents } : {}),
       items: cart.items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
     }
@@ -115,6 +118,7 @@ export function useSellPage() {
               uuid: input.uuid,
               items: cart.items,
               paymentMethod: cart.paymentMethod as NonNullable<typeof cart.paymentMethod>,
+              partialPayment,
               amountReceivedCents: sendsReceived ? cart.amountReceivedCents : null,
               changeCents: sendsReceived ? cart.changeCents : null,
               totalCents: cart.totalCents,
@@ -182,6 +186,7 @@ export function useSellPage() {
     handleCancel,
     isSubmitting: createSale.isPending,
     paymentMethodError: fieldErrors?.paymentMethod ?? null,
+    partialAmountError: fieldErrors?.partialPayment ?? null,
     itemsError: fieldErrors?.items ?? null,
     amountReceivedError: fieldErrors?.amountReceivedCents ?? insufficientCash,
     errorMessage: insufficientCash ? null : apiGeneralErrorMessage(createSale.error),

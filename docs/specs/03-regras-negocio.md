@@ -90,15 +90,25 @@ a mesma pessoa administrando duas contas do sistema, o que o painel recusa
   snapshot do preço na linha da venda — mudar o preço do produto depois não
   altera vendas passadas).
 - Forma de pagamento: Dinheiro, Cartão ou Pix — obrigatório escolher uma antes
-  de finalizar (sem split de pagamento em v1).
-- Troco (decisão de 2026-09-12): em venda em Dinheiro o operador pode
+  de finalizar.
+- Pagamento misto (decisão de 2026-09-28): a venda pode ser paga em até 2
+  formas (Pix+Dinheiro, Pix+Cartão, Cartão+Dinheiro, ou a mesma forma duas vezes, ex.: 2 cartões). O operador
+  informa a 1ª forma com o valor (`partialPayment`) e a 2ª (`paymentMethod`)
+  paga o resto. Cada forma vira uma linha em `SalePayment`; a soma é sempre o
+  total da venda. Recusado com 400 se o valor da 1ª não deixar resto
+  (`PARTIAL_PAYMENT_TOO_HIGH`). Sem 3+ formas e sem parcelamento em v1.
+  Fechamento, Dashboard e Relatórios somam por `SalePayment`, então só a
+  parte em Dinheiro entra no saldo esperado da gaveta.
+- Troco (decisão de 2026-09-12): quando há parte em Dinheiro o operador pode
   informar quanto o cliente entregou (`amountReceivedCents`, opcional). A
-  API calcula o troco (`changeCents = recebido − total`) e grava os dois na
-  venda — nunca aceita o troco pronto do cliente. Recebido menor que o total
-  é recusado (400 `INSUFFICIENT_CASH`). Em Cartão/Pix os campos ficam nulos.
-  O saldo do caixa não muda com o troco (líquido continua sendo o total da
-  venda); registrar serve para rastrear, no Fechamento, uma venda com troco
-  dado errado quando o caixa fecha com sobra ou falta.
+  API calcula o troco (`changeCents = recebido − parte em Dinheiro`) e grava
+  os dois na venda — nunca aceita o troco pronto do cliente. Recebido menor
+  que a parte em Dinheiro é recusado (400 `INSUFFICIENT_CASH`). Sem Dinheiro
+  na venda os campos ficam nulos. A tela só oferece "Valor recebido"/troco na
+  venda com uma forma só (no pagamento misto o campo não aparece).
+  O saldo do caixa não muda com o troco (líquido continua sendo o valor pago
+  em Dinheiro); registrar serve para rastrear, no Fechamento, uma venda com
+  troco dado errado quando o caixa fecha com sobra ou falta.
 - Ao finalizar a venda:
   - Debita o estoque do(s) produto(s) vendido(s).
   - Gera um registro de venda com UUID (importante para sync offline, ver

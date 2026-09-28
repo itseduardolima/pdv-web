@@ -4,7 +4,7 @@ import * as Dialog from '@radix-ui/react-dialog'
 import type { Sale } from '@pdv/shared'
 import { formatCurrency } from '@/lib/utils/format-currency'
 import { formatDayLong, formatTime } from '@/lib/utils/format-date'
-import { PAYMENT_METHOD_LABEL } from '@/lib/utils/payment-method'
+import { salePaymentLabel } from '@/lib/utils/payment-method'
 import { PaymentMethodIllustration } from './PaymentMethodIllustration'
 
 interface SaleDetailsDialogProps {
@@ -55,7 +55,7 @@ export function SaleDetailsDialog({ sale, onOpenChange }: SaleDetailsDialogProps
               <div className="flex flex-col gap-1.5 border-t border-border pt-3 font-body text-sm">
                 <div className="flex items-center justify-between text-ink/60">
                   <span>Forma de pagamento</span>
-                  <span>{PAYMENT_METHOD_LABEL[sale.paymentMethod]}</span>
+                  <span>{salePaymentLabel(sale.payments)}</span>
                 </div>
                 {sale.amountReceivedCents !== null && (
                   <div className="flex items-center justify-between text-ink/60">

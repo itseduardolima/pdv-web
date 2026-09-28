@@ -12,7 +12,7 @@ export interface ReportSaleItemRow {
 export interface ReportSaleRow {
   soldAt: Date
   totalCents: number
-  paymentMethod: PaymentMethod
+  payments: { method: PaymentMethod; amountCents: number }[]
   operatorId: string
   operatorName: string
   items: ReportSaleItemRow[]
@@ -41,7 +41,7 @@ export class ReportsRepository {
       select: {
         soldAt: true,
         totalCents: true,
-        paymentMethod: true,
+        payments: { select: { method: true, amountCents: true } },
         operatorId: true,
         operator: { select: { name: true } },
         items: { select: { productId: true, productName: true, quantity: true, unitPriceCents: true } },
@@ -51,7 +51,7 @@ export class ReportsRepository {
     return rows.map((row) => ({
       soldAt: row.soldAt,
       totalCents: row.totalCents,
-      paymentMethod: row.paymentMethod,
+      payments: row.payments,
       operatorId: row.operatorId,
       operatorName: row.operator.name,
       items: row.items,

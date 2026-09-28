@@ -6,6 +6,7 @@ import { CashReceived } from '@/components/pos/CashReceived'
 import { CategoryFilter } from '@/components/pos/CategoryFilter'
 import { FlyToCartLayer } from '@/components/pos/FlyToCartLayer'
 import { PaymentMethodPicker } from '@/components/pos/PaymentMethodPicker'
+import { SplitPayment } from '@/components/pos/SplitPayment'
 import { QuickStockAdjust } from '@/components/pos/QuickStockAdjust'
 import { ProductTile } from '@/components/pos/ProductTile'
 import { Button } from '@/components/ui/Button'
@@ -166,13 +167,34 @@ export default function SellPage() {
             </span>
           </div>
 
-          <PaymentMethodPicker
-            value={page.cart.paymentMethod}
-            onChange={page.cart.setPaymentMethod}
-            error={page.paymentMethodError ?? undefined}
-          />
+          {page.cart.splitting ? (
+            <SplitPayment
+              firstMethod={page.cart.partialMethod}
+              firstAmountText={page.cart.partialAmountText}
+              secondMethod={page.cart.paymentMethod}
+              remainderCents={page.cart.remainderCents}
+              onFirstMethodChange={page.cart.setPartialMethod}
+              onFirstAmountChange={page.cart.setPartialAmountText}
+              onSecondMethodChange={page.cart.setPaymentMethod}
+              firstAmountError={page.partialAmountError ?? undefined}
+              secondMethodError={page.paymentMethodError ?? undefined}
+            />
+          ) : (
+            <PaymentMethodPicker
+              value={page.cart.paymentMethod}
+              onChange={page.cart.setPaymentMethod}
+              error={page.paymentMethodError ?? undefined}
+            />
+          )}
+          <button
+            type="button"
+            onClick={() => page.cart.setSplitting(!page.cart.splitting)}
+            className="self-start font-body text-xs font-semibold text-ink/60 underline"
+          >
+            {page.cart.splitting ? 'Pagar com uma forma só' : 'Dividir pagamento'}
+          </button>
 
-          {page.cart.paymentMethod === 'CASH' && (
+          {!page.cart.splitting && page.cart.paymentMethod === 'CASH' && (
             <CashReceived
               value={page.cart.amountReceivedText}
               onChange={page.handleAmountReceivedChange}

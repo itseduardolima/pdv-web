@@ -7,10 +7,11 @@ const now = new Date('2026-09-13T02:30:00.000Z')
 function sale(
   soldAt: string,
   totalCents: number,
-  paymentMethod: DashboardSaleRow['paymentMethod'],
+  payment: DashboardSaleRow['payments'][number]['method'] | DashboardSaleRow['payments'],
   items: DashboardSaleRow['items'] = [],
 ): DashboardSaleRow {
-  return { soldAt: new Date(soldAt), totalCents, paymentMethod, items }
+  const payments = typeof payment === 'string' ? [{ method: payment, amountCents: totalCents }] : payment
+  return { soldAt: new Date(soldAt), totalCents, payments, items }
 }
 
 function makeService(sales: DashboardSaleRow[], timezone: string | null = 'America/Sao_Paulo') {
@@ -23,6 +24,17 @@ function makeService(sales: DashboardSaleRow[], timezone: string | null = 'Ameri
 }
 
 describe('DashboardService.summary', () => {
+  it('splits a mixed-payment sale across its payment methods', async () => {
+    const { service } = makeService([
+      sale('2026-09-12T15:00:00.000Z', 5000, [
+        { method: 'PIX', amountCents: 3000 },
+        { method: 'CASH', amountCents: 2000 },
+      ]),
+    ])
+    const summary = await service.summary('t1', now)
+    expect(summary.today.byPaymentMethod).toEqual({ CASH: 2000, CARD: 0, PIX: 3000 })
+  })
+
   it('asks for the 7 store days ending today, in UTC instants', async () => {
     const { service, repository } = makeService([])
     await service.summary('t1', now)

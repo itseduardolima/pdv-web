@@ -193,10 +193,25 @@ model Sale {
   cashSession CashSession @relation(fields: [cashSessionId], references: [id])
   operator    Operator    @relation(fields: [operatorId], references: [id])
   items       SaleItem[]
+  payments    SalePayment[]
 
   @@unique([tenantId, uuid])
   @@index([tenantId, soldAt])
   @@index([cashSessionId])
+}
+
+// Pagamento misto (03-regras-negocio § Venda): 1 linha por forma de
+// pagamento, no máximo 2 por venda (podem repetir a forma: 2 cartões). A soma é sempre o totalCents da venda.
+model SalePayment {
+  id          String        @id @default(cuid())
+  tenantId    String
+  saleId      String
+  method      PaymentMethod
+  amountCents Int
+
+  sale Sale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, saleId])
 }
 
 model SaleItem {

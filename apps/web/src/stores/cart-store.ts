@@ -7,6 +7,10 @@ interface CartState {
   paymentMethod: PaymentMethod | null
   // Só para Dinheiro: quanto o cliente entregou, como o operador digita (mascarado).
   amountReceivedText: string
+  // Pagamento misto: 1ª forma + valor; `paymentMethod` paga o resto.
+  splitting: boolean
+  partialMethod: PaymentMethod | null
+  partialAmountText: string
   // uuid da venda em andamento: gerado ao montar o carrinho e reusado em
   // qualquer reenvio, para a API nunca duplicar a venda (idempotência).
   saleUuid: string
@@ -17,16 +21,25 @@ interface CartState {
   remove: (productId: string) => void
   setPaymentMethod: (method: PaymentMethod) => void
   setAmountReceivedText: (text: string) => void
+  setSplitting: (splitting: boolean) => void
+  setPartialMethod: (method: PaymentMethod) => void
+  setPartialAmountText: (text: string) => void
   clear: () => void
   finish: (sale: Sale) => void
 }
 
 const newUuid = () => crypto.randomUUID()
+const emptyPayment = {
+  paymentMethod: null,
+  amountReceivedText: '',
+  splitting: false,
+  partialMethod: null,
+  partialAmountText: '',
+}
 
 export const useCartStore = create<CartState>((set) => ({
   items: [],
-  paymentMethod: null,
-  amountReceivedText: '',
+  ...emptyPayment,
   saleUuid: newUuid(),
   lastSale: null,
   add: (item) =>
@@ -54,8 +67,11 @@ export const useCartStore = create<CartState>((set) => ({
   remove: (productId) => set((state) => ({ items: state.items.filter((line) => line.productId !== productId) })),
   setPaymentMethod: (paymentMethod) => set({ paymentMethod }),
   setAmountReceivedText: (amountReceivedText) => set({ amountReceivedText }),
+  setSplitting: (splitting) =>
+    set(splitting ? { splitting } : { splitting, partialMethod: null, partialAmountText: '' }),
+  setPartialMethod: (partialMethod) => set({ partialMethod }),
+  setPartialAmountText: (partialAmountText) => set({ partialAmountText }),
   // Cancelar só descarta o carrinho — nenhum registro (03-regras-negocio § Venda).
-  clear: () => set({ items: [], paymentMethod: null, amountReceivedText: '', saleUuid: newUuid() }),
-  finish: (sale) =>
-    set({ items: [], paymentMethod: null, amountReceivedText: '', saleUuid: newUuid(), lastSale: sale }),
+  clear: () => set({ items: [], ...emptyPayment, saleUuid: newUuid() }),
+  finish: (sale) => set({ items: [], ...emptyPayment, saleUuid: newUuid(), lastSale: sale }),
 }))

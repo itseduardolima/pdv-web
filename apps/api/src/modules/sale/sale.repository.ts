@@ -10,11 +10,17 @@ export interface NewSaleItem {
   unitPriceCents: number
 }
 
+export interface NewSalePayment {
+  method: PaymentMethod
+  amountCents: number
+}
+
 export interface NewSale {
   uuid: string
   cashSessionId: string
   operatorId: string
   paymentMethod: PaymentMethod
+  payments: NewSalePayment[]
   totalCents: number
   amountReceivedCents: number | null
   changeCents: number | null
@@ -65,6 +71,7 @@ export class SaleRepository {
           changeCents: sale.changeCents,
           soldAt: sale.soldAt,
           items: { create: sale.items },
+          payments: { create: sale.payments.map((payment) => ({ ...payment, tenantId })) },
         },
         include: saleInclude,
       })

@@ -11,12 +11,26 @@ export const saleItemInputSchema = z.object({
     .positive('A quantidade deve ser maior que zero'),
 })
 
+// Pagamento misto: `partialPayment` é a parte paga numa 1ª forma, com valor
+// explícito; `paymentMethod` paga o resto. A API valida que as formas são
+// diferentes e que o valor fica entre 0 e o total.
+export const partialPaymentSchema = z.object({
+  method: paymentMethodSchema,
+  amountCents: z
+    .number({ invalid_type_error: 'Informe um valor válido' })
+    .int('Informe um valor válido')
+    .positive('O valor deve ser maior que zero'),
+})
+export type PartialPayment = z.infer<typeof partialPaymentSchema>
+
 export const createSaleSchema = z.object({
   uuid: z.string().uuid('Identificador da venda inválido'),
   items: z.array(saleItemInputSchema).min(1, 'Adicione ao menos um item ao carrinho'),
   paymentMethod: paymentMethodSchema,
-  // Só para Dinheiro e opcional: quanto o cliente entregou. A API calcula o
-  // troco e recusa se for menor que o total; em Cartão/Pix é ignorado.
+  partialPayment: partialPaymentSchema.optional(),
+  // Só para Dinheiro e opcional: quanto o cliente entregou pela parte em
+  // Dinheiro. A API calcula o troco e recusa se for menor que essa parte; em
+  // Cartão/Pix é ignorado.
   amountReceivedCents: z
     .number({ invalid_type_error: 'Informe um valor válido' })
     .int('Informe um valor válido')
@@ -38,6 +52,9 @@ export const saleItemSchema = z.object({
   unitPriceCents: cents,
 })
 
+export const salePaymentSchema = z.object({ method: paymentMethodSchema, amountCents: cents })
+export type SalePayment = z.infer<typeof salePaymentSchema>
+
 export const saleSchema = z.object({
   id: idSchema,
   uuid: z.string().uuid(),
@@ -45,6 +62,8 @@ export const saleSchema = z.object({
   operatorId: idSchema,
   operatorName: z.string(),
   paymentMethod: paymentMethodSchema,
+  // 1 ou 2 formas de pagamento; a soma é totalCents.
+  payments: z.array(salePaymentSchema).min(1).max(2),
   totalCents: cents,
   // Preenchidos só em venda em Dinheiro com valor recebido informado.
   amountReceivedCents: cents.nullable(),

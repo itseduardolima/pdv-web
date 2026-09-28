@@ -5,6 +5,7 @@ interface BuildLocalSaleInput {
   uuid: string
   items: CartItem[]
   paymentMethod: PaymentMethod
+  partialPayment?: { method: PaymentMethod; amountCents: number }
   amountReceivedCents: number | null
   changeCents: number | null
   totalCents: number
@@ -25,6 +26,12 @@ export function buildLocalSale(input: BuildLocalSaleInput): Sale {
     operatorId: input.operatorId,
     operatorName: input.operatorName,
     paymentMethod: input.paymentMethod,
+    payments: input.partialPayment
+      ? [
+          input.partialPayment,
+          { method: input.paymentMethod, amountCents: input.totalCents - input.partialPayment.amountCents },
+        ]
+      : [{ method: input.paymentMethod, amountCents: input.totalCents }],
     totalCents: input.totalCents,
     amountReceivedCents: input.amountReceivedCents,
     changeCents: input.changeCents,

@@ -31,7 +31,8 @@ export function matchesProductSearch(
 }
 
 // Troco exibido ao vivo enquanto o operador digita. Só orientação visual:
-// quem valida e grava o troco é a API. null = sem troco a mostrar.
+// quem valida e grava o troco é a API. null = sem troco a mostrar. Só existe
+// na venda com uma forma só (no pagamento misto o campo não aparece).
 export function changeForCash(
   paymentMethod: PaymentMethod | null,
   amountReceivedCents: number,
