@@ -27,7 +27,14 @@ export function SaleHistoryEntry({ sale, onSelect }: { sale: Sale; onSelect: (sa
             {itemsLabel} · {sale.operatorName} · {salePaymentLabel(sale.payments)}
           </p>
         </div>
-        <span className="shrink-0 font-body text-sm font-bold">{formatCurrency(sale.totalCents)}</span>
+        {sale.voidedAt && (
+          <span className="shrink-0 rounded-pill bg-danger px-2.5 py-0.5 font-body text-[11px] font-semibold text-surface">
+            Anulada
+          </span>
+        )}
+        <span className={`shrink-0 font-body text-sm font-bold ${sale.voidedAt ? 'text-ink/40 line-through' : ''}`}>
+          {formatCurrency(sale.totalCents)}
+        </span>
         <BackIcon aria-hidden width="16" height="16" className="shrink-0 rotate-180 text-ink/30" />
       </button>
     </li>

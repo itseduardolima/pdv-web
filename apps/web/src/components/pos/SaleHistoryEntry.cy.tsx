@@ -9,6 +9,9 @@ const sale = {
   paymentMethod: 'PIX' as const,
   payments: [{ method: 'PIX' as const, amountCents: 8340 }],
   totalCents: 8340,
+  voidable: true,
+  voidedAt: null as string | null,
+  voidReason: null as string | null,
   amountReceivedCents: null,
   changeCents: null,
   soldAt: new Date(2026, 8, 12, 16, 42).toISOString(),
@@ -72,5 +75,16 @@ describe('SaleHistoryEntry', () => {
     )
     cy.contains('4 itens · Karol · Cartão').should('exist')
     cy.contains('Cartão + Cartão').should('not.exist')
+  })
+
+  it('flags a voided sale and strikes its total', () => {
+    const voided = { ...sale, voidable: false, voidedAt: new Date(2026, 8, 12, 17, 0).toISOString() }
+    cy.mount(
+      <ul>
+        <SaleHistoryEntry sale={voided} onSelect={() => {}} />
+      </ul>,
+    )
+    cy.contains('Anulada')
+    cy.contains('span', 'R$').should('have.class', 'line-through')
   })
 })

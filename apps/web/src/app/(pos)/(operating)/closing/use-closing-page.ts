@@ -8,6 +8,7 @@ import { useCloseCashSession } from '@/hooks/queries/use-close-cash-session'
 import { useCurrentCashSession } from '@/hooks/queries/use-current-cash-session'
 import { useSaveState } from '@/hooks/use-save-state'
 import { useSession } from '@/hooks/use-session'
+import { useVoidSaleFlow } from '@/hooks/use-void-sale-flow'
 import { apiErrorMessage } from '@/lib/utils/api-error-message'
 import { PAYMENT_METHODS, percentOf } from '@/lib/utils/payment-method'
 
@@ -19,6 +20,7 @@ export function useClosingPage() {
   const registers = useCashSessionRegisters()
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null)
+  const voiding = useVoidSaleFlow(setSelectedSale)
 
   // HU 4.7: Administrador pode fechar QUALQUER caixa aberto, não só o
   // próprio — a lista mostra todos os abertos (o dele incluso, se tiver),
@@ -94,6 +96,10 @@ export function useClosingPage() {
     handleSelectRegister,
     selectedSale,
     handleSelectSale: setSelectedSale,
-    handleCloseSaleDetails: () => setSelectedSale(null),
+    handleCloseSaleDetails: () => {
+      voiding.resetVoid()
+      setSelectedSale(null)
+    },
+    voiding,
   }
 }

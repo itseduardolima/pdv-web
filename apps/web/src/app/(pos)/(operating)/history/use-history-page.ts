@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Sale, SalesHistoryPeriod } from '@pdv/shared'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
+import { useVoidSaleFlow } from '@/hooks/use-void-sale-flow'
 import { useSalesHistory } from '@/hooks/queries/use-sales-history'
 import { apiErrorMessage } from '@/lib/utils/api-error-message'
 
@@ -18,6 +19,7 @@ export function useHistoryPage() {
   const debouncedSearch = useDebouncedValue(search)
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null)
 
+  const voiding = useVoidSaleFlow(setSelectedSale)
   const history = useSalesHistory({
     period,
     date: period === 'day' && date ? date : undefined,
@@ -46,6 +48,10 @@ export function useHistoryPage() {
     errorMessage: apiErrorMessage(history.error),
     selectedSale,
     handleSelectSale: setSelectedSale,
-    handleCloseSaleDetails: () => setSelectedSale(null),
+    handleCloseSaleDetails: () => {
+      voiding.resetVoid()
+      setSelectedSale(null)
+    },
+    voiding,
   }
 }

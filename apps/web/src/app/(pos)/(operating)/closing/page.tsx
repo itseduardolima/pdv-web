@@ -131,7 +131,14 @@ export default function ClosingPage() {
         </>
       )}
 
-      <SaleDetailsDialog sale={page.selectedSale} onOpenChange={(open) => !open && page.handleCloseSaleDetails()} />
+      <SaleDetailsDialog
+        sale={page.selectedSale}
+        onOpenChange={(open) => !open && page.handleCloseSaleDetails()}
+        canVoid={page.voiding.canVoid}
+        onVoid={page.voiding.handleVoid}
+        voidState={page.voiding.voidState}
+        voidError={page.voiding.voidError ?? undefined}
+      />
     </>
   )
 }

@@ -1,7 +1,10 @@
 'use client'
 
 import * as Dialog from '@radix-ui/react-dialog'
+import { useEffect, useState } from 'react'
 import type { Sale } from '@pdv/shared'
+import { Button, type ButtonState } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { formatCurrency } from '@/lib/utils/format-currency'
 import { formatDayLong, formatTime } from '@/lib/utils/format-date'
 import { salePaymentLabel } from '@/lib/utils/payment-method'
@@ -10,12 +13,35 @@ import { PaymentMethodIllustration } from './PaymentMethodIllustration'
 interface SaleDetailsDialogProps {
   sale: Sale | null
   onOpenChange: (open: boolean) => void
+  // Anular venda: só Administrador (`canVoid`) e só se a API disse que a
+  // venda ainda é anulável (`sale.voidable`).
+  canVoid?: boolean
+  onVoid?: (sale: Sale, reason: string) => void
+  voidState?: ButtonState
+  voidError?: string
 }
 
 // Histórico de Vendas: a linha da lista só mostra o resumo (hora, forma de
 // pagamento, total) — clicar abre aqui o detalhe item a item, preço
 // congelado no momento da venda (SaleItem.productName/unitPriceCents).
-export function SaleDetailsDialog({ sale, onOpenChange }: SaleDetailsDialogProps) {
+export function SaleDetailsDialog({
+  sale,
+  onOpenChange,
+  canVoid = false,
+  onVoid,
+  voidState = 'idle',
+  voidError,
+}: SaleDetailsDialogProps) {
+  const [voiding, setVoiding] = useState(false)
+  const [reason, setReason] = useState('')
+  const saleId = sale?.id
+
+  // Trocou de venda (ou fechou): volta ao estado inicial, sem motivo antigo.
+  useEffect(() => {
+    setVoiding(false)
+    setReason('')
+  }, [saleId])
+
   return (
     <Dialog.Root open={sale !== null} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -36,6 +62,17 @@ export function SaleDetailsDialog({ sale, onOpenChange }: SaleDetailsDialogProps
                   </Dialog.Description>
                 </div>
               </div>
+
+              {sale.voidedAt && (
+                <p
+                  role="status"
+                  className="break-words rounded-input bg-canvas p-3 font-body text-sm [overflow-wrap:anywhere]"
+                  data-cy="sale-voided"
+                >
+                  <span className="font-bold text-danger">Venda anulada</span>
+                  {sale.voidReason && <span className="text-ink/60"> · {sale.voidReason}</span>}
+                </p>
+              )}
 
               <ul className="flex min-h-0 flex-1 flex-col divide-y divide-border overflow-y-auto">
                 {sale.items.map((item, index) => (
@@ -74,6 +111,44 @@ export function SaleDetailsDialog({ sale, onOpenChange }: SaleDetailsDialogProps
                   <span>{formatCurrency(sale.totalCents)}</span>
                 </div>
               </div>
+
+              {canVoid && sale.voidable && onVoid && !voiding && (
+                <button
+                  type="button"
+                  onClick={() => setVoiding(true)}
+                  className="rounded-pill border-[1.5px] border-danger bg-surface px-4 py-2 font-body text-xs font-semibold text-danger"
+                >
+                  Anular venda
+                </button>
+              )}
+
+              {canVoid && sale.voidable && onVoid && voiding && (
+                <div className="flex flex-col gap-2" data-cy="void-form">
+                  <Input
+                    label="Motivo da anulação"
+                    placeholder="Ex.: Cliente desistiu da compra"
+                    name="voidReason"
+                    maxLength={200}
+                    value={reason}
+                    error={voidError}
+                    hint="Anular devolve o estoque e tira a venda dos totais. Não dá para desfazer."
+                    onChange={(event) => setReason(event.target.value)}
+                  />
+                  <div className="flex flex-col gap-2 sm:flex-row-reverse">
+                    <Button
+                      size="sm"
+                      state={voidState}
+                      onClick={() => onVoid(sale, reason)}
+                      className="!bg-danger !text-surface"
+                    >
+                      Confirmar anulação
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={() => setVoiding(false)}>
+                      Voltar
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               <Dialog.Close asChild>
                 <button

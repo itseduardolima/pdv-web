@@ -1,10 +1,11 @@
-import { Body, Controller, Get, HttpCode, Post, Query } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, Param, Post, Query } from '@nestjs/common'
 import {
   ApiBadRequestResponse,
   ApiBody,
   ApiConflictResponse,
   ApiCookieAuth,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiTags,
@@ -14,17 +15,20 @@ import {
   saleSchema,
   syncSalesResultSchema,
   syncSalesSchema,
+  voidSaleSchema,
   type Sale,
   type SyncSalesResult,
 } from '@pdv/shared'
 import { z } from 'zod'
 import { CurrentOperator } from '../../common/decorators/current-operator.decorator'
 import { CurrentTenant } from '../../common/decorators/current-tenant.decorator'
+import { Roles } from '../../common/decorators/roles.decorator'
 import { apiErrorOpenApi, openApi } from '../../common/openapi'
 import { SESSION_COOKIE, type OperatorSession } from '../../common/types/request'
 import { CreateSaleDto } from './dto/create-sale.dto'
 import { SalesHistoryQueryDto } from './dto/sales-history-query.dto'
 import { SyncSalesDto } from './dto/sync-sales.dto'
+import { VoidSaleDto } from './dto/void-sale.dto'
 import { SaleService } from './sale.service'
 
 @ApiTags('sales')
@@ -70,6 +74,25 @@ export class SaleController {
     @Body() body: SyncSalesDto,
   ): Promise<SyncSalesResult> {
     return this.sales.syncBatch(tenantId, operator, body)
+  }
+
+  // Anula (nunca apaga) uma venda de caixa aberto e devolve o estoque.
+  @Post(':id/void')
+  @Roles('ADMIN')
+  @HttpCode(200)
+  @ApiBody({ schema: openApi(voidSaleSchema) })
+  @ApiOkResponse({ schema: openApi(saleSchema), description: 'Venda anulada (marcada, não apagada)' })
+  @ApiBadRequestResponse({ schema: apiErrorOpenApi, description: 'VALIDATION — motivo obrigatório' })
+  @ApiForbiddenResponse({ schema: apiErrorOpenApi, description: 'ADMIN_ONLY' })
+  @ApiNotFoundResponse({ schema: apiErrorOpenApi, description: 'SALE_NOT_FOUND' })
+  @ApiConflictResponse({ schema: apiErrorOpenApi, description: 'ALREADY_VOIDED | CASH_SESSION_CLOSED' })
+  void(
+    @CurrentTenant() tenantId: string,
+    @CurrentOperator() operator: OperatorSession,
+    @Param('id') id: string,
+    @Body() body: VoidSaleDto,
+  ): Promise<Sale> {
+    return this.sales.void(tenantId, id, operator, body)
   }
 
   // Tela Histórico de Vendas: Admin e Operador (sem @Roles) — diferente de
