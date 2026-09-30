@@ -76,70 +76,13 @@ pnpm --filter api db:studio     # Prisma Studio (inspecionar o banco local)
 pnpm --filter api db:migrate    # nova migration em desenvolvimento
 ```
 
-## Deploy na VPS (produção)
-
-Pré-requisitos na VPS: Docker + Docker Compose, portas 80 e 443 livres, e o
-DNS apontando para o IP da VPS:
-
-| Registro | Nome                      | Uso                                           |
-| -------- | ------------------------- | --------------------------------------------- |
-| A        | `app.seudominio.com.br`   | web (loja padrão)                             |
-| A        | `*.app.seudominio.com.br` | web — um subdomínio por loja (`karol.app...`) |
-| A        | `api.seudominio.com.br`   | API                                           |
-| A        | `media.seudominio.com.br` | fotos/logos (MinIO)                           |
-
-```bash
-git clone <repo> pdv-web && cd pdv-web
-cp .env.example .env            # preencher TUDO com valores reais
-./scripts/deploy-check.sh       # barra .env ausente ou com placeholder
-docker compose up -d --build    # web + api + postgres + minio + caddy
-docker compose logs -f api      # aguardar "Nest application successfully started"
-
-# primeira loja (ver docs/specs/07-multitenant-whitelabel.md § Onboarding)
-docker compose exec -e SEED_TENANT_SLUG=karol -e SEED_TENANT_NAME='Mercadinho da Karol' \
-  -e SEED_ADMIN_NAME=Karol -e SEED_ADMIN_PIN=4321 api node dist/seed/prisma/seed.js
-```
-
-Depois disso `https://karol.app.seudominio.com.br` abre com certificado
-Let's Encrypt emitido na primeira visita (Caddy `on_demand_tls`: só emite
-para hosts que a API reconhece como loja, via `GET /tenant/tls-check`). Um
-domínio próprio do cliente funciona do mesmo jeito: CNAME para a VPS +
-`SEED_TENANT_DOMAIN=caixa.mercadinho.com.br` no seed.
-
-O que o compose garante: Postgres e MinIO nunca expostos fora da rede
-interna; a API conecta ao banco como usuário **sem superusuário**
-(`APP_DB_USER`, criado por `infra/postgres/init-app-role.sh` na primeira
-subida), condição para a Row-Level Security valer; migrations rodam no
-`CMD` da API antes de subir. Monitoramento, backup/restore e rollback: ver
-[`docs/specs/09-operacao.md`](./docs/specs/09-operacao.md).
-
-Alerta de espaço em disco (09-operacao § 2) e backup diário do banco
-(09-operacao § 4) — registrar no crontab da VPS (o comportamento padrão do
-cron já envia por e-mail qualquer saída de um job, se o sistema tiver
-MTA/MAILTO configurado):
-
-```cron
-0 * * * *  /caminho/para/pdv-web/scripts/disk-space-check.sh
-0 3 * * *  BACKUP_ENCRYPTION_PASSPHRASE=... BACKUP_S3_BUCKET=... /caminho/para/pdv-web/scripts/backup-db.sh
-```
-
-`backup-db.sh` requer `aws`-cli instalado na VPS (`apt install awscli`) e
-um destino **fora** desta VPS (bucket S3 de verdade, ou qualquer serviço
-S3-compatível via `BACKUP_S3_ENDPOINT_URL`). Sem `BACKUP_ENCRYPTION_PASSPHRASE`
-ou `BACKUP_S3_BUCKET` o script recusa rodar — nunca sobe um backup sem
-criptografia, nem grava só no disco local. Restaurar: ver `09-operacao.md` § 4.
-
-Atualizar uma versão: `git pull && ./scripts/deploy-check.sh && docker compose up -d --build`.
-Ambiente local continua em `docker-compose.dev.yml` (defaults `*.localhost`
-e senhas triviais — nunca use esses defaults na VPS).
-
 ## Onde está o quê
 
 ```
 apps/web/        Next.js — frontend/PWA, nunca acessa banco direto
 apps/api/         NestJS — toda regra de negócio, Prisma/PostgreSQL
 packages/shared/  schemas Zod compartilhados (contrato de API)
-docs/specs/       arquitetura, regras de negócio, padrões, segurança, operação
+docs/specs/       arquitetura, regras de negócio, padrões, segurança
 docs/scrum/       backlog e plano de sprints
 TODO.md           checklist vivo do que está feito e o que falta
 ```
