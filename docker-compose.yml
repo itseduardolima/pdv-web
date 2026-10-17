@@ -2,25 +2,6 @@
 # triviais). Em produção o .env é obrigatório — rode ./scripts/deploy-check.sh
 # antes de `docker compose up`, ele barra .env ausente ou com placeholder.
 services:
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    ports:
-      - '80:80'
-      - '443:443'
-    environment:
-      ACME_EMAIL: ${ACME_EMAIL:-internal@localhost}
-      API_DOMAIN: ${API_DOMAIN:-api.localhost}
-      MEDIA_DOMAIN: ${MEDIA_DOMAIN:-media.localhost}
-      PLATFORM_HOST: ${PLATFORM_HOST:-admin.app.localhost}
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - web
-      - api
-
   web:
     build:
       context: .
@@ -35,9 +16,13 @@ services:
     restart: unless-stopped
     environment:
       API_INTERNAL_URL: http://api:3001
+      HOSTNAME: '0.0.0.0'
       # Lido em runtime (lib/env.ts, server-side) pra reconhecer o host do
       # painel Superadmin — precisa bater com o PLATFORM_HOST da api.
       PLATFORM_HOST: ${PLATFORM_HOST:-admin.app.localhost}
+    networks:
+      - default
+      - edge
     depends_on:
       - api
 
@@ -57,6 +42,9 @@ services:
       STORAGE_PUBLIC_URL: https://${MEDIA_DOMAIN:-media.localhost}/${STORAGE_BUCKET:-pdv-media}
       # Link dos e-mails de PIN aponta para a loja em HTTPS.
       WEB_ORIGIN_TEMPLATE: https://{host}
+    networks:
+      - default
+      - edge
     depends_on:
       postgres:
         condition: service_healthy
@@ -90,11 +78,16 @@ services:
     environment:
       MINIO_ROOT_USER: ${STORAGE_ACCESS_KEY:-pdv}
       MINIO_ROOT_PASSWORD: ${STORAGE_SECRET_KEY:-pdvpdvpdv}
+    networks:
+      - default
+      - edge
     volumes:
       - minio_data:/data
 
+networks:
+  edge:
+    external: true
+
 volumes:
-  caddy_data:
-  caddy_config:
   postgres_data:
   minio_data:

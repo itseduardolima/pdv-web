@@ -193,3 +193,7 @@ meu PIN" (ver `03-regras-negocio.md` § Autenticação). Em produção
   "quando alguém perceber e tiver tempo", não um SLA de minutos — definir
   isso é decisão comercial, não técnica, e vem antes de qualquer
   automação de alerta mais sofisticada.
+
+## Proxy compartilhado
+
+O Caddy não faz parte deste compose: na VPS ele é a stack `/root/proxy`, compartilhada com outros apps. Este app publica o próprio site em `infra/caddy/pdv.caddy` (`scripts/publish-caddy-site.sh` no deploy) e entra na rede externa `edge` (web, api e minio, alcançados pelo nome do container). O web precisa de `HOSTNAME=0.0.0.0` para escutar na rede `edge`.

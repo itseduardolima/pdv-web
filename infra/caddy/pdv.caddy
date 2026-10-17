@@ -1,0 +1,23 @@
+# Loja: qualquer host que a API reconheça (subdomínio ou domínio próprio).
+https:// {
+	tls {
+		on_demand
+	}
+	reverse_proxy pdv-web-web-1:3000
+}
+
+{$API_DOMAIN} {
+	reverse_proxy pdv-web-api-1:3001
+}
+
+# Fotos/logos servidas direto do MinIO (nunca pela API, ver 08-seguranca § 6).
+{$MEDIA_DOMAIN} {
+	reverse_proxy pdv-web-minio-1:9000
+}
+
+# Painel Superadmin (Épico 13): host fixo conhecido de antemão (env), nunca
+# passa pelo tenant/tls-check — cai no bloco genérico acima e nunca teria
+# certificado, já que resolveByHost só reconhece tenant.
+{$PLATFORM_HOST} {
+	reverse_proxy pdv-web-web-1:3000
+}
