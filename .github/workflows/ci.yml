@@ -181,6 +181,7 @@ jobs:
             git reset --hard origin/main
             ./scripts/deploy-check.sh
             docker compose up -d --build
+            ./scripts/publish-caddy-site.sh pdv infra/caddy/pdv.caddy
             # --build sem limpeza deixa imagem/camada órfã a cada deploy —
             # exatamente o tipo de crescimento silencioso de disco que
             # scripts/disk-space-check.sh (9.8) existe pra pegar, então
