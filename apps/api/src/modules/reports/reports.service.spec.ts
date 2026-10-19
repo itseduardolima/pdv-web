@@ -13,9 +13,10 @@ function sale(
   operatorId = 'op1',
   operatorName = 'Karol',
   items: ReportSaleRow['items'] = [],
+  discountCents = 0,
 ): ReportSaleRow {
   const payments = typeof payment === 'string' ? [{ method: payment, amountCents: totalCents }] : payment
-  return { soldAt: new Date(soldAt), totalCents, payments, operatorId, operatorName, items }
+  return { soldAt: new Date(soldAt), totalCents, discountCents, payments, operatorId, operatorName, items }
 }
 
 function makeService(
@@ -217,6 +218,7 @@ describe('ReportsService.summary', () => {
         productName: `Produto ${productId}`,
         quantity,
         unitPriceCents,
+        discountCents: 0,
       })
       const { service } = makeService(
         [
@@ -262,6 +264,7 @@ describe('ReportsService.summary', () => {
         productName: productId,
         quantity,
         unitPriceCents: 100,
+        discountCents: 0,
       })
       const { service } = makeService(
         [sale('2026-09-13T12:00:00.000Z', 0, 'CASH', 'op1', 'Karol', [item('sold-a-lot', 50)])],
@@ -284,6 +287,7 @@ describe('ReportsService.summary', () => {
         productName: productId,
         quantity,
         unitPriceCents: 100,
+        discountCents: 0,
       })
       const { service } = makeService(
         [sale('2026-09-13T12:00:00.000Z', 0, 'CASH', 'op1', 'Karol', [item('barely-sold', 2), item('sold-a-lot', 20)])],
@@ -297,5 +301,50 @@ describe('ReportsService.summary', () => {
       const summary = await service.summary('t1', today, now)
       expect(summary.stagnantProducts.map((p) => p.productId)).toEqual(['barely-sold'])
     })
+  })
+})
+
+describe('ReportsService.summary — desconto', () => {
+  const item = (productId: string, unitPriceCents: number, discountCents: number) => ({
+    productId,
+    productName: productId,
+    quantity: 1,
+    unitPriceCents,
+    discountCents,
+  })
+
+  it('sums item revenue net of the discount', async () => {
+    const { service } = makeService([
+      sale('2026-09-13T12:00:00.000Z', 1700, 'CASH', 'op1', 'Karol', [item('a', 1000, 200), item('b', 1000, 100)], 300),
+    ])
+    const summary = await service.summary('t1', today, now)
+    expect(summary.topProducts.map((p) => [p.productId, p.totalCents])).toEqual([
+      ['b', 900],
+      ['a', 800],
+    ])
+  })
+
+  it('reports total discounts, sales with discount and the split by operator', async () => {
+    const { service } = makeService([
+      sale('2026-09-13T12:00:00.000Z', 900, 'CASH', 'op1', 'Karol', [], 100),
+      sale('2026-09-13T13:00:00.000Z', 800, 'PIX', 'op2', 'Davi', [], 500),
+      sale('2026-09-13T14:00:00.000Z', 700, 'PIX', 'op2', 'Davi', [], 50),
+      sale('2026-09-13T15:00:00.000Z', 600, 'PIX', 'op1', 'Karol', [], 0),
+    ])
+    const summary = await service.summary('t1', today, now)
+    expect(summary.discounts).toEqual({
+      totalCents: 650,
+      salesCount: 3,
+      byOperator: [
+        { operatorId: 'op2', name: 'Davi', totalCents: 550, salesCount: 2 },
+        { operatorId: 'op1', name: 'Karol', totalCents: 100, salesCount: 1 },
+      ],
+    })
+  })
+
+  it('returns an empty indicator when no sale had a discount', async () => {
+    const { service } = makeService([sale('2026-09-13T12:00:00.000Z', 500, 'CASH')])
+    const summary = await service.summary('t1', today, now)
+    expect(summary.discounts).toEqual({ totalCents: 0, salesCount: 0, byOperator: [] })
   })
 })

@@ -7,6 +7,7 @@ export interface DashboardSaleItemRow {
   productName: string
   quantity: number
   unitPriceCents: number
+  discountCents: number
 }
 
 export interface DashboardSaleRow {
@@ -43,7 +44,9 @@ export class DashboardRepository {
         soldAt: true,
         totalCents: true,
         payments: { select: { method: true, amountCents: true } },
-        items: { select: { productId: true, productName: true, quantity: true, unitPriceCents: true } },
+        items: {
+          select: { productId: true, productName: true, quantity: true, unitPriceCents: true, discountCents: true },
+        },
       },
       orderBy: { soldAt: 'asc' },
     })

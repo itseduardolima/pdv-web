@@ -26,6 +26,12 @@ export function toSale(row: SaleRow): Sale {
     operatorName: row.operator.name,
     paymentMethod: row.paymentMethod,
     payments: row.payments.map((payment) => ({ method: payment.method, amountCents: payment.amountCents })),
+    subtotalCents: row.subtotalCents,
+    discountCents: row.discountCents,
+    discount:
+      row.discountType !== null && row.discountValue !== null
+        ? { type: row.discountType, value: row.discountValue }
+        : null,
     totalCents: row.totalCents,
     amountReceivedCents: row.amountReceivedCents,
     changeCents: row.changeCents,
@@ -38,6 +44,7 @@ export function toSale(row: SaleRow): Sale {
       productName: item.productName,
       quantity: item.quantity,
       unitPriceCents: item.unitPriceCents,
+      discountCents: item.discountCents,
     })),
   }
 }

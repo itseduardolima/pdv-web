@@ -84,12 +84,76 @@ describe('SaleService.create', () => {
         paymentMethod: 'PIX',
         totalCents: 2 * 399 + 2890,
         items: [
-          { productId: 'p1', productName: 'Cerveja Lata 350ml', quantity: 2, unitPriceCents: 399 },
-          { productId: 'p2', productName: 'Arroz 5kg', quantity: 1, unitPriceCents: 2890 },
+          { productId: 'p1', productName: 'Cerveja Lata 350ml', quantity: 2, unitPriceCents: 399, discountCents: 0 },
+          { productId: 'p2', productName: 'Arroz 5kg', quantity: 1, unitPriceCents: 2890, discountCents: 0 },
         ],
       }),
     )
     expect(sale).toMatchObject({ uuid, totalCents: 3688, operatorName: 'Karol', paymentMethod: 'PIX' })
+  })
+
+  it('applies the discount, spreads it over the items and charges the net total', async () => {
+    const { service, repository } = makeService()
+    const sale = await service.create('t1', operator, { ...input, discount: { type: 'AMOUNT', value: 688 } })
+    expect(repository.createWithStockDebit).toHaveBeenCalledWith(
+      't1',
+      expect.objectContaining({
+        subtotalCents: 3688,
+        discountCents: 688,
+        discountType: 'AMOUNT',
+        discountValue: 688,
+        totalCents: 3000,
+        payments: [{ method: 'PIX', amountCents: 3000 }],
+      }),
+    )
+    const items = repository.createWithStockDebit.mock.calls[0][1].items as { discountCents: number }[]
+    expect(items.reduce((sum, item) => sum + item.discountCents, 0)).toBe(688)
+    expect(sale).toMatchObject({
+      subtotalCents: 3688,
+      discountCents: 688,
+      totalCents: 3000,
+      discount: { type: 'AMOUNT', value: 688 },
+    })
+  })
+
+  it('computes a percentage discount on the subtotal', async () => {
+    const { service, repository } = makeService()
+    await service.create('t1', operator, { ...input, discount: { type: 'PERCENT', value: 1000 } })
+    expect(repository.createWithStockDebit).toHaveBeenCalledWith(
+      't1',
+      expect.objectContaining({ discountCents: 369, totalCents: 3319, discountType: 'PERCENT', discountValue: 1000 }),
+    )
+  })
+
+  it('uses the discounted total for split payments and change', async () => {
+    const { service, repository } = makeService()
+    await service.create('t1', operator, {
+      ...input,
+      paymentMethod: 'CASH',
+      discount: { type: 'AMOUNT', value: 688 },
+      partialPayments: [{ method: 'PIX', amountCents: 1000 }],
+      amountReceivedCents: 2500,
+    })
+    expect(repository.createWithStockDebit).toHaveBeenCalledWith(
+      't1',
+      expect.objectContaining({
+        totalCents: 3000,
+        payments: [
+          { method: 'PIX', amountCents: 1000 },
+          { method: 'CASH', amountCents: 2000 },
+        ],
+        amountReceivedCents: 2500,
+        changeCents: 500,
+      }),
+    )
+  })
+
+  it('rejects a discount that is not below the subtotal without touching stock', async () => {
+    const { service, repository } = makeService()
+    await expect(
+      service.create('t1', operator, { ...input, discount: { type: 'AMOUNT', value: 3688 } }),
+    ).rejects.toMatchObject({ code: 'DISCOUNT_TOO_HIGH', statusCode: 400 })
+    expect(repository.createWithStockDebit).not.toHaveBeenCalled()
   })
 
   it('is idempotent: an existing uuid returns the stored sale without creating or debiting again', async () => {

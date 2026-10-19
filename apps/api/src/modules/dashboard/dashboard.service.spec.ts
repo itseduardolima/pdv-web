@@ -83,6 +83,7 @@ describe('DashboardService.summary', () => {
       productName: `Produto ${productId}`,
       quantity,
       unitPriceCents,
+      discountCents: 0,
     })
     const { service } = makeService([
       sale('2026-09-12T12:00:00.000Z', 0, 'CASH', [item('a', 2, 100), item('b', 5, 10)]),
@@ -109,5 +110,21 @@ describe('DashboardService.summary', () => {
       new Date('2026-09-07T00:00:00.000Z'),
       new Date('2026-09-14T00:00:00.000Z'),
     )
+  })
+})
+
+describe('DashboardService.summary — desconto', () => {
+  it('ranks products by net value, after the discount spread over the items', async () => {
+    const { service } = makeService([
+      sale('2026-09-12T12:00:00.000Z', 1700, 'CASH', [
+        { productId: 'a', productName: 'Produto a', quantity: 1, unitPriceCents: 1000, discountCents: 200 },
+        { productId: 'b', productName: 'Produto b', quantity: 1, unitPriceCents: 1000, discountCents: 100 },
+      ]),
+    ])
+    const summary = await service.summary('t1', now)
+    expect(summary.topProductsToday).toEqual([
+      expect.objectContaining({ productId: 'b', totalCents: 900 }),
+      expect.objectContaining({ productId: 'a', totalCents: 800 }),
+    ])
   })
 })

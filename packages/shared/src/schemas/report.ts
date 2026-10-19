@@ -83,6 +83,21 @@ export const reportStagnantProductSchema = z.object({
 })
 export type ReportStagnantProduct = z.infer<typeof reportStagnantProductSchema>
 
+export const reportDiscountOperatorSchema = z.object({
+  operatorId: z.string(),
+  name: z.string(),
+  totalCents: cents,
+  salesCount: z.number().int().positive(),
+})
+export type ReportDiscountOperator = z.infer<typeof reportDiscountOperatorSchema>
+
+export const reportDiscountsSchema = z.object({
+  totalCents: cents,
+  salesCount: z.number().int().nonnegative(),
+  byOperator: z.array(reportDiscountOperatorSchema),
+})
+export type ReportDiscounts = z.infer<typeof reportDiscountsSchema>
+
 export const REPORT_TOP_PRODUCTS = 5
 export const REPORT_STAGNANT_PRODUCTS = 5
 // HU 12.7: "parado" = vendeu isso ou menos unidades no período.
@@ -107,6 +122,7 @@ export const reportSummarySchema = z.object({
   months: z.array(reportMonthSchema),
   topProducts: z.array(reportTopProductSchema),
   byOperator: z.array(reportOperatorSchema),
+  discounts: reportDiscountsSchema,
   stagnantProducts: z.array(reportStagnantProductSchema),
 })
 export type ReportSummary = z.infer<typeof reportSummarySchema>

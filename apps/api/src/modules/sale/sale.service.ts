@@ -15,6 +15,7 @@ import type { OperatorSession } from '../../common/types/request'
 import { CashSessionService } from '../cash-session/cash-session.service'
 import { TenantService } from '../tenant/tenant.service'
 import { toSale } from './sale.mapper'
+import { allocateDiscount, computeDiscount } from './sale-discount'
 import {
   SaleNotVoidableError,
   SaleRepository,
@@ -51,7 +52,7 @@ export class SaleService {
     )
     const byId = new Map(products.map((product) => [product.id, product]))
 
-    const items: NewSaleItem[] = requested.map((item) => {
+    const lines = requested.map((item) => {
       const product = byId.get(item.productId)
       if (!product) {
         throw new NotFoundError('PRODUCT_NOT_FOUND', 'Um dos produtos do carrinho não existe mais.', {
@@ -67,7 +68,14 @@ export class SaleService {
       }
     })
 
-    const totalCents = items.reduce((sum, item) => sum + item.quantity * item.unitPriceCents, 0)
+    const subtotalCents = lines.reduce((sum, line) => sum + line.quantity * line.unitPriceCents, 0)
+    const discount = computeDiscount(subtotalCents, input.discount)
+    const lineDiscounts = allocateDiscount(
+      lines.map((line) => line.quantity * line.unitPriceCents),
+      discount.discountCents,
+    )
+    const items: NewSaleItem[] = lines.map((line, index) => ({ ...line, discountCents: lineDiscounts[index] ?? 0 }))
+    const totalCents = subtotalCents - discount.discountCents
     const payments = splitPayments(input, totalCents)
     const change = computeChange(payments, input.amountReceivedCents)
 
@@ -78,6 +86,10 @@ export class SaleService {
         operatorId: operator.id,
         paymentMethod: input.paymentMethod,
         payments,
+        subtotalCents,
+        discountCents: discount.discountCents,
+        discountType: discount.discountType,
+        discountValue: discount.discountValue,
         totalCents,
         amountReceivedCents: change.amountReceivedCents,
         changeCents: change.changeCents,

@@ -7,6 +7,7 @@ import {
   type ReportDay,
   type ReportHour,
   type ReportMonth,
+  type ReportDiscounts,
   type ReportOperator,
   type ReportStagnantProduct,
   type ReportSummary,
@@ -99,6 +100,7 @@ export class ReportsService {
       months,
       topProducts,
       byOperator,
+      discounts: summarizeDiscounts(sales),
       stagnantProducts,
     }
   }
@@ -193,7 +195,7 @@ function rankTopProducts(sales: ReportSaleRow[]): RankedProduct[] {
         totalCents: 0,
       }
       current.quantity += item.quantity
-      current.totalCents += item.quantity * item.unitPriceCents
+      current.totalCents += item.quantity * item.unitPriceCents - item.discountCents
       byProduct.set(item.productId, current)
     }
   }
@@ -242,4 +244,26 @@ function rankStagnantProducts(
     .filter((p) => p.quantitySold <= REPORT_STAGNANT_THRESHOLD_UNITS)
     .sort((a, b) => a.quantitySold - b.quantitySold)
     .slice(0, REPORT_STAGNANT_PRODUCTS)
+}
+
+function summarizeDiscounts(sales: ReportSaleRow[]): ReportDiscounts {
+  const byOperator = new Map<string, { name: string; totalCents: number; salesCount: number }>()
+  let totalCents = 0
+  let salesCount = 0
+  for (const sale of sales) {
+    if (sale.discountCents === 0) continue
+    totalCents += sale.discountCents
+    salesCount += 1
+    const current = byOperator.get(sale.operatorId) ?? { name: sale.operatorName, totalCents: 0, salesCount: 0 }
+    current.totalCents += sale.discountCents
+    current.salesCount += 1
+    byOperator.set(sale.operatorId, current)
+  }
+  return {
+    totalCents,
+    salesCount,
+    byOperator: [...byOperator.entries()]
+      .map(([operatorId, v]) => ({ operatorId, ...v }))
+      .sort((a, b) => b.totalCents - a.totalCents),
+  }
 }

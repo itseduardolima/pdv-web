@@ -26,10 +26,29 @@ export const partialPaymentSchema = z.object({
 })
 export type PartialPayment = z.infer<typeof partialPaymentSchema>
 
+export const discountTypeSchema = z.enum(['AMOUNT', 'PERCENT'])
+export type DiscountType = z.infer<typeof discountTypeSchema>
+export const MAX_DISCOUNT_PERCENT_BASIS_POINTS = 9999
+
+export const discountInputSchema = z
+  .object({
+    type: discountTypeSchema,
+    value: z
+      .number({ invalid_type_error: 'Informe um valor de desconto válido' })
+      .int('Informe um valor de desconto válido')
+      .positive('O desconto deve ser maior que zero'),
+  })
+  .refine((d) => d.type !== 'PERCENT' || d.value <= MAX_DISCOUNT_PERCENT_BASIS_POINTS, {
+    message: 'A porcentagem de desconto deve ser menor que 100%',
+    path: ['value'],
+  })
+export type DiscountInput = z.infer<typeof discountInputSchema>
+
 export const createSaleSchema = z.object({
   uuid: z.string().uuid('Identificador da venda inválido'),
   items: z.array(saleItemInputSchema).min(1, 'Adicione ao menos um item ao carrinho'),
   paymentMethod: paymentMethodSchema,
+  discount: discountInputSchema.optional(),
   partialPayments: z
     .array(partialPaymentSchema)
     .max(MAX_SALE_PAYMENTS - 1, `No máximo ${MAX_SALE_PAYMENTS} formas de pagamento por venda`)
@@ -66,6 +85,7 @@ export const saleItemSchema = z.object({
   productName: z.string(),
   quantity: z.number().int().positive(),
   unitPriceCents: cents,
+  discountCents: cents,
 })
 
 export const salePaymentSchema = z.object({ method: paymentMethodSchema, amountCents: cents })
@@ -80,6 +100,9 @@ export const saleSchema = z.object({
   paymentMethod: paymentMethodSchema,
   // 1 a 5 formas de pagamento; a soma é totalCents.
   payments: z.array(salePaymentSchema).min(1).max(MAX_SALE_PAYMENTS),
+  subtotalCents: cents,
+  discountCents: cents,
+  discount: discountInputSchema.nullable(),
   totalCents: cents,
   // Preenchidos só em venda em Dinheiro com valor recebido informado.
   amountReceivedCents: cents.nullable(),

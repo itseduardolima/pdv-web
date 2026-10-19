@@ -86,7 +86,7 @@ function topProducts(sales: DashboardSaleRow[]): RankedProduct[] {
         totalCents: 0,
       }
       current.quantity += item.quantity
-      current.totalCents += item.quantity * item.unitPriceCents
+      current.totalCents += item.quantity * item.unitPriceCents - item.discountCents
       byProduct.set(item.productId, current)
     }
   }

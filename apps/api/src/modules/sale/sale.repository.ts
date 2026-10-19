@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common'
-import type { PaymentMethod, Product } from '@prisma/client'
+import type { DiscountType, PaymentMethod, Product } from '@prisma/client'
 import { PRISMA, setTenantInTransaction, type PrismaService } from '../../prisma/prisma.client'
 import { saleInclude, type SaleRow } from './sale.mapper'
 
@@ -8,6 +8,7 @@ export interface NewSaleItem {
   productName: string
   quantity: number
   unitPriceCents: number
+  discountCents: number
 }
 
 export interface NewSalePayment {
@@ -21,6 +22,10 @@ export interface NewSale {
   operatorId: string
   paymentMethod: PaymentMethod
   payments: NewSalePayment[]
+  subtotalCents: number
+  discountCents: number
+  discountType: DiscountType | null
+  discountValue: number | null
   totalCents: number
   amountReceivedCents: number | null
   changeCents: number | null
@@ -73,6 +78,10 @@ export class SaleRepository {
           cashSessionId: sale.cashSessionId,
           operatorId: sale.operatorId,
           paymentMethod: sale.paymentMethod,
+          subtotalCents: sale.subtotalCents,
+          discountCents: sale.discountCents,
+          discountType: sale.discountType,
+          discountValue: sale.discountValue,
           totalCents: sale.totalCents,
           amountReceivedCents: sale.amountReceivedCents,
           changeCents: sale.changeCents,

@@ -51,3 +51,27 @@ describe('voidSaleSchema', () => {
     expect(reasonError('a'.repeat(201))).toBe('O motivo pode ter no máximo 200 caracteres')
   })
 })
+
+describe('createSaleSchema — desconto', () => {
+  const parse = (discount: unknown) => createSaleSchema.safeParse({ ...base, discount })
+
+  it('accepts a discount in cents or in basis points', () => {
+    expect(parse({ type: 'AMOUNT', value: 500 }).success).toBe(true)
+    expect(parse({ type: 'PERCENT', value: 1000 }).success).toBe(true)
+  })
+
+  it('is optional', () => {
+    expect(createSaleSchema.safeParse(base).success).toBe(true)
+  })
+
+  it('rejects zero, negative and fractional values', () => {
+    expect(parse({ type: 'AMOUNT', value: 0 }).success).toBe(false)
+    expect(parse({ type: 'AMOUNT', value: -1 }).success).toBe(false)
+    expect(parse({ type: 'PERCENT', value: 10.5 }).success).toBe(false)
+  })
+
+  it('rejects a percentage of 100% or more', () => {
+    expect(parse({ type: 'PERCENT', value: 10000 }).success).toBe(false)
+    expect(parse({ type: 'PERCENT', value: 9999 }).success).toBe(true)
+  })
+})
