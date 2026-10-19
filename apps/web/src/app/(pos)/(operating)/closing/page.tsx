@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { InlineAlert } from '@/components/ui/InlineAlert'
 import { Loader } from '@/components/ui/Loader'
-import { useTenant } from '@/hooks/use-tenant'
 import { cashSessionBadgeLabel } from '@/lib/utils/cash-session-badge'
 import { formatCurrency } from '@/lib/utils/format-currency'
 import { formatDayLong, formatTime } from '@/lib/utils/format-date'
@@ -19,7 +18,6 @@ import { useClosingPage } from './use-closing-page'
 
 export default function ClosingPage() {
   const page = useClosingPage()
-  const tenant = useTenant()
   const session = page.session
   const openedAt = session ? new Date(session.openedAt) : null
 
@@ -33,7 +31,7 @@ export default function ClosingPage() {
         actions={
           session && (
             <span className="rounded-pill bg-ink px-4 py-1.5 font-body text-[13px] font-medium text-surface">
-              {cashSessionBadgeLabel(tenant, session)}
+              {cashSessionBadgeLabel(session)}
             </span>
           )
         }
