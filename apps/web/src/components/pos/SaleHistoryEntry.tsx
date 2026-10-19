@@ -32,9 +32,19 @@ export function SaleHistoryEntry({ sale, onSelect }: { sale: Sale; onSelect: (sa
             Anulada
           </span>
         )}
-        <span className={`shrink-0 font-body text-sm font-bold ${sale.voidedAt ? 'text-ink/40 line-through' : ''}`}>
-          {formatCurrency(sale.totalCents)}
-        </span>
+        <div className="flex shrink-0 flex-col items-end">
+          {sale.discountCents > 0 && (
+            <span data-cy="sale-gross" className="font-body text-xs text-ink/45 line-through">
+              {formatCurrency(sale.subtotalCents)}
+            </span>
+          )}
+          <span
+            data-cy="sale-net"
+            className={`font-body text-sm font-bold ${sale.voidedAt ? 'text-ink/40 line-through' : ''}`}
+          >
+            {formatCurrency(sale.totalCents)}
+          </span>
+        </div>
         <BackIcon aria-hidden width="16" height="16" className="shrink-0 rotate-180 text-ink/30" />
       </button>
     </li>

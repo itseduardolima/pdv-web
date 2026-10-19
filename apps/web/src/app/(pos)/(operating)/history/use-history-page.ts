@@ -17,6 +17,7 @@ export function useHistoryPage() {
   const [date, setDate] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebouncedValue(search)
+  const [onlyDiscounted, setOnlyDiscounted] = useState(false)
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null)
 
   const voiding = useVoidSaleFlow(setSelectedSale)
@@ -43,7 +44,9 @@ export function useHistoryPage() {
     handleApplyDay,
     search,
     handleSearchChange: setSearch,
-    sales: history.data ?? [],
+    onlyDiscounted,
+    handleToggleOnlyDiscounted: () => setOnlyDiscounted((current) => !current),
+    sales: (history.data ?? []).filter((sale) => !onlyDiscounted || sale.discountCents > 0),
     isLoading: history.isPending,
     errorMessage: apiErrorMessage(history.error),
     selectedSale,

@@ -43,11 +43,25 @@ export default function HistoryPage() {
         }
       />
 
-      <SearchBar
-        placeholder="Buscar por produto…"
-        value={page.search}
-        onChange={(event) => page.handleSearchChange(event.target.value)}
-      />
+      <div className="flex items-center justify-between gap-3">
+        <SearchBar
+          className="min-w-0 max-w-sm flex-1"
+          placeholder="Buscar por produto…"
+          value={page.search}
+          onChange={(event) => page.handleSearchChange(event.target.value)}
+        />
+        <button
+          type="button"
+          data-cy="discounted-filter"
+          onClick={page.handleToggleOnlyDiscounted}
+          aria-pressed={page.onlyDiscounted}
+          className={`shrink-0 rounded-pill border-[1.5px] border-ink px-4 py-2 font-body text-xs font-semibold md:text-[13px] ${
+            page.onlyDiscounted ? 'bg-primary text-primary-ink' : 'bg-surface text-ink'
+          }`}
+        >
+          Com desconto
+        </button>
+      </div>
 
       {page.errorMessage && <InlineAlert>{page.errorMessage}</InlineAlert>}
 

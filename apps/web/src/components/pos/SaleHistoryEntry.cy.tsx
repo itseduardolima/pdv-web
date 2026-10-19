@@ -8,6 +8,9 @@ const sale = {
   operatorName: 'Karol',
   paymentMethod: 'PIX' as const,
   payments: [{ method: 'PIX' as const, amountCents: 8340 }],
+  subtotalCents: 8340,
+  discountCents: 0,
+  discount: null,
   totalCents: 8340,
   voidable: true,
   voidedAt: null as string | null,
@@ -31,6 +34,25 @@ describe('SaleHistoryEntry', () => {
     cy.contains('16:42')
     cy.contains('4 itens · Karol · Pix')
     cy.contains('R$ 83,40')
+  })
+
+  it('shows gross and net totals only when there is a discount', () => {
+    cy.mount(
+      <ul>
+        <SaleHistoryEntry sale={sale} onSelect={() => {}} />
+      </ul>,
+    )
+    cy.get('[data-cy=sale-gross]').should('not.exist')
+    cy.mount(
+      <ul>
+        <SaleHistoryEntry
+          sale={{ ...sale, subtotalCents: 9000, discountCents: 660, totalCents: 8340 }}
+          onSelect={() => {}}
+        />
+      </ul>,
+    )
+    cy.get('[data-cy=sale-gross]').should('contain.text', '90,00')
+    cy.get('[data-cy=sale-net]').should('contain.text', '83,40')
   })
 
   it('calls onSelect with the sale when clicked', () => {
