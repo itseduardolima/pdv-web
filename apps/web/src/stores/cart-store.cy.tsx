@@ -77,3 +77,32 @@ describe('cart-store — pagamento dividido', () => {
     })
   })
 })
+
+describe('cart-store — desconto', () => {
+  beforeEach(() => {
+    useCartStore.getState().clear()
+    useCartStore.getState().add({ productId: 'p1', name: 'Arroz', unit: 'UN', unitPriceCents: 3000 })
+  })
+
+  it('splits equally over the discounted total', () => {
+    useCartStore.getState().setDiscountText('3,00')
+    useCartStore.getState().setSplitting(true)
+    useCartStore.getState().splitEqually(3)
+    expect(useCartStore.getState().parts.map((part) => part.amountText)).to.deep.equal(['9,00', '9,00'])
+  })
+
+  it('clears the text when the type changes, so R$ and % never get mixed up', () => {
+    useCartStore.getState().setDiscountText('10')
+    useCartStore.getState().setDiscountType('PERCENT')
+    expect(useCartStore.getState().discountText).to.eq('')
+    expect(useCartStore.getState().discountType).to.eq('PERCENT')
+  })
+
+  it('drops the discount when the cart is cleared or the sale finishes', () => {
+    useCartStore.getState().setDiscountType('PERCENT')
+    useCartStore.getState().setDiscountText('10')
+    useCartStore.getState().clear()
+    expect(useCartStore.getState().discountText).to.eq('')
+    expect(useCartStore.getState().discountType).to.eq('AMOUNT')
+  })
+})

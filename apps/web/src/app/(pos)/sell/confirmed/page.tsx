@@ -3,6 +3,7 @@
 import { SplitAuthLayout } from '@/components/layout/SplitAuthLayout'
 import { Button } from '@/components/ui/Button'
 import { CardIcon, CashIcon, CheckCircleIcon, PixIcon } from '@/components/ui/Icons'
+import { discountLabel } from '@/lib/utils/discount'
 import { formatCurrency } from '@/lib/utils/format-currency'
 import { salePaymentLabel } from '@/lib/utils/payment-method'
 import { useSaleConfirmedPage } from './use-sale-confirmed-page'
@@ -46,6 +47,21 @@ export default function SaleConfirmedPage() {
       </ul>
 
       <ul className="flex w-full flex-col gap-2 md:gap-2.5">
+        {sale.discountCents > 0 && (
+          <>
+            <li className="flex justify-between font-body text-xs text-ink/60 md:text-[13px]">
+              <span>Subtotal</span>
+              <span>{formatCurrency(sale.subtotalCents)}</span>
+            </li>
+            <li
+              data-cy="confirmed-discount"
+              className="flex justify-between font-body text-xs text-ink/60 md:text-[13px]"
+            >
+              <span>{discountLabel(sale.discount)}</span>
+              <span>-{formatCurrency(sale.discountCents)}</span>
+            </li>
+          </>
+        )}
         <li className="flex justify-between font-body text-sm font-bold md:text-[15px]">
           <span>Total</span>
           <span>{formatCurrency(sale.totalCents)}</span>

@@ -1,16 +1,24 @@
 import { cartItemCount, cartTotalCents, changeForCash } from '@/lib/utils/cart'
+import { buildDiscountInput, previewDiscountCents } from '@/lib/utils/discount'
 import { parseMoneyInput } from '@/lib/utils/money'
 import { useCartStore } from '@/stores/cart-store'
 
 // Carrinho em progresso: estado local (Zustand), sem chamar a API a cada clique.
 export function useCart() {
   const store = useCartStore()
-  const totalCents = cartTotalCents(store.items)
+  const subtotalCents = cartTotalCents(store.items)
+  const discountCents = previewDiscountCents(subtotalCents, store.discountType, store.discountText)
+  const totalCents = subtotalCents - discountCents
   // NaN quando vazio/inválido: nada é enviado e a API decide o resto.
   const amountReceivedCents = parseMoneyInput(store.amountReceivedText)
   const partsCents = store.parts.map((part) => parseMoneyInput(part.amountText))
   return {
     items: store.items,
+    discountType: store.discountType,
+    discountText: store.discountText,
+    discount: buildDiscountInput(store.discountType, store.discountText),
+    subtotalCents,
+    discountCents,
     paymentMethod: store.paymentMethod,
     amountReceivedText: store.amountReceivedText,
     amountReceivedCents,
@@ -36,6 +44,8 @@ export function useCart() {
     increment: store.increment,
     decrement: store.decrement,
     remove: store.remove,
+    setDiscountType: store.setDiscountType,
+    setDiscountText: store.setDiscountText,
     setPaymentMethod: store.setPaymentMethod,
     setAmountReceivedText: store.setAmountReceivedText,
     setSplitting: store.setSplitting,

@@ -1,7 +1,7 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import type { CreateSaleInput, Product } from '@pdv/shared'
+import type { CreateSaleInput, DiscountType, Product } from '@pdv/shared'
 import { useAdjustStock } from '@/hooks/queries/use-adjust-stock'
 import { useCreateSale } from '@/hooks/queries/use-create-sale'
 import { useProductCategories } from '@/hooks/queries/use-product-categories'
@@ -36,6 +36,7 @@ export function useSellPage() {
   const [adjustingStock, setAdjustingStock] = useState(false)
   const [calculatorOpen, setCalculatorOpen] = useState(false)
   const [paymentOpen, setPaymentOpen] = useState(false)
+  const [discountOpen, setDiscountOpen] = useState(cart.discountText !== '')
   const flyToCart = useFlyToCart()
   const cartRef = useRef<HTMLElement>(null)
   const cartBadgeRef = useRef<HTMLSpanElement>(null)
@@ -88,6 +89,22 @@ export function useSellPage() {
     cart.setAmountReceivedText(text)
   }
 
+  function handleDiscountTextChange(text: string) {
+    createSale.reset()
+    cart.setDiscountText(text)
+  }
+
+  function handleDiscountTypeChange(type: DiscountType) {
+    createSale.reset()
+    cart.setDiscountType(type)
+  }
+
+  function handleRemoveDiscount() {
+    createSale.reset()
+    cart.setDiscountText('')
+    setDiscountOpen(false)
+  }
+
   // Sempre envia: a API decide (caixa aberto, estoque, forma de pagamento,
   // troco). O valor recebido só vai em Dinheiro e só se foi digitado.
   function handleCheckout() {
@@ -96,6 +113,7 @@ export function useSellPage() {
     const input: CreateSaleInput = {
       uuid: cart.saleUuid,
       paymentMethod: cart.paymentMethod ?? ('' as never),
+      ...(cart.discount ? { discount: cart.discount } : {}),
       ...(partialPayments ? { partialPayments } : {}),
       ...(sendsReceived ? { amountReceivedCents: cart.amountReceivedCents } : {}),
       items: cart.items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
@@ -121,6 +139,9 @@ export function useSellPage() {
               partialPayments,
               amountReceivedCents: sendsReceived ? cart.amountReceivedCents : null,
               changeCents: sendsReceived ? cart.changeCents : null,
+              subtotalCents: cart.subtotalCents,
+              discountCents: cart.discountCents,
+              discount: cart.discount,
               totalCents: cart.totalCents,
               cashSessionId: cashSession.data?.id ?? 'offline',
               operatorId: operator.id,
@@ -139,6 +160,7 @@ export function useSellPage() {
   function handleCancel() {
     createSale.reset()
     setPaymentOpen(false)
+    setDiscountOpen(false)
     cart.clear()
   }
 
@@ -147,6 +169,10 @@ export function useSellPage() {
   const details = apiError?.details as { productId?: string; available?: number } | undefined
   // INSUFFICIENT_CASH é erro do campo "Valor recebido", não do carrinho inteiro.
   const insufficientCash = apiError?.code === 'INSUFFICIENT_CASH' ? apiError.message : null
+  const discountError =
+    fieldErrors?.['discount.value'] ??
+    fieldErrors?.discount ??
+    (apiError?.code === 'DISCOUNT_TOO_HIGH' ? apiError.message : null)
   // "Sem estoque" no meio da venda: atalho para o admin corrigir sem sair
   // da tela (03-regras-negocio § Venda). Operador não edita produto (ADMIN_ONLY).
   const insufficientStock =
@@ -196,7 +222,13 @@ export function useSellPage() {
     partialPaymentsError: fieldErrors?.partialPayments ?? null,
     itemsError: fieldErrors?.items ?? null,
     amountReceivedError: fieldErrors?.amountReceivedCents ?? insufficientCash,
-    errorMessage: insufficientCash ? null : apiGeneralErrorMessage(createSale.error),
+    discountError,
+    discountOpen,
+    openDiscount: () => setDiscountOpen(true),
+    handleRemoveDiscount,
+    handleDiscountTextChange,
+    handleDiscountTypeChange,
+    errorMessage: insufficientCash || discountError ? null : apiGeneralErrorMessage(createSale.error),
     highlightedProductId: details?.productId ?? null,
     dismissError: createSale.reset,
     insufficientStock,

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
-import { MAX_SALE_PAYMENTS, type PaymentMethod, type Sale } from '@pdv/shared'
+import { MAX_SALE_PAYMENTS, type DiscountType, type PaymentMethod, type Sale } from '@pdv/shared'
 import { cartTotalCents, splitEvenly, type CartItem } from '@/lib/utils/cart'
+import { previewDiscountCents } from '@/lib/utils/discount'
 import { formatMoneyMasked } from '@/lib/utils/money'
 
 // Parte do pagamento misto com valor digitado; a forma em `paymentMethod`
@@ -12,6 +13,8 @@ export interface SplitPart {
 
 interface CartState {
   items: CartItem[]
+  discountType: DiscountType
+  discountText: string
   paymentMethod: PaymentMethod | null
   // Só para Dinheiro: quanto o cliente entregou, como o operador digita (mascarado).
   amountReceivedText: string
@@ -29,6 +32,8 @@ interface CartState {
   increment: (productId: string) => void
   decrement: (productId: string) => void
   remove: (productId: string) => void
+  setDiscountType: (type: DiscountType) => void
+  setDiscountText: (text: string) => void
   setPaymentMethod: (method: PaymentMethod) => void
   setAmountReceivedText: (text: string) => void
   setSplitting: (splitting: boolean) => void
@@ -43,6 +48,8 @@ interface CartState {
 
 const newUuid = () => crypto.randomUUID()
 const emptyPayment = {
+  discountType: 'AMOUNT' as DiscountType,
+  discountText: '',
   paymentMethod: null,
   amountReceivedText: '',
   splitting: false,
@@ -81,6 +88,8 @@ export const useCartStore = create<CartState>((set) => ({
     })),
   remove: (productId) =>
     set((state) => ({ items: state.items.filter((line) => line.productId !== productId), evenSplit: null })),
+  setDiscountType: (discountType) => set({ discountType, discountText: '', evenSplit: null }),
+  setDiscountText: (discountText) => set({ discountText, evenSplit: null }),
   setPaymentMethod: (paymentMethod) => set({ paymentMethod }),
   setAmountReceivedText: (amountReceivedText) => set({ amountReceivedText }),
   setSplitting: (splitting) =>
@@ -107,7 +116,9 @@ export const useCartStore = create<CartState>((set) => ({
   // N pessoas = N-1 partes com valor + a forma do resto (que leva a sobra).
   splitEqually: (people) =>
     set((state) => {
-      const amounts = splitEvenly(cartTotalCents(state.items), people)
+      const subtotalCents = cartTotalCents(state.items)
+      const discountCents = previewDiscountCents(subtotalCents, state.discountType, state.discountText)
+      const amounts = splitEvenly(subtotalCents - discountCents, people)
       return {
         parts: amounts.slice(0, -1).map((cents, i) => ({
           method: state.parts[i]?.method ?? null,

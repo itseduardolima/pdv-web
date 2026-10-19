@@ -65,3 +65,47 @@ describe('Vender sem rede: fila e sincronização', () => {
     })
   })
 })
+
+describe('Vender sem rede com desconto', () => {
+  it('keeps the discount in the queue and the server applies it on sync', () => {
+    cy.loginAs('Administrador', '1234')
+    cy.ensureRegisterOpen()
+
+    let networkDown = true
+    cy.intercept('POST', '**/sales', (req) => {
+      if (networkDown) req.destroy()
+      else req.continue()
+    }).as('createSale')
+    cy.intercept('POST', '**/sales/sync', (req) => {
+      if (networkDown) req.destroy()
+      else req.continue()
+    }).as('syncSales')
+
+    cy.visit('/sell')
+    cy.get('button[aria-label="Adicionar Sal Refinado 1kg"]').click()
+    cy.get('[data-cy=discount-toggle]').click()
+    cy.get('input[name=discount]').type('10')
+    cy.contains('button', 'Ir para o pagamento').click()
+    cy.contains('[role=radio]', 'Pix').click()
+    cy.contains('button', 'Finalizar Venda').click()
+    cy.wait('@createSale')
+    cy.wait('@syncSales')
+
+    cy.location('pathname').should('eq', '/sell/confirmed')
+    cy.get('[data-cy=confirmed-discount]').should('contain.text', '0,10')
+
+    cy.then(() => {
+      networkDown = false
+    })
+    cy.visit('/sell')
+    cy.wait('@syncSales').its('response.statusCode').should('eq', 200)
+
+    cy.request({ url: api('/sales?period=today'), headers: headers() })
+      .its('body')
+      .then((sales) => {
+        const last = (sales as { discountCents: number; totalCents: number; subtotalCents: number }[])[0]!
+        expect(last.discountCents).to.eq(10)
+        expect(last.totalCents).to.eq(last.subtotalCents - 10)
+      })
+  })
+})

@@ -1,4 +1,4 @@
-import type { PaymentMethod, Sale } from '@pdv/shared'
+import type { DiscountInput, PaymentMethod, Sale } from '@pdv/shared'
 import type { CartItem } from '@/lib/utils/cart'
 
 interface BuildLocalSaleInput {
@@ -8,6 +8,9 @@ interface BuildLocalSaleInput {
   partialPayments?: { method: PaymentMethod; amountCents: number }[]
   amountReceivedCents: number | null
   changeCents: number | null
+  subtotalCents: number
+  discountCents: number
+  discount: DiscountInput | undefined
   totalCents: number
   cashSessionId: string
   operatorId: string
@@ -33,6 +36,9 @@ export function buildLocalSale(input: BuildLocalSaleInput): Sale {
         amountCents: input.totalCents - (input.partialPayments ?? []).reduce((sum, part) => sum + part.amountCents, 0),
       },
     ],
+    subtotalCents: input.subtotalCents,
+    discountCents: input.discountCents,
+    discount: input.discount ?? null,
     totalCents: input.totalCents,
     amountReceivedCents: input.amountReceivedCents,
     changeCents: input.changeCents,
@@ -46,6 +52,7 @@ export function buildLocalSale(input: BuildLocalSaleInput): Sale {
       productName: item.name,
       quantity: item.quantity,
       unitPriceCents: item.unitPriceCents,
+      discountCents: 0,
     })),
   }
 }

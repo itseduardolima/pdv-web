@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import type { Sale } from '@pdv/shared'
 import { Button, type ButtonState } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { discountLabel } from '@/lib/utils/discount'
 import { formatCurrency } from '@/lib/utils/format-currency'
 import { formatDayLong, formatTime } from '@/lib/utils/format-date'
 import { salePaymentLabel } from '@/lib/utils/payment-method'
@@ -94,6 +95,18 @@ export function SaleDetailsDialog({
                   <span>Forma de pagamento</span>
                   <span>{salePaymentLabel(sale.payments)}</span>
                 </div>
+                {sale.discountCents > 0 && (
+                  <>
+                    <div className="flex items-center justify-between text-ink/60">
+                      <span>Subtotal</span>
+                      <span>{formatCurrency(sale.subtotalCents)}</span>
+                    </div>
+                    <div data-cy="sale-discount" className="flex items-center justify-between text-ink/60">
+                      <span>{discountLabel(sale.discount)}</span>
+                      <span>-{formatCurrency(sale.discountCents)}</span>
+                    </div>
+                  </>
+                )}
                 {sale.amountReceivedCents !== null && (
                   <div className="flex items-center justify-between text-ink/60">
                     <span>Recebido</span>

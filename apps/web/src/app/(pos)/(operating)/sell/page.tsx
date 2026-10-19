@@ -3,6 +3,7 @@
 import { PageHeader } from '@/components/layout/PageHeader'
 import { CartLine } from '@/components/pos/CartLine'
 import { CashReceived } from '@/components/pos/CashReceived'
+import { DiscountField } from '@/components/pos/DiscountField'
 import { CategoryFilter } from '@/components/pos/CategoryFilter'
 import { FlyToCartLayer } from '@/components/pos/FlyToCartLayer'
 import { PaymentDialog } from '@/components/pos/PaymentDialog'
@@ -19,6 +20,7 @@ import { InlineAlert } from '@/components/ui/InlineAlert'
 import { Loader } from '@/components/ui/Loader'
 import { useTenant } from '@/hooks/use-tenant'
 import { cashSessionBadgeLabel } from '@/lib/utils/cash-session-badge'
+import { discountLabel } from '@/lib/utils/discount'
 import { formatCurrency } from '@/lib/utils/format-currency'
 import { formatDayLong, formatTime } from '@/lib/utils/format-date'
 import { useSellPage } from './use-sell-page'
@@ -161,6 +163,40 @@ export default function SellPage() {
           </ul>
           <FieldError id="cart-items-error" message={page.itemsError ?? undefined} />
 
+          {page.cart.items.length > 0 &&
+            (page.discountOpen ? (
+              <DiscountField
+                type={page.cart.discountType}
+                value={page.cart.discountText}
+                onTypeChange={page.handleDiscountTypeChange}
+                onValueChange={page.handleDiscountTextChange}
+                error={page.discountError ?? undefined}
+                onRemove={page.handleRemoveDiscount}
+              />
+            ) : (
+              <button
+                type="button"
+                data-cy="discount-toggle"
+                onClick={page.openDiscount}
+                className="self-start font-body text-xs font-semibold text-ink/60 underline"
+              >
+                Aplicar desconto
+              </button>
+            ))}
+
+          {page.cart.discountCents > 0 && (
+            <dl data-cy="cart-discount-summary" className="flex flex-col gap-1 font-body text-sm text-ink/60">
+              <div className="flex justify-between">
+                <dt>Subtotal</dt>
+                <dd>{formatCurrency(page.cart.subtotalCents)}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt>{discountLabel(page.cart.discount ?? null)}</dt>
+                <dd data-cy="cart-discount-value">-{formatCurrency(page.cart.discountCents)}</dd>
+              </div>
+            </dl>
+          )}
+
           <div className="flex items-baseline justify-between border-t-2 border-ink pt-3">
             <span className="font-body text-[15px] font-medium">Total</span>
             <span className="font-heading text-[26px] font-bold tracking-tight md:text-[28px]">
@@ -194,6 +230,7 @@ export default function SellPage() {
         alertKey={page.alertKey}
       >
         {page.itemsError && <InlineAlert>{page.itemsError}</InlineAlert>}
+        {page.discountError && <InlineAlert onDismiss={page.dismissError}>{page.discountError}</InlineAlert>}
         {page.cart.splitting ? (
           <SplitPayment
             parts={page.cart.parts}

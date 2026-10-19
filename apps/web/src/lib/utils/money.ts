@@ -36,3 +36,18 @@ export function maskMoneyInput(rawText: string): string {
 export function parseIntegerInput(text: string): number {
   return /^-?\d+$/.test(text.trim()) ? Number(text) : NaN
 }
+
+export function parsePercentInput(text: string): number {
+  const normalized = text.trim().replace(',', '.')
+  if (!/^\d+(\.\d{1,2})?$/.test(normalized)) return NaN
+  return Math.round(Number(normalized) * 100)
+}
+
+export function maskPercentInput(rawText: string): string {
+  const [whole = '', ...rest] = rawText
+    .replace(/[^\d,.]/g, '')
+    .replace(/\./g, ',')
+    .split(',')
+  const integer = whole.slice(0, 3)
+  return rest.length > 0 ? `${integer},${rest.join('').slice(0, 2)}` : integer
+}
