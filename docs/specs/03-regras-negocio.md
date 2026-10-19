@@ -103,6 +103,21 @@ a mesma pessoa administrando duas contas do sistema, o que o painel recusa
   valores; a API continua conferindo a soma. Fechamento, Dashboard e
   Relatórios somam por `SalePayment`, então só a parte em Dinheiro entra no
   saldo esperado da gaveta.
+- Desconto (decisão de 2026-10-19): a venda pode ter um desconto sobre o
+  subtotal (soma dos itens), informado em valor (`AMOUNT`, centavos) ou em
+  porcentagem (`PERCENT`, em centésimos de ponto percentual: 1000 = 10%). O cliente manda só a intenção (`discount`); a API
+  calcula `discountCents` (porcentagem arredondada para centavos inteiros) e
+  `totalCents = subtotalCents − discountCents` — nunca aceita o total pronto.
+  Qualquer Operador pode aplicar, sem teto por papel. Recusado com 400
+  `DISCOUNT_TOO_HIGH` se o desconto for maior ou igual ao subtotal (venda
+  nunca fica em R$ 0,00). O desconto é rateado entre os itens, proporcional
+  ao valor de cada um (`SaleItem.discountCents`; os centavos que sobram vão
+  para os itens de maior resto, e a soma dos itens é sempre o desconto da
+  venda), então rankings de produto e totais ficam líquidos. Pagamento misto,
+  troco e Fechamento usam o `totalCents` já com desconto. Rankings de produto
+  (Dashboard e Relatórios) somam o valor líquido de cada item; nenhuma
+  tela mostra indicador de descontos concedidos. Sem
+  campo de motivo na v1. Anular a venda anula o desconto junto.
 - Troco (decisão de 2026-09-12): quando há parte em Dinheiro o operador pode
   informar quanto o cliente entregou (`amountReceivedCents`, opcional). A
   API calcula o troco (`changeCents = recebido − parte em Dinheiro`) e grava

@@ -505,6 +505,19 @@ implementação no plano aprovado desta sessão. Esta fatia é só o backend
 - [ ] Venda ainda na fila offline não pode ser anulada (fora da v1).
 - [ ] Sem HU no `BACKLOG.md` ainda (pagamento misto e anular venda) — registrar critério de aceite/pontos lá.
 
+## Desconto na venda (decisão de 2026-10-19)
+
+Decisões: desconto na venda inteira (R$ ou %), operador livre (sem teto),
+sem motivo, indicador "Descontos concedidos" nos Relatórios, desconto rateado
+nos itens (`SaleItem.discountCents`). HU 5.6 em `docs/scrum/BACKLOG.md`.
+
+- [x] Etapa 1 — spec (`03-regras-negocio` § Venda) e HU 5.6 no backlog
+- [x] Etapa 2 — `packages/shared` (`discount`, `subtotalCents`/`discountCents`) e migration com backfill (`Sale.subtotalCents`/`discountCents`/`discountType`/`discountValue`, `SaleItem.discountCents`; backfill sob RLS, ver reparo de `SalePayment`) — migration `20261019120000_sale_discount` aplicada no dev (220 vendas com `subtotalCents = totalCents`, `SET NOT NULL` falharia se sobrasse alguma). `discount.value` em PERCENT é em centésimos de ponto percentual (1000 = 10%). Ligação mínima: `sale.service` ainda grava desconto 0 e `local-sale.ts` idem, até as etapas 3 e 5
+- [x] Etapa 3 — API: `computeDiscount` + `allocateDiscount` (maior resto) em `sale/sale-discount.ts`, `DISCOUNT_TOO_HIGH` (400), ligados em `SaleService.create` (pagamento misto e troco usam o total líquido). Porcentagem que arredonda a 0 centavo vira "sem desconto". Jest: `sale-discount.spec.ts` + 4 casos novos em `sale.service.spec.ts` (302 testes na API). Não validado contra o servidor de dev real (só Jest)
+- [x] Etapa 4 — Dashboard e Relatórios somam o valor líquido por item (`quantidade × preço − SaleItem.discountCents`); `ReportSummary.discounts` (total, vendas com desconto, por operador) só na API (sem card na tela: removido a pedido). Jest: +4 na API (306). Dashboard e Relatórios não exibem indicador de descontos
+- [x] Etapa 5 — Front: `DiscountField` (R$/%) no carrinho de Vender, com Subtotal/Desconto/Total ao vivo (prévia local em `lib/utils/discount.ts`, só exibição — a API calcula e recusa); total líquido alimenta o pagamento, o troco e o "Dividir igualmente"; erro do desconto (`discount.value`/`DISCOUNT_TOO_HIGH`) aparece no campo e no `PaymentDialog`; `discount` viaja na fila offline e `buildLocalSale` monta a venda local com ele; Venda Confirmada e `SaleDetailsDialog` mostram Subtotal e Desconto. Component tests: `DiscountField`, `discount.cy`, `cart-store`, `SaleDetailsDialog`. Desconto por item da venda local offline fica 0 (a tela não mostra desconto por item)
+- [x] Etapa 6 — E2E `sell-discount.cy.ts` (R$, %, recusa `DISCOUNT_TOO_HIGH` mantendo a venda aberta, dividir igualmente sobre o líquido, card nos Relatórios, anulação tirando o desconto dos Relatórios) e caso de desconto em `sell-offline-sync.cy.ts` (desconto viaja na fila e o servidor aplica no sync). Suíte E2E completa: 38 passando. Desconto na venda **concluído** (HU 5.6)
+
 ## Backlog P2 (sem sprint fixa ainda)
 
 - [ ] Sessão com renovação deslizante por inatividade (hoje o JWT expira 12h fixas após o login — decisão da Sprint 1)
