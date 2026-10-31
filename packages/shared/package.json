@@ -19,8 +19,8 @@
   "devDependencies": {
     "@pdv/config": "workspace:*",
     "@types/jest": "^30.0.0",
-    "jest": "^30.1.3",
-    "ts-jest": "^29.4.4",
+    "jest": "^30.5.2",
+    "ts-jest": "^29.4.15",
     "typescript": "^5.9.2"
   },
   "jest": {
